@@ -2,7 +2,7 @@
 # modelscan
 <p align="center">
 <a href="https://github.com/protectai/model-scanner-private/blob/23-update-readme/imgs/logo.png">
-  <img src="imgs/logo.png" alt="modelscan logo" width="200">  
+  <img src="imgs/logo.png" width="200">  
 </a>
 
 ```python
@@ -12,7 +12,7 @@ malicious_code = """cat ~/.aws/secrets"""
 ```
 
 <a href="https://github.com/protectai/model-scanner-private/blob/23-update-readme/imgs/attack_example.png">
-  <img src="imgs/attack_example.png" alt="modelscan logo" width="700">
+  <img src="imgs/attack_example.png" width="700">
 </a>
 
 </p>
@@ -24,7 +24,7 @@ malicious_code = """cat ~/.aws/secrets"""
 
 <p align="center">
 <a href="https://github.com/protectai/model-scanner-private/blob/23-update-readme/imgs/cli_output.png">
-  <img src="imgs/cli_output.png" alt="modelscan logo" width="700">
+  <img src="imgs/cli_output.png" width="700">
 </a>
 
 </p>
@@ -36,7 +36,7 @@ malicious_code = """cat ~/.aws/secrets"""
 
 <p align="center">
 <a href="https://github.com/protectai/model-scanner-private/blob/23-update-readme/imgs/flow_chart.png">
-  <img src="./imgs/flow_chart.png" alt="Appsmith Logo" width="700">
+  <img src="./imgs/flow_chart.png" width="700">
 </a>
 <br />
 Fig 1: An outline for scanning models using modelscan.
