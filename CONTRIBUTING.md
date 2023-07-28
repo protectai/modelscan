@@ -1,12 +1,12 @@
 # 👩‍💻 CONTRIBUTING
 
-Welcome! We're glad to have you. If you would like to report a bug, request a new feature or enhancement, follow [this link](to-be-updated-in-new-repo) for more help.
+Welcome! We're glad to have you. If you would like to report a bug, request a new feature or enhancement, follow [this link](https://github.com/protectai/modelscan/issues/new/choose).
 
 ## ❗️ Requirements
 
 1. Python
 
-   `modelscan` requires python version `>=3.8` and `<4.0`
+   `modelscan` requires python version `>=3.8` and `<3.11`
 
 2. Poetry
 
@@ -31,7 +31,7 @@ Welcome! We're glad to have you. If you would like to report a bug, request a ne
    Run a scan with the cli with the following command:
 
    ```bash
-   modelscan --huggingface ykilcher/totally-harmless-model
+   modelscan -p /path/to/file
    ```
 
 ## 📝 Submitting Changes
