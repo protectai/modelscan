@@ -2,7 +2,7 @@ import abc
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 
 from collections import defaultdict
 
@@ -62,8 +62,13 @@ class Issue:
 
 
 class Issues:
-    def __init__(self, issues: List[Issue] = []) -> None:
-        self.all_issues: List[Issue] = issues
+    all_issues: List[Issue]
+
+    def __init__(self, issues: Optional[List[Issue]] = None) -> None:
+        if issues is None:
+            self.all_issues = []
+        else:
+            self.all_issues = issues
 
     def add_issue(self, issue: Issue) -> None:
         """
