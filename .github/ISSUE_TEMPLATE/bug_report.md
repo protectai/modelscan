@@ -12,10 +12,9 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+1. Use arguments '...'
+2. With model '....'
+3. See error '...'
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
@@ -23,9 +22,11 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Version [e.g. 22]
+**Environment (please complete the following information):**
+ - OS [e.g. macOS 13.4 (ARM)]
+ - Modelscan Version [e.g. v1.0.0]
+ - ML Framework version [e.g. Tensorflow v2.13.0] (if applicable)
+ - Describe the model serialization format that triggered this error (if applicable)
 
 **Additional context**
 Add any other context about the problem here.
