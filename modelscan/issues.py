@@ -49,6 +49,8 @@ class Issue:
         self.details = details
 
     def __eq__(self, other: Any) -> bool:
+        if type(other) is not Issue:
+            return False
         return (
             self.code == other.code
             and self.severity == other.severity
