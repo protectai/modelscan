@@ -15,7 +15,7 @@ import tensorflow as tf
 from tensorflow import keras
 import torch
 from typing import Any, List, Set, Union
-from utils import PickleInject, generate_dill_unsafe_file, get_payload
+from test_utils import PickleInject, generate_dill_unsafe_file, get_payload
 import zipfile
 
 from modelscan.modelscan import Modelscan
@@ -29,7 +29,6 @@ from modelscan.issues import (
 from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
     scan_numpy,
-    scan_pytorch,
 )
 
 
@@ -76,72 +75,6 @@ class Malicious7:
 class Malicious8:
     def __reduce__(self) -> Any:
         return sys.exit, (0,)
-
-
-# class HTTPResponse:
-#     def __init__(self, status: int, data:Any=None):
-#         self.status = status
-#         self.reason = "mock reason"
-
-#         self.data = data
-#     def read(self) -> Any:
-#         return self.data
-
-
-# class MockHTTPSConnection:
-#     def __init__(self, host: Any):
-#         self.host = host
-#         self.response: Union[HTTPResponse, None] = None
-
-#     def request(self, method: Any, path_and_query: Any) -> None:
-#         assert self.response is None
-#         target = f"{method} https://{self.host}{path_and_query}"
-#         if target == "GET https://localhost/mock/200":
-#             self.response = HTTPResponse(200, b"mock123")
-#         elif target == "GET https://localhost/mock/400":
-#             self.response = HTTPResponse(400)
-#         elif target == "GET https://localhost/mock/pickle/benign":
-#             self.response = HTTPResponse(200, pickle.dumps({"a": 0, "b": 1, "c": 2}))
-#         elif target == "GET https://localhost/mock/pickle/malicious":
-#             self.response = HTTPResponse(200, pickle.dumps(Malicious2()))
-#         elif target == "GET https://localhost/mock/zip/benign":
-#             buffer = io.BytesIO()
-#             with zipfile.ZipFile(buffer, "w") as zip:
-#                 zip.writestr("data.pkl", pickle.dumps({"a": 0, "b": 1, "c": 2}))
-#             self.response = HTTPResponse(200, buffer.getbuffer())
-#         elif target == "GET https://localhost/mock/zip/malicious":
-#             buffer = io.BytesIO()
-#             with zipfile.ZipFile(buffer, "w") as zip:
-#                 zip.writestr("data.pkl", pickle.dumps(Malicious1()))
-#             self.response = HTTPResponse(200, buffer.getbuffer())
-#         elif (
-#             target
-#             == "GET https://huggingface.co/api/models/ykilcher/totally-harmless-model"
-#         ):
-#             self.response = HTTPResponse(
-#                 200, b'{"siblings": [{"rfilename": "pytorch_model.bin"}]}'
-#             )
-#         elif (
-#             target
-#             == "GET https://huggingface.co/ykilcher/totally-harmless-model/resolve/main/pytorch_model.bin"
-#         ):
-#             buffer = io.BytesIO()
-#             with zipfile.ZipFile(buffer, "w") as zip:
-#                 zip.writestr("archive/data.pkl", pickle.dumps(Malicious1()))
-#             self.response = HTTPResponse(200, buffer.getbuffer())
-#         else:
-#             raise ValueError(f"No mock for request '{target}'")
-
-#     def getresponse(self) -> Any:
-#         response = self.response
-#         self.response = None
-#         return response
-
-#     def close(self) -> None:
-#         pass
-
-
-# http.client.HTTPSConnection = MockHTTPSConnection # type: ignore[misc, assignment]
 
 
 def initialize_pickle_file(path: str, obj: Any, version: int) -> None:
@@ -920,21 +853,21 @@ def test_scan_directory_path(pickle_file_path: str) -> None:
     compare_results(ms.issues.all_issues, expected)
 
 
-# def test_scan_huggingface_model() -> None:
-#     expected = [
-#         Issue(
-#             IssueCode.UNSAFE_OPERATOR,
-#             IssueSeverity.CRITICAL,
-#             OperatorIssueDetails(
-#                 "builtins",
-#                 "eval",
-#                 "https://huggingface.co/ykilcher/totally-harmless-model/resolve/main/pytorch_model.bin:archive/data.pkl",
-#             ),
-#         )
-#     ]
-#     ms = Modelscan()
-#     ms.scan_huggingface_model("ykilcher/totally-harmless-model")
-#     assert ms.issues.all_issues == expected
+def test_scan_huggingface_model() -> None:
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "__builtin__",
+                "eval",
+                "https://huggingface.co/ykilcher/totally-harmless-model/resolve/main/pytorch_model.bin:archive/data.pkl",
+            ),
+        )
+    ]
+    ms = Modelscan()
+    ms.scan_huggingface_model("ykilcher/totally-harmless-model")
+    assert ms.issues.all_issues == expected
 
 
 # def test_scan_tf() -> None:

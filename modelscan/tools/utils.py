@@ -60,8 +60,7 @@ def _is_zipfile(source: Union[Path, str], data: Optional[IO[bytes]] = None) -> b
     # collisions and assume the zip has only 1 file.
     # See bugs.python.org/issue28494.
     if not data:
-        with open(source, "rb") as f:
-            data = f
+        data = open(source, "rb")
 
     # Read the first 4 bytes of the file
     read_bytes = []
