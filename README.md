@@ -18,16 +18,38 @@ malicious_code = """cat ~/.aws/secrets"""
 </p>
 <br />
 
-<p align="center"> modelscan is an open-source tool for scanning Machine Learning (ML) models. With modelscan, the ML models can be scanned *without* loading them in your machines: saving you from potential malicious code injection attacks.</p>
-
-<br /><br />
-
-<p align="center">
-<a href="https://github.com/protectai/model-scanner-private/blob/23-update-readme/imgs/cli_output.png">
-  <img src="imgs/cli_output.png" width="700">
-</a>
+<p align="center"> modelscan is an open-source tool for scanning Machine Learning (ML) models. With modelscan, the ML models can be scanned *without* loading them in your machines: saving you from potential malicious   [code injection attacks](/docs/CodeInjectionAttacks.mddocs)
 
 </p>
+
+<br /><br />
+<t>
+```
+Scanning /Users/Documents/models_to_scan/model.pkl 
+
+--- Summary ---
+
+Total Issues: 1
+
+Total Issues by Severity:
+  - LOW: 0
+  - MEDIUM: 0
+  - HIGH: 0
+  - CRITICAL: 1
+
+--- Issues by Severity ---
+
+--- CRITICAL ---
+
+Unsafe operator found:
+  - Severity: CRITICAL
+  - Description: Use of unsafe operator 'system' from module 'posix'
+  - Source: /Users/Documents/models_to_scan/model.pkl
+```
+</t>
+
+
+
 
 <br /><br />
 
@@ -43,7 +65,6 @@ Fig 1: An outline for scanning models using modelscan.
 </p>
 <br />
 
-TODO: Add a gif here like NBDefense to show how modelscan works- example notebook from pytorch
 
 <br /><br />
 
@@ -75,9 +96,9 @@ TODO: Add a gif here like NBDefense to show how modelscan works- example noteboo
     - List of files scanned. 
     - List of files _not_ scanned. 
     - A summery of scan results categorized using modelscan severity levels of: CRITICAL, HIGH, MEDIUM, and LOW. 
-    - A detailed list under each severity level of the malicious code found. 
+    - A detailed description of potentially malicious code found under each severity level. 
 
-    More information on which ML models will be scanned using modelscan can be found [here](#which-ml-models-can-be-scanned-using-modelscan)
+    More information on which ML models can be scanned using modelscan [here](#which-ml-models-can-be-scanned-using-modelscan)
 
     More information about modelscan severity levels can be found [here](docs/SeverityLevels.md).
 
@@ -117,11 +138,12 @@ TODO
 
 The modelscan CLI arguments and their usage is as follows:
 
-| argument | Exaplanation| Usage 
+| argument | Explanation| Usage 
 | ----| ----| ----|
-| -h or --help | For getting help | ```modelscan -h ```
+| --help | For getting help | ```modelscan --help ```
 | -p or --path | For scanning a model file in local directory | ```modelscan -p /path/to/model_file```
 | -hf or --huggingface | For scanning a model file on hugging face| ```modelscan -hf /repo/model_file```
+|-l or --log |Level of log messages to be disaplyed (default: INFO) | ``` modelscan -p path/to/model/file -l [CRITICAL\|ERROR\|WARNING\|INFO\|DEBUG] ```
 
 <br /><br />
 
