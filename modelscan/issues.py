@@ -83,11 +83,10 @@ class Issues:
     all_issues: List[Issue]
 
     def __init__(self, issues: Optional[List[Issue]] = None) -> None:
-        # if issues is None:
-        #     self.all_issues = []
-        # else:
-        #     self.all_issues = issues
-        self.all_issues = issues or []
+        if issues is None:
+            self.all_issues = []
+        else:
+            self.all_issues = issues
 
     def add_issue(self, issue: Issue) -> None:
         """
