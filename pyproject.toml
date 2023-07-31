@@ -45,4 +45,8 @@ build-backend = "poetry.core.masonry.api"
 enable = true
 
 [tool.bandit]
-exclude_dirs = ["tests"]
+exclude_dirs = ["tests", "examples"]
+
+
+[tool.mypy]
+exclude = ["examples"]
