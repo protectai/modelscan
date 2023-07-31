@@ -67,11 +67,18 @@ class Modelscan:
         for file_name in file_names:
             file_ext = os.path.splitext(file_name)[1]
             url = f"https://huggingface.co/{repo_id}/resolve/main/{file_name}"
-            self._scan_source(
-                source=url,
-                extension=file_ext,
-                data=io.BytesIO(_http_get(url)),
-            )
+            data = io.BytesIO(_http_get(url))
+            if (
+                _is_zipfile(source=url, data=data)
+                or file_ext in self._supported_zip_extensions()
+            ):
+                self._scan_zip(source=url, data=data)
+            else:
+                self._scan_source(
+                    source=url,
+                    extension=file_ext,
+                    data=data,
+                )
 
     def scan_url(self, url: str) -> None:
         # Todo: before it was just scanning scanning_pickle_bytes
@@ -105,8 +112,10 @@ class Modelscan:
         self._issues.add_issues(issues)
         self._errors.extend(errors)
 
-    def _scan_zip(self, source: Union[str, Path]) -> None:
-        with zipfile.ZipFile(source, "r") as zip:
+    def _scan_zip(
+        self, source: Union[str, Path], data: Optional[IO[bytes]] = None
+    ) -> None:
+        with zipfile.ZipFile(data if data else source, "r") as zip:
             file_names = zip.namelist()
             for file_name in file_names:
                 file_ext = os.path.splitext(file_name)[1]
