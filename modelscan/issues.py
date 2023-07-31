@@ -2,7 +2,7 @@ import abc
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Dict, Optional
+from typing import Any, List, Union, Dict, Optional
 
 from collections import defaultdict
 
@@ -48,6 +48,24 @@ class Issue:
         self.severity = severity
         self.details = details
 
+    def __eq__(self, other: Any) -> bool:
+        return (
+            self.code == other.code
+            and self.severity == other.severity
+            and self.details.module == other.details.module  # type: ignore[attr-defined]
+            and self.details.operator == other.details.operator  # type: ignore[attr-defined]
+            and str(self.details.source) == str(other.details.source)  # type: ignore[attr-defined]
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            str(self.code)
+            + str(self.severity)
+            + str(self.details.module)  # type: ignore[attr-defined]
+            + str(self.details.operator)  # type: ignore[attr-defined]
+            + str(self.details.source)  # type: ignore[attr-defined]
+        )
+
     def print(self) -> None:
         issue_description = self.code.name
         if self.code == IssueCode.UNSAFE_OPERATOR:
@@ -65,10 +83,11 @@ class Issues:
     all_issues: List[Issue]
 
     def __init__(self, issues: Optional[List[Issue]] = None) -> None:
-        if issues is None:
-            self.all_issues = []
-        else:
-            self.all_issues = issues
+        # if issues is None:
+        #     self.all_issues = []
+        # else:
+        #     self.all_issues = issues
+        self.all_issues = issues or []
 
     def add_issue(self, issue: Issue) -> None:
         """
