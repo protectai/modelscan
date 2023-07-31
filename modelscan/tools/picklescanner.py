@@ -214,12 +214,6 @@ def scan_pickle_bytes(
             severity = IssueSeverity.LOW
         elif "unknown" in global_module or "unknown" in global_name:
             severity = IssueSeverity.MEDIUM
-        elif (
-            unsafe_critical_filter is None
-            and unsafe_high_filter is None
-            and safe_filter is None
-        ):
-            severity = IssueSeverity.MEDIUM
         else:
             continue
         issues.append(
