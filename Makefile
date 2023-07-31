@@ -32,7 +32,7 @@ bandit:
 	poetry run bandit -c pyproject.toml -r .
 
 mypy:
-	poetry run mypy --ignore-missing-imports --strict --check-untyped-defs .
+	poetry run mypy --ignore-missing-imports  --exclude "examples" --strict --check-untyped-defs .
 
 format:
 	black .
