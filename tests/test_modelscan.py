@@ -106,7 +106,7 @@ def initialize_numpy_file(path: str) -> None:
         np.save(f, x)
 
 
-@pytest.fixture(scope="session")  # type: ignore[misc]
+@pytest.fixture(scope="session")
 def zip_file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("zip")
     initialize_zip_file(
@@ -117,7 +117,7 @@ def zip_file_path(tmp_path_factory: Any) -> Any:
     return tmp
 
 
-@pytest.fixture(scope="session")  # type: ignore[misc]
+@pytest.fixture(scope="session")
 def pickle_file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("test_files")
     os.makedirs(f"{tmp}/data", exist_ok=True)
@@ -166,7 +166,7 @@ def pickle_file_path(tmp_path_factory: Any) -> Any:
     return tmp
 
 
-@pytest.fixture(scope="session")  # type: ignore[misc]
+@pytest.fixture(scope="session")
 def keras_file_path(tmp_path_factory: Any) -> Any:
     # Create a simple model.
     inputs = keras.Input(shape=(32,))
@@ -209,14 +209,14 @@ conn = http.client.HTTPSConnection("protectai.com")"""
     return tmp
 
 
-@pytest.fixture(scope="session")  # type: ignore[misc]
+@pytest.fixture(scope="session")
 def pytorch_file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("pytorch")
 
     # Load a PyTorch model from huggingface and import relevant libaries
     name_of_model_repo_on_huggingface = "gpt2"
 
-    from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
+    from transformers import GPT2LMHeadModel
 
     safe_model = GPT2LMHeadModel.from_pretrained(name_of_model_repo_on_huggingface)
     safe_model_path = f"{tmp}/safe.pt"
