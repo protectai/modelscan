@@ -28,6 +28,8 @@ h5py = ["h5py"]
 pytest = "^7.4.0"
 bandit = { version = "1.7.5", extras = ["toml"] }
 mypy = "^1.4.1"
+aiohttp = "^3.8.5"
+dill = "^0.3.7"
 
 [tool.poetry.group.dev.dependencies]
 dunamai = "^1.18.0"
