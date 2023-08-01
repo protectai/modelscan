@@ -190,7 +190,6 @@ def scan_pickle_bytes(
 
     for rg in raw_globals:
         global_module, global_name, severity = rg[0], rg[1], None
-        safe_filter = _safe_globals.get(global_module)
         unsafe_critical_filter = _unsafe_globals["CRITICAL"].get(global_module)
         unsafe_high_filter = _unsafe_globals["HIGH"].get(global_module)
         unsafe_medium_filter = _unsafe_globals["MEDIUM"].get(global_module)
@@ -213,12 +212,6 @@ def scan_pickle_bytes(
         ):
             severity = IssueSeverity.LOW
         elif "unknown" in global_module or "unknown" in global_name:
-            severity = IssueSeverity.MEDIUM
-        elif (
-            unsafe_critical_filter is None
-            and unsafe_high_filter is None
-            and safe_filter is None
-        ):
             severity = IssueSeverity.MEDIUM
         else:
             continue
