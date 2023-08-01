@@ -190,7 +190,6 @@ def scan_pickle_bytes(
 
     for rg in raw_globals:
         global_module, global_name, severity = rg[0], rg[1], None
-        safe_filter = _safe_globals.get(global_module)
         unsafe_critical_filter = _unsafe_globals["CRITICAL"].get(global_module)
         unsafe_high_filter = _unsafe_globals["HIGH"].get(global_module)
         unsafe_medium_filter = _unsafe_globals["MEDIUM"].get(global_module)
