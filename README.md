@@ -95,10 +95,10 @@ Fig 1: An outline for scanning models using modelscan.
     
     - List of files scanned. 
     - List of files _not_ scanned. 
-    - A summery of scan results categorized using modelscan severity levels of: CRITICAL, HIGH, MEDIUM, and LOW. 
+    - A summary of scan results categorized using modelscan severity levels of: CRITICAL, HIGH, MEDIUM, and LOW. 
     - A detailed description of potentially malicious code found under each severity level. 
 
-    More information on which ML models can be scanned using modelscan [here](#which-ml-models-can-be-scanned-using-modelscan)
+    More information on which ML models can be scanned using modelscan is outlined [here](#which-ml-models-can-be-scanned-using-modelscan)
 
     More information about modelscan severity levels can be found [here](docs/SeverityLevels.md).
 
