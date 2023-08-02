@@ -5,6 +5,8 @@ Models are shared over the internet, between teams, and are used to make critica
 
 This needs to change, and proper tooling is the first step.
 
+![ModelScan Preview](imgs/model_scan_tutorial.gif)
+
 ModelScan is open source product that scans models to determine if they contain 
 unsafe code. It is the first model scanning tool to support multiple model formats. 
 ModelScan currently supports: H5, Pickle, and Saved_Model formats. This protects you 
@@ -90,7 +92,7 @@ At present, ModelScan supports any Pickle derived format and many others:
 
 
 ### Installation 
-ModelScan is installed on your systems as a Python package. As shown from above you can install
+ModelScan is installed on your systems as a Python package(Python 3.8 to 3.11 supported). As shown from above you can install
 it by running this in your terminal:
 
 ```bash
@@ -115,6 +117,9 @@ ModelScan supports the following arguments via the CLI:
 | -hf or --huggingface | Scan all the models in a HuggingFace model repository | ```modelscan -hf /repo/model_file```
 
 Remember models are just like any other form of digital media, you should scan content from any untrusted source before use.
+
+**NOTE**: LLMs are large files, it can take a few minutes to download them before scanning. Expect the process
+to take just a few minutes to complete. 
 
 ### Understanding The Results
 
