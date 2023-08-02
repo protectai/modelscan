@@ -1,5 +1,5 @@
 
-# ModelScan: Open Source Protection Against Model Serialization Attacks
+# ModelScan: Protection Against Model Serialization Attacks
 
 Models are shared over the internet, between teams, and are used to make critical decisions. Despite this, models are not scanned with the rigor of a PDF file in your inbox.
 
@@ -129,14 +129,36 @@ it allows an attacker to read our AWS credentials and write them to another plac
 
 That is a firm NO for usage.
 
-## Integrating ModelScan In Your ML Pipelines
+## Integrating ModelScan In Your ML Pipelines and CI/CD Pipelines
 
 Ad-hoc scanning is a great first step, please drill it into yourself, peers, and friends to do
 this whenever they pull down a new model to explore. It is not sufficient to improve security
 for production MLOps processes.
 
+Model scanning needs to be performed more than once to accomplish the following:
 
+1. Scan all pre-trained models before loading it for further work to prevent a compromised
+model from impacting your model building or data science environments.
+2. Scan all models after training to detect a supply chain attack that compromises new models.
+3. Scan all models before deploying to an endpoint to ensure that the model has not been compromised after storage.
 
+The red blocks below highlight this in a traditional ML Pipeline.
+![MLOps Pipeline with ModelScan](imgs/ml_ops_pipeline_model_scan.png)
+
+The processes would be the same for fine-tuning or any modifications of LLMs, foundational models, or external model.
+
+Embed scans into deployment processes in your CI/CD systems to secure usage
+as models are deployed as well if this is done outside your ML Pipelines.
+
+## Diving Deeper
+
+Inside our [notebooks](notebooks/) folder you can explore a number of notebooks that showcase
+exactly how Model Serialization Attacks can be performed against various ML Frameworks like TensorFlow and PyTorch.
+
+To dig more into the meat of how exactly these attacks work check out [Security.md](SECURITY.md)
+
+If you encounter any other approaches for evaluating models in a static context, please reach out, we'd love
+to learn more!
 
 ## Licensing
 
