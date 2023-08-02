@@ -1,8 +1,8 @@
 
 # modelscan
 <p align="center">
-<a href="https://github.com/protectai/model-scanner-private/blob/23-update-readme/imgs/logo.png">
-  <img src="imgs/logo.png" width="200">  
+<a href="https://github.com/protectai/modelscan/blob/main/imgs/logo.png">
+  <img src="https://github.com/protectai/modelscan/blob/main/imgs/logo.png?raw=true" width="200">  
 </a>
 
 ```python
@@ -11,14 +11,25 @@ command = "system"
 malicious_code = """cat ~/.aws/secrets""" 
 ```
 
-<a href="https://github.com/protectai/model-scanner-private/blob/23-update-readme/imgs/attack_example.png">
-  <img src="imgs/attack_example.png" width="700">
+<a href="https://github.com/protectai/modelscan/blob/main/imgs/attack_example.png">
+  <img src="https://github.com/protectai/modelscan/blob/main/imgs/attack_example.png?raw=true" width="700">
 </a>
 
 </p>
 <br />
 
+<<<<<<< HEAD
 <p align="center"> modelscan is an open-source tool for scanning Machine Learning (ML) models. With modelscan, the ML models can be scanned *without* loading them in your machines: saving you from potential malicious   [code injection attacks](/docs/CodeInjectionAttacks.mddocs)
+=======
+<p align="center"> modelscan is an open-source tool for scanning Machine Learning (ML) models. With modelscan, the ML models can be scanned *without* loading them in your machines: saving you from potential malicious code injection attacks.</p>
+
+<br /><br />
+
+<p align="center">
+<a href="https://github.com/protectai/modelscan/blob/main/imgs/cli_output.png">
+  <img src="https://github.com/protectai/modelscan/blob/main/imgs/cli_output.png?raw=true" width="700">
+</a>
+>>>>>>> main
 
 </p>
 
@@ -57,8 +68,8 @@ Unsafe operator found:
 <br /><br />
 
 <p align="center">
-<a href="https://github.com/protectai/model-scanner-private/blob/23-update-readme/imgs/flow_chart.png">
-  <img src="./imgs/flow_chart.png" width="700">
+<a href="https://github.com/protectai/modelscan/blob/main/imgs/flow_chart.png">
+  <img src="https://github.com/protectai/modelscan/blob/main/imgs/cli_output.png?raw=true" width="700">
 </a>
 <br />
 Fig 1: An outline for scanning models using modelscan.
