@@ -110,11 +110,12 @@ modelscan = ">=0.1.1"
 
 ModelScan supports the following arguments via the CLI:
 
-| argument | Exaplanation                                          | Usage 
-| ----|-------------------------------------------------------| ----|
-| -h or --help | View Help                                             | ```modelscan -h ```
-| -p or --path | Scan a local model                                    | ```modelscan -p /path/to/model_file```
-| -hf or --huggingface | Scan all the models in a HuggingFace model repository | ```modelscan -hf /repo/model_file```
+| Usage                                 | Argument                                         | Explanation 
+|---------------------------------------|--------------------------------------------------| ----|
+| ```modelscan -h ```                   | -h or --help                                        | View Help
+| ```modelscan -p /path/to/model_file``` | -p or --path                                  | Scan a locally stored model
+| ```modelscan -hf repo/model_file```   |-hf or --huggingface  | Scan all the models in a HuggingFace model repository
+
 
 Remember models are just like any other form of digital media, you should scan content from any untrusted source before use.
 
@@ -167,7 +168,7 @@ to learn more!
 
 ## Licensing
 
-Copyright 2013 Protect AI 
+Copyright 2023 Protect AI 
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -184,8 +185,7 @@ limitations under the License.
 ## Acknowledgements
 
 We were heavily inspired by [Matthieu Maitre](http://mmaitre314.github.io) who built [PickleScan](https://github.com/mmaitre314/picklescan).
-THANK YOU for advancing this idea and providing a great starting point. We hope our efforts make you proud
-and expand on your original vision.
+We appreciate the work and have extended it significantly with ModelScan. ModelScan is OSS’ed in the similar spirit as PickleScan.
 
 ## Contributing 
 
