@@ -114,7 +114,7 @@ ModelScan supports the following arguments via the CLI:
 |---------------------------------------|--------------------------------------------------| ----|
 | ```modelscan -h ```                   | -h or --help                                        | View Help
 | ```modelscan -p /path/to/model_file``` | -p or --path                                  | Scan a locally stored model
-| ```modelscan -hf repo/model_file```   |-hf or --huggingface  | Scan all the models in a HuggingFace model repository
+| ```modelscan -hf repo/model_file```   |-hf or --huggingface  | Scan all the models in a Hugging Face model repository
 
 
 Remember models are just like any other form of digital media, you should scan content from any untrusted source before use.
