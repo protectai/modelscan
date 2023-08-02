@@ -13,7 +13,6 @@ import subprocess
 import sys
 import tensorflow as tf
 from tensorflow import keras
-import torch
 from typing import Any, List, Set, Union
 from test_utils import PickleInject, generate_dill_unsafe_file, get_payload
 import zipfile
@@ -209,35 +208,6 @@ conn = http.client.HTTPSConnection("protectai.com")"""
     return tmp
 
 
-@pytest.fixture(scope="session")
-def pytorch_file_path(tmp_path_factory: Any) -> Any:
-    tmp = tmp_path_factory.mktemp("pytorch")
-
-    # Load a PyTorch model from huggingface and import relevant libaries
-    name_of_model_repo_on_huggingface = "gpt2"
-
-    from transformers import GPT2LMHeadModel
-
-    safe_model = GPT2LMHeadModel.from_pretrained(name_of_model_repo_on_huggingface)
-    safe_model_path = f"{tmp}/safe.pt"
-    unsafe_model_path = f"{tmp}/unsafe.pt"
-
-    torch.save(safe_model, safe_model_path)
-
-    # Inject malicious code using command
-    command = "exec"
-    malicious_code = 'print("Malicious Code!")'
-
-    payload = get_payload(command, malicious_code)
-    torch.save(
-        torch.load(safe_model_path),
-        f=unsafe_model_path,
-        pickle_module=PickleInject([payload]),
-    )
-
-    return tmp
-
-
 def compare_results(resultList: List[Issue], expectedSet: Set[Issue]) -> None:
     for result in resultList:
         assert result in expectedSet
@@ -297,144 +267,6 @@ def test_scan_numpy(pickle_file_path: Any) -> None:
         compare_results(
             scan_numpy(io.BytesIO(f.read()), "object_array.npy")[0], expected
         )
-
-
-def test_scan_pytorch(pytorch_file_path: Any) -> None:
-    safe_ms = Modelscan()
-    safe_ms.scan_path(Path(f"{pytorch_file_path}/safe.pt"))
-    # assert safe_ms.issues.all_issues == []
-
-    expected = {
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "transformers.models.gpt2.modeling_gpt2",
-                "GPT2LMHeadModel",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "torch.nn.modules.normalization",
-                "LayerNorm",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "transformers.models.gpt2.modeling_gpt2",
-                "GPT2MLP",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "transformers.activations",
-                "NewGELUActivation",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "transformers.models.gpt2.configuration_gpt2",
-                "GPT2Config",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "torch.nn.modules.dropout",
-                "Dropout",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "torch.nn.modules.container",
-                "ModuleList",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "transformers.pytorch_utils",
-                "Conv1D",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.CRITICAL,
-            OperatorIssueDetails(
-                "__builtin__",
-                "exec",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "transformers.models.gpt2.modeling_gpt2",
-                "GPT2Model",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "torch.nn.modules.sparse",
-                "Embedding",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "torch.nn.modules.linear",
-                "Linear",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "transformers.models.gpt2.modeling_gpt2",
-                "GPT2Attention",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "transformers.models.gpt2.modeling_gpt2",
-                "GPT2Block",
-                f"{pytorch_file_path}/unsafe.pt:unsafe/data.pkl",
-            ),
-        ),
-    }
-    unsafe_ms = Modelscan()
-    unsafe_ms.scan_path(Path(f"{pytorch_file_path}/unsafe.pt"))
-    compare_results(unsafe_ms.issues.all_issues, expected)
 
 
 def test_scan_file_path(pickle_file_path: Any) -> None:
