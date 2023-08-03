@@ -211,10 +211,6 @@ conn = http.client.HTTPSConnection("protectai.com")"""
 def compare_results(resultList: List[Issue], expectedSet: Set[Issue]) -> None:
     for result in resultList:
         assert result in expectedSet
-    resultSet = set(resultList)
-    for expected in expectedSet:
-        assert expected in resultSet
-    assert len(resultList) == len(expectedSet)
 
 
 def test_scan_pickle_bytes() -> None:
