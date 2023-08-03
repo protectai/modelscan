@@ -11,10 +11,12 @@ from modelscan.reports import ConsoleReport
 logger = logging.getLogger("modelscan")
 
 
-# @click.group()
-# @click.pass_context
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
+
 @click.command(
-    help="Modelscan detects machine learning model files that perform suspicious actions"
+    context_settings=CONTEXT_SETTINGS,
+    help="Modelscan detects machine learning model files that perform suspicious actions",
 )
 @click.option(
     "-p",
