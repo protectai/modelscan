@@ -2,7 +2,7 @@ import abc
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Dict, Optional
+from typing import Any, List, Union, Dict, Optional
 
 from collections import defaultdict
 
@@ -47,6 +47,26 @@ class Issue:
         self.code = code
         self.severity = severity
         self.details = details
+
+    def __eq__(self, other: Any) -> bool:
+        if type(other) is not Issue:
+            return False
+        return (
+            self.code == other.code
+            and self.severity == other.severity
+            and self.details.module == other.details.module  # type: ignore[attr-defined]
+            and self.details.operator == other.details.operator  # type: ignore[attr-defined]
+            and str(self.details.source) == str(other.details.source)  # type: ignore[attr-defined]
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            str(self.code)
+            + str(self.severity)
+            + str(self.details.module)  # type: ignore[attr-defined]
+            + str(self.details.operator)  # type: ignore[attr-defined]
+            + str(self.details.source)  # type: ignore[attr-defined]
+        )
 
     def print(self) -> None:
         issue_description = self.code.name

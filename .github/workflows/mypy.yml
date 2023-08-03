@@ -28,7 +28,7 @@ jobs:
       - name: Install Dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install --with test --no-root
+          make install-test
       - name: Run MYPY
         run: |
           make mypy
