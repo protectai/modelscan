@@ -68,12 +68,12 @@ TensorFlow is one of the few ML frameworks to implement its own storage format, 
 
 ### Security Implications
 
-This is generally a secure approach as majority of TensorFlow operations are just ML computations and transformations. However, exceptions exist that can be exploited for ~~code injection~~ model serialization attacks:
+This is generally a secure approach as majority of TensorFlow operations are just ML computations and transformations. However, exceptions exist that can be exploited for model serialization attacks:
 
 - `io.write_file`
 - `io.read_file`
 - `io.MatchingFiles`
-- Custom Operators — allow arbitrary code to be executed but these operators need to be explicitly loaded during Inference as a library which makes it hard to carry out a ~~code injection~~ model serialization attack however these can be potent in a supply chain attack. So it is still important to treat TensorFlow models with custom operators to high degree of scrutiny.
+- Custom Operators — allow arbitrary code to be executed but these operators need to be explicitly loaded during Inference as a library which makes it hard to carry out a model serialization attack however these can be potent in a supply chain attack. So it is still important to treat TensorFlow models with custom operators to high degree of scrutiny.
 
 ## 3. H5 (Keras)
 
