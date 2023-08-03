@@ -6,7 +6,7 @@ Despite this, models are not scanned with the rigor of a PDF file in your inbox.
 
 This needs to change, and proper tooling is the first step.
 
-![ModelScan Preview](imgs/model_scan_tutorial.gif)
+![ModelScan Preview](imgs/modelscan_hf_demo.gif)
 
 ModelScan is open source project that scans models to determine if they contain 
 unsafe code. It is the first model scanning tool to support multiple model formats. 
