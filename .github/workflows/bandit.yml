@@ -28,6 +28,6 @@ jobs:
       - name: Install Dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install --with test --no-root
+          make install-test
       - name: Run Bandit
         run: poetry run bandit -c pyproject.toml -r $(git ls-files '*.py')

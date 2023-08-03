@@ -23,9 +23,9 @@ logger = logging.getLogger("modelscan")
     default=None,
     help="Path to the file or folder to scan",
 )
-@click.option(
-    "-u", "--url", type=str, default=None, help="URL to the file or folder to scan"
-)
+# @click.option(
+#     "-u", "--url", type=str, default=None, help="URL to the file or folder to scan"
+# )
 @click.option(
     "-hf",
     "--huggingface",
@@ -44,7 +44,7 @@ logger = logging.getLogger("modelscan")
 def cli(
     ctx: click.Context,
     log: str,
-    url: Optional[str],
+    # url: Optional[str],
     huggingface: Optional[str],
     path: Optional[str],
 ) -> int:
@@ -65,13 +65,13 @@ def cli(
                 raise FileNotFoundError(f"Path {path} does not exist")
             else:
                 modelscan.scan_path(pathlibPath)
-        elif url is not None:
-            modelscan.scan_url(url)
+        # elif url is not None:
+        #     modelscan.scan_url(url)
         elif huggingface is not None:
             modelscan.scan_huggingface_model(huggingface)
         else:
             raise click.UsageError(
-                "Command line must include either a path, a URL, or a Hugging Face model"
+                "Command line must include either a path or a Hugging Face model"
             )
         ConsoleReport.generate(modelscan.issues, modelscan.errors)
         return 0

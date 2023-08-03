@@ -10,6 +10,9 @@ install:
 install-prod:
 	poetry install --with prod
 
+install-test:
+	poetry install --with test --extras "tensorflow h5py"
+
 clean:
 	pip uninstall modelscan
 
