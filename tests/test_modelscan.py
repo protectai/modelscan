@@ -214,6 +214,7 @@ def compare_results(resultList: List[Issue], expectedSet: Set[Issue]) -> None:
     resultSet = set(resultList)
     for expected in expectedSet:
         assert expected in resultSet
+    assert len(resultList) == len(expectedSet)
 
 
 def test_scan_pickle_bytes() -> None:
