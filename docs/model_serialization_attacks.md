@@ -130,10 +130,7 @@ With the exception of pickle, these formats cannot execute arbitrary code. Howev
 With an understanding of various approaches to model serialization, explore how many popular choices are vulnerable to this attack with an end to end explanation.
 
 # End to end Attack Scenario
-
-There are two major attack vectors for code injection in serialized models.
-
-1. Internal ~~threat actor~~ attacker:
+1. Internal attacker:
 The attack complexity will vary depending on the access trusted to an internal actor.
 2. External attacker:
 External attackers usually have to start from scratch unless they have infiltrated already and are trying to perform privilege escalation attacks.
