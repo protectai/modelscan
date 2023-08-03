@@ -1,7 +1,5 @@
-
-# ModelScan: Protection Against Model Serialization Attacks
-
 ![ModelScan Banner](imgs/PAI-ModelScan-banner-080323-space.png)
+# ModelScan: Protection Against Model Serialization Attacks
 Models are shared publicly over the internet, within teams, and are increasingly used to make critical decisions. 
 Despite this, models are not scanned with the rigor of a PDF file in your inbox.
 
