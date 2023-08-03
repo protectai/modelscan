@@ -8,12 +8,10 @@ In addition to demonstrate the model serialization attacks, the safe and unsafe 
 
 <br></br>
 # PyTorch
-Pytorch models can be saved and loaded using pickle. modelscan can scan models saved using pickle. A notebook to illustrate:
+Pytorch models can be saved and loaded using pickle. modelscan can scan models saved using pickle. A notebook to illustrate the following is added. 
 
 - Exfiltrate AWS secret on a PyTorch model using `os.system()`
 - modelscan usage and expected scan results with safe and unsafe PyTorch models
-
-is added.
 
 📓 Notebook:[pytorch_sentiment_analysis.ipynb](pytorch_sentiment_analysis.ipynb)
 
@@ -21,12 +19,10 @@ is added.
 
 <br> </br>
 # Tensorflow
-Tensorflow uses saved_model for model serialization. modelscan can scan models saved using saved_model. A notebook to illustrate
+Tensorflow uses saved_model for model serialization. modelscan can scan models saved using saved_model. A notebook to illustrate the following is added. 
 
 - Exfiltrate AWS secret on a Tensorflow model `tf.io.read_file()` and `tf.io.write_file()`
 - ModelScan usage and expected scan results with safe and unsafe tensorflow models
-
-is added.
 
 📓 Notebook: [tensorflow_fashion_mnist.ipynb](./tensorflow_fashion_mnist.ipynb)
 
@@ -34,12 +30,10 @@ is added.
 
 <br></br>
 # Keras
-Keras uses saved_model and h5 for model serialization. A notebook to illustrate
+Keras uses saved_model and h5 for model serialization. A notebook to illustrate the following is added. 
 
 - Exfiltrate AWS secret on a Keras model using `keras.layers.lambda()`
 - ModelScan usage and expected scan results with safe and unsafe Keras models
-
-is added.
 
 📓 Notebook: [keras_fashion_mnist.ipynb](./keras_fashion_mnist.ipynb).
 
@@ -48,12 +42,10 @@ is added.
 <br></br>
 # Classical ML libraries
 
-modelscan also supports all ML libraries that support pickle for their model serialization, such as Sklearn, XGBoost, Catboost etc. A notebook to illustrate
+modelscan also supports all ML libraries that support pickle for their model serialization, such as Sklearn, XGBoost, Catboost etc. A notebook to illustrate the following is added. 
 
 - Exfiltrate AWS secret on a XGBoost model using `os.system()`
 - ModelScan usage and expected scan results with safe and unsafe XGBoost models
-
-is added.
 
 📓 Notebook: [xgboost_diabetes_classification.ipynb](./xgboost_diabetes_classification.ipynb)
 
