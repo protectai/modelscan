@@ -31,4 +31,4 @@ jobs:
           make install-test
       - name: Run MYPY
         run: |
-          poetry run mypy --ignore-missing-imports --strict --check-untyped-defs $(git ls-files '*.py')
+          make mypy
