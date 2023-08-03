@@ -158,10 +158,10 @@ as models are deployed as well if this is done outside your ML Pipelines.
 
 ## Diving Deeper
 
-Inside our [notebooks](https://github.com/protectai/modelscan/tree/main/notebooks) folder you can explore a number of notebooks that showcase
+Inside the [**notebooks**](https://github.com/protectai/modelscan/tree/main/notebooks) folder you can explore a number of notebooks that showcase
 exactly how Model Serialization Attacks can be performed against various ML Frameworks like TensorFlow and PyTorch.
 
-To dig more into the meat of how exactly these attacks work check out [docs/model_serialization_attacks.md](https://github.com/protectai/modelscan/blob/main/model_serialization_attacks.md).
+To dig more into the meat of how exactly these attacks work check out [**Model Serialization Attack Explainer**](https://github.com/protectai/modelscan/blob/main/docs/model_serialization_attacks.md).
 
 If you encounter any other approaches for evaluating models in a static context, please reach out, we'd love
 to learn more!
