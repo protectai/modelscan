@@ -30,9 +30,9 @@ bandit = { version = "1.7.5", extras = ["toml"] }
 mypy = "^1.4.1"
 aiohttp = "^3.8.5"
 dill = "^0.3.7"
-torch = ">=2.0.0, !=2.0.1"
 pandas = "^2.0.3"
 requests = "^2.31.0"
+torch = "^2.0.1"
 
 [tool.poetry.group.dev.dependencies]
 dunamai = "^1.18.0"
