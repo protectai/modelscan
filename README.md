@@ -1,13 +1,13 @@
 ![ModelScan Banner](https://github.com/protectai/modelscan/raw/main/imgs/PAI-ModelScan-banner-080323-space.png)
 # ModelScan: Protection Against Model Serialization Attacks
-Models are shared publicly over the internet, within teams, and are increasingly used to make critical decisions. 
+Machine Learning (ML) models are shared publicly over the internet and within teams, and are increasingly used to make critical decisions. 
 Despite this, models are not scanned with the rigor of a PDF file in your inbox.
 
 This needs to change, and proper tooling is the first step.
 
 ![ModelScan Preview](https://github.com/protectai/modelscan/raw/main/imgs/modelscan_hf_demo.gif)
 
-ModelScan is open source project that scans models to determine if they contain 
+ModelScan is an open source project that scans models to determine if they contain 
 unsafe code. It is the first model scanning tool to support multiple model formats. 
 ModelScan currently supports: H5, Pickle, and SavedModel formats. This protects you 
 when using PyTorch, TensorFlow, Keras, Sklearn, XGBoost, with more on the way.
@@ -34,7 +34,7 @@ modelscan -hf owner/model-repository-name
 
 ## Why You Should Scan Models
 
-Models are created from automated pipelines, others may come from a data scientist’s laptop. In either case the model needs to move from one computer to another before it is used and widely adopted. That process of exporting a model is called serialization, it is what packages the model into a specific files for others to use. 
+Models are often created from automated pipelines, others may come from a data scientist’s laptop. In either case the model needs to move from one machine to another before it is used. That process of saving a model to disk is called serialization.
 
 A **Model Serialization Attack** is where malicious code is added to the contents of a model during serialization(saving) before distribution — a modern version of the Trojan Horse. 
 
