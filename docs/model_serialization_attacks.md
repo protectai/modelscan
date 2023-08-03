@@ -174,9 +174,9 @@ Avoid use of pickle (and its variants). It is by far the most insecure format fo
 
 | ML Framework | Secure Serialization | Details | Pros | Cons |
 | --- | --- | --- | --- | --- |
-| PyTorch | ONNX | Export model to ONNX. Pytorch API has https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html for it via torch.onnx.export method. <br/><br/>Avoid PyTorch’s torch.save functionality as it is not secure. | ONNX is a secure format. It does not allow for arbitrary code execution.<br/><br/>ONNX is significantly faster than raw PyTorch for Inference. | ONNX is not just a serialization format. The model undergoes conversion from a PyTorch to an ONNX model. ONNX maps PyTorch tensors and ML graph (computation) into its own. |
-| TensorFlow | SavedModel | TensorFlow native serialization format based on Protocol Buffers. | Native format. Easy to use. Fairly secure. | Handful or TF operations allow disk I/O that can be exploited. <br/><br/>ModelScan will look for these and generate finding. |
-| Keras | HDF5 or Keras v3 | TensorFlow native serialization format based on HDF5/H5. | Native format. Easy to use. Fairly secure. | Avoid lambda layer. It is not secure. Instead share pre/processing code between training and inference code.<br/><br/>ModelScan will look for lambda layer and generate finding. |
+| **PyTorch** | ONNX | Export model to ONNX [via torch.onnx.export method](https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html). <br/><br/>Avoid PyTorch’s torch.save functionality as it is not secure. | ONNX is a secure format. It does not allow for arbitrary code execution.<br/><br/>ONNX is significantly faster than raw PyTorch for Inference. | ONNX is not just a serialization format. The model undergoes conversion from a PyTorch to an ONNX model. ONNX maps PyTorch tensors and ML graph (computation) into its own. |
+| **TensorFlow** | SavedModel | TensorFlow native serialization format based on Protocol Buffers. | Native format. Easy to use. Fairly secure. | Handful or TF operations allow disk I/O that can be exploited. <br/><br/>ModelScan will look for these and generate finding. |
+| **Keras** | HDF5 or Keras v3 | TensorFlow native serialization format based on HDF5/H5. | Native format. Easy to use. Fairly secure. | Avoid lambda layer. It is not secure. Instead share pre/processing code between training and inference code.<br/><br/>ModelScan will look for lambda layer and generate finding. |
 
 # How to Secure ML Models
 
