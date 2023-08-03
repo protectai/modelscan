@@ -155,19 +155,19 @@ Commercial examples:
 - [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai/docs/model-registry/introduction)
 - [Oracle Cloud Data Science](https://docs.oracle.com/en-us/iaas/data-science/using/models-about.htm)
 
-![Untitled](Model%20Serialization%20Attacks%20742ea850f2394e3ea34b81913b040196/Untitled.png)
+![Find ML Models](attack-1.png)
 
 ### Step 2: Infiltrate Model Registry
 
 There are many ways to carry out infiltration. Phishing and social engineering are very widely employed techniques for gaining access. Another technique would be to look for unpatched instances of an OSS Model Registry like MLflow (see [Protect AI blog post series](https://protectai.com/blog/tag/mlflow) for more).
 
-![Untitled](Model%20Serialization%20Attacks%20742ea850f2394e3ea34b81913b040196/Untitled%201.png)
+![Infiltrate](attack-2.png)
 
 ### Step 3: Inject Malicious Code into ML models
 
 This is the easiest step of all. See [ModelScan Notebook Examples](https://github.com/protectai/modelscan/tree/main/notebooks) for details (working Notebooks and code samples) on how this attack can be carried out. For certain serialized model formats like pickle, an attacker can inject abitrary code that executes. This pushes the attack surface wide open to all kinds of attacks including few included below.
 
-![Untitled](Model%20Serialization%20Attacks%20742ea850f2394e3ea34b81913b040196/Untitled%202.png)
+![Attack](attack-3.png)
 
 With how easy it is to compromise a model, it is important to know how to securely serialize models to mitigate this threat as much as possible.
 
