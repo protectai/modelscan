@@ -13,8 +13,8 @@ import subprocess
 import sys
 import tensorflow as tf
 from tensorflow import keras
-from typing import Any, List, Set, Union
-from test_utils import PickleInject, generate_dill_unsafe_file, get_payload
+from typing import Any, List, Set
+from test_utils import generate_dill_unsafe_file
 import zipfile
 
 from modelscan.modelscan import Modelscan
@@ -211,6 +211,9 @@ conn = http.client.HTTPSConnection("protectai.com")"""
 def compare_results(resultList: List[Issue], expectedSet: Set[Issue]) -> None:
     for result in resultList:
         assert result in expectedSet
+    resultSet = set(resultList)
+    for expected in expectedSet:
+        assert expected in resultSet
 
 
 def test_scan_pickle_bytes() -> None:

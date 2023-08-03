@@ -1,7 +1,5 @@
 import dill
 import os
-from pickletools import genops
-import pandas as pd
 import pickle
 import struct
 from typing import Any, Tuple
@@ -106,7 +104,7 @@ class PickleInject:
             return self.command, (self.args, {})
 
 
-def get_payload(command: str, malicious_code: str) -> Any:
+def get_pickle_payload(command: str, malicious_code: str) -> Any:
     if command == "system":
         payload: Any = PickleInject.System(malicious_code)
     elif command == "exec":
@@ -118,10 +116,10 @@ def get_payload(command: str, malicious_code: str) -> Any:
     return payload
 
 
-def generate_unsafe_file(
+def generate_unsafe_pickle_file(
     safe_model: Any, command: str, malicious_code: str, unsafe_model_path: str
 ) -> None:
-    payload = get_payload(command, malicious_code)
+    payload = get_pickle_payload(command, malicious_code)
     pickle_protocol = 4
     file_for_unsafe_model = open(unsafe_model_path, "wb")
     mypickler = PickleInject._Pickler(file_for_unsafe_model, pickle_protocol, [payload])
