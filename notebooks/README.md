@@ -1,6 +1,6 @@
 # Notebooks demonstarting Model Serialization Attacks
 
-To learn more about model serialization attacks, please see [Model Serialization Attacks](./docs/model_serialization_attacks.md). 
+To learn more about model serialization attacks, please see [Model Serialization Attacks](../docs/model_serialization_attacks.md). 
 
 In the notebooks directory, the notebooks included focus on model serialization attack on a particular ML library. We carry out a stealth mock exfiltration attack. Stealth, because the model still works as before the attack. Mock, because we don't actually carry out an exfiltration attack but show a POC where it can be carried out. 
 
