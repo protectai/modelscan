@@ -1,11 +1,11 @@
-![ModelScan Banner](https://github.com/protectai/modelscan/raw/readme_refactor/imgs/PAI-ModelScan-banner-080323-space.png)
+![ModelScan Banner](https://github.com/protectai/modelscan/raw/main/imgs/PAI-ModelScan-banner-080323-space.png)
 # ModelScan: Protection Against Model Serialization Attacks
 Models are shared publicly over the internet, within teams, and are increasingly used to make critical decisions. 
 Despite this, models are not scanned with the rigor of a PDF file in your inbox.
 
 This needs to change, and proper tooling is the first step.
 
-![ModelScan Preview](https://github.com/protectai/modelscan/raw/readme_refactor/imgs/modelscan_hf_demo.gif)
+![ModelScan Preview](https://github.com/protectai/modelscan/raw/main/imgs/modelscan_hf_demo.gif)
 
 ModelScan is open source project that scans models to determine if they contain 
 unsafe code. It is the first model scanning tool to support multiple model formats. 
@@ -68,7 +68,7 @@ ModelScan ranks the unsafe code as:
 * LOW
 
 Things are ranked consistently if the models are local or stored in Hugging Face
-![ModelScan Flow Chart](https://github.com/protectai/modelscan/raw/readme_refactor/imgs/model_scan_flow_chart.png)
+![ModelScan Flow Chart](https://github.com/protectai/modelscan/raw/main/imgs/model_scan_flow_chart.png)
 
 If an issue is detecting, reach out to the author's of the model immediately to determine the cause.
 
@@ -126,7 +126,7 @@ to take just a few minutes to complete.
 
 Once a scan has been completed you'll see output like this if an issue is found:
 
-![ModelScan Scan Output](https://github.com/protectai/modelscan/raw/readme_refactor/imgs/cli_output.png)
+![ModelScan Scan Output](https://github.com/protectai/modelscan/raw/main/imgs/cli_output.png)
 
 Here we have a model that has an unsafe operator for both `ReadFile` and `WriteFile` in the model.
 Clearly we do not want our models reading and writing files arbitrarily. We would now reach out 
@@ -149,7 +149,7 @@ model from impacting your model building or data science environments.
 3. Scan all models before deploying to an endpoint to ensure that the model has not been compromised after storage.
 
 The red blocks below highlight this in a traditional ML Pipeline.
-![MLOps Pipeline with ModelScan](https://github.com/protectai/modelscan/raw/readme_refactor/imgs/ml_ops_pipeline_model_scan.png)
+![MLOps Pipeline with ModelScan](https://github.com/protectai/modelscan/raw/main/imgs/ml_ops_pipeline_model_scan.png)
 
 The processes would be the same for fine-tuning or any modifications of LLMs, foundational models, or external model.
 
