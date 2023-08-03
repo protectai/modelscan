@@ -70,7 +70,7 @@ ModelScan ranks the unsafe code as:
 Things are ranked consistently if the models are local or stored in Hugging Face
 ![ModelScan Flow Chart](https://github.com/protectai/modelscan/raw/main/imgs/model_scan_flow_chart.png)
 
-If an issue is detecting, reach out to the author's of the model immediately to determine the cause.
+If an issue is detected, reach out to the author's of the model immediately to determine the cause.
 
 In some cases, code may be embedded in the model to make things easier to reproduce as a data scientist, but
 it opens you up for attack. Use your discretion to determine if that is appropriate for your workloads.
