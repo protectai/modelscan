@@ -53,12 +53,11 @@ Pickle allows for arbitrary code execution and is highly vulnerable to code inje
 > arbitrary code during unpickling**. Never unpickle data that could have come
 > from an untrusted source, or that could have been tampered with.
 > 
-> Consider signing data with `[hmac](https://docs.python.org/3/library/hmac.html#module-hmac)` if you need to ensure that it has not
+> Consider signing data with [hmac](https://docs.python.org/3/library/hmac.html#module-hmac) if you need to ensure that it has not
 > been tampered with.
 > 
-> Safer serialization formats such as `[json](https://docs.python.org/3/library/json.html#module-json)` may be more appropriate if
+> Safer serialization formats such as [json](https://docs.python.org/3/library/json.html#module-json) may be more appropriate if
 > you are processing untrusted data.
-> 
 
 Source: [https://docs.python.org/3/library/pickle.html](https://docs.python.org/3/library/pickle.html)
 
