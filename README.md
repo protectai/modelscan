@@ -47,7 +47,7 @@ A **Model Serialization Attack** can be used to execute:
 - Data Poisoning(the data sent after the model has performed its task)
 - Model Poisoning(altering the results of the model itself)
 
-These attacks are incredibly simple to execute and you can view worked examples in our [notebooks](https://github.com/protectai/modelscan/tree/main/notebooks) folder.
+These attacks are incredibly simple to execute and you can view working examples in our 📓[notebooks](https://github.com/protectai/modelscan/tree/main/notebooks) folder.
 
 ## Getting Started
 
@@ -158,10 +158,10 @@ as models are deployed as well if this is done outside your ML Pipelines.
 
 ## Diving Deeper
 
-Inside the [**notebooks**](https://github.com/protectai/modelscan/tree/main/notebooks) folder you can explore a number of notebooks that showcase
+Inside the 📓[**notebooks**](https://github.com/protectai/modelscan/tree/main/notebooks) folder you can explore a number of notebooks that showcase
 exactly how Model Serialization Attacks can be performed against various ML Frameworks like TensorFlow and PyTorch.
 
-To dig more into the meat of how exactly these attacks work check out [**Model Serialization Attack Explainer**](https://github.com/protectai/modelscan/blob/main/docs/model_serialization_attacks.md).
+To dig more into the meat of how exactly these attacks work check out 🖹 [**Model Serialization Attack Explainer**](https://github.com/protectai/modelscan/blob/main/docs/model_serialization_attacks.md).
 
 If you encounter any other approaches for evaluating models in a static context, please reach out, we'd love
 to learn more!
