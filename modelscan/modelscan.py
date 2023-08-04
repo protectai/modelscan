@@ -115,7 +115,7 @@ class Modelscan:
     def _scan_zip(
         self, source: Union[str, Path], data: Optional[IO[bytes]] = None
     ) -> None:
-        with zipfile.ZipFile(data if data else source, "r") as zip:
+        with zipfile.ZipFile(data or source, "r") as zip:
             file_names = zip.namelist()
             for file_name in file_names:
                 file_ext = os.path.splitext(file_name)[1]
