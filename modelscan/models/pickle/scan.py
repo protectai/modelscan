@@ -70,7 +70,7 @@ class PickleScan(ScanBase):
 
     @staticmethod
     def supported_extensions() -> List[str]:
-        return [".pkl", ".pickle", ".joblib", ".dat", ".data"]
+        return [".pkl", ".pickle", ".joblib", ".dill", ".dat", ".data"]
 
     @staticmethod
     def name() -> str:
