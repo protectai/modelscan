@@ -1,6 +1,6 @@
 ![ModelScan Banner](https://github.com/protectai/modelscan/raw/main/imgs/PAI-ModelScan-banner-080323-space.png)
 # ModelScan: Protection Against Model Serialization Attacks
-Machine Learning (ML) models are shared publicly over the internet and within teams, and are increasingly used to make critical decisions. 
+Machine Learning (ML) models are shared publicly over the internet, within teams and across teams. The rise of Foundation Models have resulted in public ML models being increasingly consumed for further training/fine tuning. They are increasingly used to make critical decisions and power critical applications. 
 Despite this, models are not scanned with the rigor of a PDF file in your inbox.
 
 This needs to change, and proper tooling is the first step.
