@@ -256,7 +256,7 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     bad_pytorch = Modelscan()
     bad_pytorch.scan_path(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
     assert bad_pytorch.issues.all_issues == []
-    assert [error.scan_name for error in bad_pytorch.errors] == ["pytorch"]
+    assert [error.scan_name for error in bad_pytorch.errors] == ["pytorch"]  # type: ignore[attr-defined]
 
 
 def test_scan_numpy(pickle_file_path: Any) -> None:

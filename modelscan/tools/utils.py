@@ -88,9 +88,9 @@ def get_magic_number(data: IO[bytes]) -> Optional[int]:
         for opcode, args, _pos in genops(data):
             if "INT" in opcode.name or "LONG" in opcode.name:
                 data.seek(0)
-                return int(args)
+                return int(args)  # type: ignore[arg-type]
     except ValueError:
-        return None 
+        return None
     return None
 
 
