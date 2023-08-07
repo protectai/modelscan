@@ -14,7 +14,7 @@ import sys
 import tensorflow as tf
 from tensorflow import keras
 from typing import Any, List, Set
-from test_utils import generate_dill_unsafe_file
+from test_utils import generate_dill_unsafe_file, generate_unsafe_pickle_file
 import zipfile
 
 from modelscan.modelscan import Modelscan
@@ -94,17 +94,6 @@ def initialize_zip_file(path: str, file_name: str, data: Any) -> None:
             zip.writestr(file_name, data)
 
 
-def initialize_numpy_file(path: str) -> None:
-    import numpy as np
-
-    # create numpy object array
-    with open(path, "wb") as f:
-        data = [(1, 2), (3, 4)]
-        x = np.empty((2, 2), dtype=object)
-        x[:] = data
-        np.save(f, x)
-
-
 @pytest.fixture(scope="session")
 def zip_file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("zip")
@@ -160,8 +149,6 @@ def pickle_file_path(tmp_path_factory: Any) -> Any:
         pickle.dumps(Malicious1(), protocol=4),
     )
 
-    initialize_numpy_file(f"{tmp}/data/object_array.npy")
-
     return tmp
 
 
@@ -208,9 +195,37 @@ conn = http.client.HTTPSConnection("protectai.com")"""
     return tmp
 
 
+@pytest.fixture(scope="session")
+def numpy_file_path(tmp_path_factory: Any) -> Any:
+    tmp = tmp_path_factory.mktemp("numpy")
+
+    command = "exec"
+    malicious_code = 'print("Malicious code!")'
+    array_directory = tmp
+    if not os.path.isdir(array_directory):
+        os.mkdir(array_directory)
+
+    safe_array = [[1, 2, 3], [4, 5, 6]]
+
+    safe_array_path_numpy = os.path.join(array_directory, "safe_numpy.npy")
+    np.save(safe_array_path_numpy, safe_array)
+    safe_array_numpy = np.load(safe_array_path_numpy, allow_pickle=True)
+
+    unsafe_array_path_numpy = os.path.join(array_directory, "unsafe_numpy.npy")
+    generate_unsafe_pickle_file(
+        safe_array_numpy, command, malicious_code, unsafe_array_path_numpy
+    )
+
+    return tmp
+
+
 def compare_results(resultList: List[Issue], expectedSet: Set[Issue]) -> None:
     for result in resultList:
         assert result in expectedSet
+    resultSet = set(resultList)
+    for expected in expectedSet:
+        assert expected in resultSet
+    assert len(resultList) == len(expectedSet)
 
 
 def test_scan_pickle_bytes() -> None:
@@ -243,29 +258,21 @@ def test_scan_zip(zip_file_path: Any) -> None:
     assert ms.issues.all_issues == expected
 
 
-def test_scan_numpy(pickle_file_path: Any) -> None:
+def test_scan_numpy(numpy_file_path: Any) -> None:
+    with open(f"{numpy_file_path}/safe_numpy.npy", "rb") as f:
+        assert scan_numpy(io.BytesIO(f.read()), "safe_numpy.npy")[0] == []
+
     expected = {
         Issue(
             IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "numpy.core.multiarray", "_reconstruct", "object_array.npy"
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails("numpy", "ndarray", "object_array.npy"),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails("numpy", "dtype", "object_array.npy"),
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails("builtins", "exec", "unsafe_numpy.npy"),
         ),
     }
-    with open(f"{pickle_file_path}/data/object_array.npy", "rb") as f:
+
+    with open(f"{numpy_file_path}/unsafe_numpy.npy", "rb") as f:
         compare_results(
-            scan_numpy(io.BytesIO(f.read()), "object_array.npy")[0], expected
+            scan_numpy(io.BytesIO(f.read()), "unsafe_numpy.npy")[0], expected
         )
 
 
@@ -276,13 +283,6 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
 
     malicious0 = Modelscan()
     expected_malicious0 = {
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "__builtin__", "dict", f"{pickle_file_path}/data/malicious0.pkl"
-            ),
-        ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
@@ -302,13 +302,6 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
                 "__builtin__", "compile", f"{pickle_file_path}/data/malicious0.pkl"
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "__builtin__", "globals", f"{pickle_file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
@@ -557,36 +550,6 @@ def test_scan_directory_path(pickle_file_path: str) -> None:
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "numpy", "ndarray", f"{pickle_file_path}/data/object_array.npy"
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "numpy", "dtype", f"{pickle_file_path}/data/object_array.npy"
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "numpy", "dtype", f"{pickle_file_path}/data/object_array.npy"
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "numpy.core.multiarray",
-                "_reconstruct",
-                f"{pickle_file_path}/data/object_array.npy",
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
                 "aiohttp.client",
@@ -631,13 +594,6 @@ def test_scan_directory_path(pickle_file_path: str) -> None:
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "__builtin__", "globals", f"{pickle_file_path}/data/malicious0.pkl"
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
                 "__builtin__", "apply", f"{pickle_file_path}/data/malicious0.pkl"
@@ -648,13 +604,6 @@ def test_scan_directory_path(pickle_file_path: str) -> None:
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
                 "__builtin__", "getattr", f"{pickle_file_path}/data/malicious0.pkl"
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "__builtin__", "dict", f"{pickle_file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
