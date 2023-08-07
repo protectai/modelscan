@@ -1,13 +1,13 @@
 ![ModelScan Banner](https://github.com/protectai/modelscan/raw/main/imgs/PAI-ModelScan-banner-080323-space.png)
 # ModelScan: Protection Against Model Serialization Attacks
-Models are shared publicly over the internet, within teams, and are increasingly used to make critical decisions. 
+Machine Learning (ML) models are shared publicly over the internet, within teams and across teams. The rise of Foundation Models have resulted in public ML models being increasingly consumed for further training/fine tuning. ML Models are increasingly used to make critical decisions and power mission-critical applications.
 Despite this, models are not scanned with the rigor of a PDF file in your inbox.
 
 This needs to change, and proper tooling is the first step.
 
 ![ModelScan Preview](https://github.com/protectai/modelscan/raw/main/imgs/modelscan_hf_demo.gif)
 
-ModelScan is open source project that scans models to determine if they contain 
+ModelScan is an open source project that scans models to determine if they contain 
 unsafe code. It is the first model scanning tool to support multiple model formats. 
 ModelScan currently supports: H5, Pickle, and SavedModel formats. This protects you 
 when using PyTorch, TensorFlow, Keras, Sklearn, XGBoost, with more on the way.
@@ -34,7 +34,7 @@ modelscan -hf owner/model-repository-name
 
 ## Why You Should Scan Models
 
-Models are created from automated pipelines, others may come from a data scientist’s laptop. In either case the model needs to move from one computer to another before it is used and widely adopted. That process of exporting a model is called serialization, it is what packages the model into a specific files for others to use. 
+Models are often created from automated pipelines, others may come from a data scientist’s laptop. In either case the model needs to move from one machine to another before it is used. That process of saving a model to disk is called serialization.
 
 A **Model Serialization Attack** is where malicious code is added to the contents of a model during serialization(saving) before distribution — a modern version of the Trojan Horse. 
 
@@ -47,7 +47,7 @@ A **Model Serialization Attack** can be used to execute:
 - Data Poisoning(the data sent after the model has performed its task)
 - Model Poisoning(altering the results of the model itself)
 
-These attacks are incredibly simple to execute and you can view worked examples in our [notebooks](https://github.com/protectai/modelscan/tree/main/notebooks) folder.
+These attacks are incredibly simple to execute and you can view working examples in our 📓[notebooks](https://github.com/protectai/modelscan/tree/main/notebooks) folder.
 
 ## Getting Started
 
@@ -70,7 +70,7 @@ ModelScan ranks the unsafe code as:
 Things are ranked consistently if the models are local or stored in Hugging Face
 ![ModelScan Flow Chart](https://github.com/protectai/modelscan/raw/main/imgs/model_scan_flow_chart.png)
 
-If an issue is detecting, reach out to the author's of the model immediately to determine the cause.
+If an issue is detected, reach out to the author's of the model immediately to determine the cause.
 
 In some cases, code may be embedded in the model to make things easier to reproduce as a data scientist, but
 it opens you up for attack. Use your discretion to determine if that is appropriate for your workloads.
@@ -158,10 +158,10 @@ as models are deployed as well if this is done outside your ML Pipelines.
 
 ## Diving Deeper
 
-Inside the [**notebooks**](https://github.com/protectai/modelscan/tree/main/notebooks) folder you can explore a number of notebooks that showcase
+Inside the 📓[**notebooks**](https://github.com/protectai/modelscan/tree/main/notebooks) folder you can explore a number of notebooks that showcase
 exactly how Model Serialization Attacks can be performed against various ML Frameworks like TensorFlow and PyTorch.
 
-To dig more into the meat of how exactly these attacks work check out [**Model Serialization Attack Explainer**](https://github.com/protectai/modelscan/blob/main/docs/model_serialization_attacks.md).
+To dig more into the meat of how exactly these attacks work check out 🖹 [**Model Serialization Attack Explainer**](https://github.com/protectai/modelscan/blob/main/docs/model_serialization_attacks.md).
 
 If you encounter any other approaches for evaluating models in a static context, please reach out, we'd love
 to learn more!

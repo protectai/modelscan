@@ -77,12 +77,7 @@ class SavedModelScan(ScanBase):
         ]
 
         # if lambda code is not empty list that means there has been some code injection in Keras layer
-        if lambda_code:
-            keras_operators = ["Lambda"]
-        else:
-            keras_operators = []
-
-        return keras_operators
+        return ["Lambda"] if lambda_code else []
 
     @staticmethod
     def _get_tensorflow_operator_names(data: IO[bytes]) -> List[str]:

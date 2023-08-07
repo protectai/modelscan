@@ -62,12 +62,7 @@ class H5Scan(SavedModelScan):
                 if layer["class_name"] == "Lambda"
             ]
 
-        if lambda_code:
-            keras_operator = ["Lambda"]
-        else:
-            keras_operator = []
-
-        return keras_operator
+        return ["Lambda"] if lambda_code else []
 
     @staticmethod
     def supported_extensions() -> List[str]:
