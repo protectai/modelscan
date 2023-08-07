@@ -59,10 +59,7 @@ def cli(
     try:
         modelscan = Modelscan()
         if path is not None:
-            if path == ".":
-                pathlibPath = Path().cwd()
-            else:
-                pathlibPath = Path(path).absolute()
+            pathlibPath = Path().cwd() if path == "." else Path(path).absolute()
             if not pathlibPath.exists():
                 raise FileNotFoundError(f"Path {path} does not exist")
             else:
