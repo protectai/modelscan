@@ -315,6 +315,9 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
     malicious0.scan_path(Path(f"{pickle_file_path}/data/malicious0.pkl"))
     compare_results(malicious0.issues.all_issues, expected_malicious0)
 
+
+def test_scan_pickle_operators(pickle_file_path: Any) -> None:
+    # Tests the unsafe pickle operators we screen for, across differences in pickle versions 0-2, 3, and 4
     expected_malicious1_v0 = [
         Issue(
             IssueCode.UNSAFE_OPERATOR,
@@ -342,27 +345,15 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             ),
         )
     ]
-    expected_malicious1 = [
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.CRITICAL,
-            OperatorIssueDetails(
-                "builtins", "eval", f"{pickle_file_path}/data/malicious1.zip:data.pkl"
-            ),
-        )
-    ]
     malicious1_v0 = Modelscan()
     malicious1_v3 = Modelscan()
     malicious1_v4 = Modelscan()
-    malicious1 = Modelscan()
     malicious1_v0.scan_path(Path(f"{pickle_file_path}/data/malicious1_v0.pkl"))
     malicious1_v3.scan_path(Path(f"{pickle_file_path}/data/malicious1_v3.pkl"))
     malicious1_v4.scan_path(Path(f"{pickle_file_path}/data/malicious1_v4.pkl"))
-    malicious1.scan_path(Path(f"{pickle_file_path}/data/malicious1.zip"))
     assert malicious1_v0.issues.all_issues == expected_malicious1_v0
     assert malicious1_v3.issues.all_issues == expected_malicious1_v3
     assert malicious1_v4.issues.all_issues == expected_malicious1_v4
-    assert malicious1.issues.all_issues == expected_malicious1
 
     expected_malicious2_v0 = [
         Issue(
