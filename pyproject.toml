@@ -30,7 +30,6 @@ bandit = { version = "1.7.5", extras = ["toml"] }
 mypy = "^1.4.1"
 aiohttp = "^3.8.5"
 dill = "^0.3.7"
-pandas = "^2.0.3"
 requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]
