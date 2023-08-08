@@ -19,6 +19,7 @@ import zipfile
 
 from modelscan.modelscan import Modelscan
 from modelscan.cli import cli
+from modelscan.error import ModelScanError
 from modelscan.issues import (
     Issue,
     IssueCode,
@@ -102,6 +103,14 @@ def zip_file_path(tmp_path_factory: Any) -> Any:
         "data.pkl",
         pickle.dumps(Malicious1(), protocol=4),
     )
+    return tmp
+
+
+@pytest.fixture(scope="session")
+def pytorch_file_path(tmp_path_factory: Any) -> Any:
+    tmp = tmp_path_factory.mktemp("pytorch")
+    # Fake PyTorch file (PNG file format) simulating https://huggingface.co/RectalWorm/loras_new/blob/main/Owl_Mage_no_background.pt
+    initialize_data_file(f"{tmp}/bad_pytorch.pt", b"\211PNG\r\n\032\n")
     return tmp
 
 
@@ -256,6 +265,13 @@ def test_scan_zip(zip_file_path: Any) -> None:
     ms = Modelscan()
     ms._scan_zip(f"{zip_file_path}/test.zip")
     assert ms.issues.all_issues == expected
+
+
+def test_scan_pytorch(pytorch_file_path: Any) -> None:
+    bad_pytorch = Modelscan()
+    bad_pytorch.scan_path(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
+    assert bad_pytorch.issues.all_issues == []
+    assert [error.scan_name for error in bad_pytorch.errors] == ["pytorch"]  # type: ignore[attr-defined]
 
 
 def test_scan_numpy(numpy_file_path: Any) -> None:
