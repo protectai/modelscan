@@ -6,6 +6,7 @@ import numpy as np
 import os
 from pathlib import Path
 import pickle
+import dill
 import pytest
 import requests  # type: ignore[import]
 import socket
@@ -82,6 +83,12 @@ def initialize_pickle_file(path: str, obj: Any, version: int) -> None:
             pickle.dump(obj, file, protocol=version)
 
 
+def initialize_dill_file(path: str, obj: Any, version: int) -> None:
+    if not os.path.exists(path):
+        with open(path, "wb") as file:
+            dill.dump(obj, file, protocol=version)
+
+
 def initialize_data_file(path: str, data: Any) -> None:
     if not os.path.exists(path):
         with open(path, "wb") as file:
@@ -95,8 +102,6 @@ def initialize_zip_file(path: str, file_name: str, data: Any) -> None:
 
 
 def initialize_numpy_file(path: str) -> None:
-    import numpy as np
-
     # create numpy object array
     with open(path, "wb") as f:
         data = [(1, 2), (3, 4)]
@@ -117,7 +122,7 @@ def zip_file_path(tmp_path_factory: Any) -> Any:
 
 
 @pytest.fixture(scope="session")
-def pickle_file_path(tmp_path_factory: Any) -> Any:
+def file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("test_files")
     os.makedirs(f"{tmp}/data", exist_ok=True)
 
@@ -133,6 +138,13 @@ def pickle_file_path(tmp_path_factory: Any) -> Any:
         )
         initialize_pickle_file(
             f"{tmp}/data/malicious2_v{version}.pkl", Malicious2(), version
+        )
+        # Dill based files
+        initialize_dill_file(
+            f"{tmp}/data/benign0_v{version}.dill", ["a", "b", "c"], version
+        )
+        initialize_dill_file(
+            f"{tmp}/data/malicious1_v{version}.dill", Malicious1(), version
         )
 
     # Malicious Pickle from https://sensepost.com/cms/resources/conferences/2011/sour_pickles/BH_US_11_Slaviero_Sour_Pickles.pdf
@@ -243,7 +255,7 @@ def test_scan_zip(zip_file_path: Any) -> None:
     assert ms.issues.all_issues == expected
 
 
-def test_scan_numpy(pickle_file_path: Any) -> None:
+def test_scan_numpy(file_path: Any) -> None:
     expected = {
         Issue(
             IssueCode.UNSAFE_OPERATOR,
@@ -263,16 +275,19 @@ def test_scan_numpy(pickle_file_path: Any) -> None:
             OperatorIssueDetails("numpy", "dtype", "object_array.npy"),
         ),
     }
-    with open(f"{pickle_file_path}/data/object_array.npy", "rb") as f:
+    with open(f"{file_path}/data/object_array.npy", "rb") as f:
         compare_results(
             scan_numpy(io.BytesIO(f.read()), "object_array.npy")[0], expected
         )
 
 
-def test_scan_file_path(pickle_file_path: Any) -> None:
-    benign = Modelscan()
-    benign.scan_path(Path(f"{pickle_file_path}/data/benign0_v3.pkl"))
-    assert benign.issues.all_issues == []
+def test_scan_file_path(file_path: Any) -> None:
+    benign_pickle = Modelscan()
+    benign_pickle.scan_path(Path(f"{file_path}/data/benign0_v3.pkl"))
+    benign_dill = Modelscan()
+    benign_dill.scan_path(Path(f"{file_path}/data/benign0_v3.dill"))
+    assert benign_pickle.issues.all_issues == []
+    assert benign_dill.issues.all_issues == []
 
     malicious0 = Modelscan()
     expected_malicious0 = {
@@ -280,54 +295,83 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.MEDIUM,
             OperatorIssueDetails(
-                "__builtin__", "dict", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "dict", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "apply", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "apply", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "eval", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "compile", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "compile", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.MEDIUM,
             OperatorIssueDetails(
-                "__builtin__", "globals", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "globals", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "getattr", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "getattr", f"{file_path}/data/malicious0.pkl"
             ),
         ),
     }
-    malicious0.scan_path(Path(f"{pickle_file_path}/data/malicious0.pkl"))
+    malicious0.scan_path(Path(f"{file_path}/data/malicious0.pkl"))
     compare_results(malicious0.issues.all_issues, expected_malicious0)
+
+    # dill based malicious 1
+    expected_malicious1_v0_dill = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "__builtin__", "eval", f"{file_path}/data/malicious1_v0.dill"
+            ),
+        )
+    ]
+    expected_malicious1_v3_dill = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins", "eval", f"{file_path}/data/malicious1_v3.dill"
+            ),
+        )
+    ]
+    expected_malicious1_v4_dill = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins", "eval", f"{file_path}/data/malicious1_v4.dill"
+            ),
+        )
+    ]
 
     expected_malicious1_v0 = [
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{pickle_file_path}/data/malicious1_v0.pkl"
+                "__builtin__", "eval", f"{file_path}/data/malicious1_v0.pkl"
             ),
         )
     ]
@@ -336,7 +380,7 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{pickle_file_path}/data/malicious1_v3.pkl"
+                "builtins", "eval", f"{file_path}/data/malicious1_v3.pkl"
             ),
         )
     ]
@@ -345,7 +389,7 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{pickle_file_path}/data/malicious1_v4.pkl"
+                "builtins", "eval", f"{file_path}/data/malicious1_v4.pkl"
             ),
         )
     ]
@@ -354,21 +398,31 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{pickle_file_path}/data/malicious1.zip:data.pkl"
+                "builtins", "eval", f"{file_path}/data/malicious1.zip:data.pkl"
             ),
         )
     ]
     malicious1_v0 = Modelscan()
     malicious1_v3 = Modelscan()
     malicious1_v4 = Modelscan()
+    malicious1_v0_dill = Modelscan()
+    malicious1_v3_dill = Modelscan()
+    malicious1_v4_dill = Modelscan()
+
     malicious1 = Modelscan()
-    malicious1_v0.scan_path(Path(f"{pickle_file_path}/data/malicious1_v0.pkl"))
-    malicious1_v3.scan_path(Path(f"{pickle_file_path}/data/malicious1_v3.pkl"))
-    malicious1_v4.scan_path(Path(f"{pickle_file_path}/data/malicious1_v4.pkl"))
-    malicious1.scan_path(Path(f"{pickle_file_path}/data/malicious1.zip"))
+    malicious1_v0.scan_path(Path(f"{file_path}/data/malicious1_v0.pkl"))
+    malicious1_v3.scan_path(Path(f"{file_path}/data/malicious1_v3.pkl"))
+    malicious1_v4.scan_path(Path(f"{file_path}/data/malicious1_v4.pkl"))
+    malicious1_v0_dill.scan_path(Path(f"{file_path}/data/malicious1_v0.dill"))
+    malicious1_v3_dill.scan_path(Path(f"{file_path}/data/malicious1_v3.dill"))
+    malicious1_v4_dill.scan_path(Path(f"{file_path}/data/malicious1_v4.dill"))
+    malicious1.scan_path(Path(f"{file_path}/data/malicious1.zip"))
     assert malicious1_v0.issues.all_issues == expected_malicious1_v0
     assert malicious1_v3.issues.all_issues == expected_malicious1_v3
     assert malicious1_v4.issues.all_issues == expected_malicious1_v4
+    assert malicious1_v0_dill.issues.all_issues == expected_malicious1_v0_dill
+    assert malicious1_v3_dill.issues.all_issues == expected_malicious1_v3_dill
+    assert malicious1_v4_dill.issues.all_issues == expected_malicious1_v4_dill
     assert malicious1.issues.all_issues == expected_malicious1
 
     expected_malicious2_v0 = [
@@ -376,7 +430,7 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{pickle_file_path}/data/malicious2_v0.pkl"
+                "posix", "system", f"{file_path}/data/malicious2_v0.pkl"
             ),
         )
     ]
@@ -385,7 +439,7 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{pickle_file_path}/data/malicious2_v3.pkl"
+                "posix", "system", f"{file_path}/data/malicious2_v3.pkl"
             ),
         )
     ]
@@ -394,16 +448,16 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{pickle_file_path}/data/malicious2_v4.pkl"
+                "posix", "system", f"{file_path}/data/malicious2_v4.pkl"
             ),
         )
     ]
     malicious2_v0 = Modelscan()
     malicious2_v3 = Modelscan()
     malicious2_v4 = Modelscan()
-    malicious2_v0.scan_path(Path(f"{pickle_file_path}/data/malicious2_v0.pkl"))
-    malicious2_v3.scan_path(Path(f"{pickle_file_path}/data/malicious2_v3.pkl"))
-    malicious2_v4.scan_path(Path(f"{pickle_file_path}/data/malicious2_v4.pkl"))
+    malicious2_v0.scan_path(Path(f"{file_path}/data/malicious2_v0.pkl"))
+    malicious2_v3.scan_path(Path(f"{file_path}/data/malicious2_v3.pkl"))
+    malicious2_v4.scan_path(Path(f"{file_path}/data/malicious2_v4.pkl"))
     assert malicious2_v0.issues.all_issues == expected_malicious2_v0
     assert malicious2_v3.issues.all_issues == expected_malicious2_v3
     assert malicious2_v4.issues.all_issues == expected_malicious2_v4
@@ -415,12 +469,12 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             OperatorIssueDetails(
                 "httplib",
                 "HTTPSConnection",
-                Path(f"{pickle_file_path}/data/malicious3.pkl"),
+                Path(f"{file_path}/data/malicious3.pkl"),
             ),
         )
     ]
     malicious3 = Modelscan()
-    malicious3.scan_path(Path(f"{pickle_file_path}/data/malicious3.pkl"))
+    malicious3.scan_path(Path(f"{file_path}/data/malicious3.pkl"))
     assert malicious3.issues.all_issues == expected_malicious3
 
     expected_malicious4 = [
@@ -428,12 +482,12 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "requests.api", "get", f"{pickle_file_path}/data/malicious4.pickle"
+                "requests.api", "get", f"{file_path}/data/malicious4.pickle"
             ),
         )
     ]
     malicious4 = Modelscan()
-    malicious4.scan_path(Path(f"{pickle_file_path}/data/malicious4.pickle"))
+    malicious4.scan_path(Path(f"{file_path}/data/malicious4.pickle"))
     assert malicious4.issues.all_issues == expected_malicious4
 
     expected_malicious5 = [
@@ -443,12 +497,12 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             OperatorIssueDetails(
                 "aiohttp.client",
                 "ClientSession",
-                f"{pickle_file_path}/data/malicious5.pickle",
+                f"{file_path}/data/malicious5.pickle",
             ),
         )
     ]
     malicious5 = Modelscan()
-    malicious5.scan_path(Path(f"{pickle_file_path}/data/malicious5.pickle"))
+    malicious5.scan_path(Path(f"{file_path}/data/malicious5.pickle"))
     assert malicious5.issues.all_issues == expected_malicious5
 
     expected_malicious6 = [
@@ -456,12 +510,12 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "requests.api", "get", f"{pickle_file_path}/data/malicious6.pkl"
+                "requests.api", "get", f"{file_path}/data/malicious6.pkl"
             ),
         )
     ]
     malicious6 = Modelscan()
-    malicious6.scan_path(Path(f"{pickle_file_path}/data/malicious6.pkl"))
+    malicious6.scan_path(Path(f"{file_path}/data/malicious6.pkl"))
     assert malicious6.issues.all_issues == expected_malicious6
 
     expected_malicious7 = [
@@ -469,12 +523,12 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "socket", "create_connection", f"{pickle_file_path}/data/malicious7.pkl"
+                "socket", "create_connection", f"{file_path}/data/malicious7.pkl"
             ),
         )
     ]
     malicious7 = Modelscan()
-    malicious7.scan_path(Path(f"{pickle_file_path}/data/malicious7.pkl"))
+    malicious7.scan_path(Path(f"{file_path}/data/malicious7.pkl"))
     assert malicious7.issues.all_issues == expected_malicious7
 
     expected_malicious8 = [
@@ -482,98 +536,116 @@ def test_scan_file_path(pickle_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "subprocess", "run", f"{pickle_file_path}/data/malicious8.pkl"
+                "subprocess", "run", f"{file_path}/data/malicious8.pkl"
             ),
         )
     ]
     malicious8 = Modelscan()
-    malicious8.scan_path(Path(f"{pickle_file_path}/data/malicious8.pkl"))
+    malicious8.scan_path(Path(f"{file_path}/data/malicious8.pkl"))
     assert malicious8.issues.all_issues == expected_malicious8
 
     expected_malicious9 = [
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
-            OperatorIssueDetails(
-                "sys", "exit", f"{pickle_file_path}/data/malicious9.pkl"
-            ),
+            OperatorIssueDetails("sys", "exit", f"{file_path}/data/malicious9.pkl"),
         )
     ]
     malicious9 = Modelscan()
-    malicious9.scan_path(Path(f"{pickle_file_path}/data/malicious9.pkl"))
+    malicious9.scan_path(Path(f"{file_path}/data/malicious9.pkl"))
     assert malicious9.issues.all_issues == expected_malicious9
 
 
-def test_scan_directory_path(pickle_file_path: str) -> None:
+def test_scan_directory_path(file_path: str) -> None:
     expected = {
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{pickle_file_path}/data/malicious1.zip:data.pkl"
+                "builtins", "eval", f"{file_path}/data/malicious1.zip:data.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "subprocess", "run", f"{pickle_file_path}/data/malicious8.pkl"
+                "subprocess", "run", f"{file_path}/data/malicious8.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
-            OperatorIssueDetails(
-                "sys", "exit", f"{pickle_file_path}/data/malicious9.pkl"
-            ),
+            OperatorIssueDetails("sys", "exit", f"{file_path}/data/malicious9.pkl"),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "requests.api", "get", f"{pickle_file_path}/data/malicious4.pickle"
+                "requests.api", "get", f"{file_path}/data/malicious4.pickle"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{pickle_file_path}/data/malicious1_v3.pkl"
+                "builtins", "eval", f"{file_path}/data/malicious1_v3.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{pickle_file_path}/data/malicious1_v0.pkl"
+                "__builtin__", "eval", f"{file_path}/data/malicious1_v0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{pickle_file_path}/data/malicious1_v4.pkl"
+                "builtins", "eval", f"{file_path}/data/malicious1_v4.pkl"
+            ),
+        ),
+        # dill based expected issues
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins", "eval", f"{file_path}/data/malicious1_v3.dill"
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "__builtin__", "eval", f"{file_path}/data/malicious1_v0.dill"
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins", "eval", f"{file_path}/data/malicious1_v4.dill"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.MEDIUM,
             OperatorIssueDetails(
-                "numpy", "ndarray", f"{pickle_file_path}/data/object_array.npy"
+                "numpy", "ndarray", f"{file_path}/data/object_array.npy"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.MEDIUM,
             OperatorIssueDetails(
-                "numpy", "dtype", f"{pickle_file_path}/data/object_array.npy"
+                "numpy", "dtype", f"{file_path}/data/object_array.npy"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.MEDIUM,
             OperatorIssueDetails(
-                "numpy", "dtype", f"{pickle_file_path}/data/object_array.npy"
+                "numpy", "dtype", f"{file_path}/data/object_array.npy"
             ),
         ),
         Issue(
@@ -582,7 +654,7 @@ def test_scan_directory_path(pickle_file_path: str) -> None:
             OperatorIssueDetails(
                 "numpy.core.multiarray",
                 "_reconstruct",
-                f"{pickle_file_path}/data/object_array.npy",
+                f"{file_path}/data/object_array.npy",
             ),
         ),
         Issue(
@@ -591,96 +663,96 @@ def test_scan_directory_path(pickle_file_path: str) -> None:
             OperatorIssueDetails(
                 "aiohttp.client",
                 "ClientSession",
-                f"{pickle_file_path}/data/malicious5.pickle",
+                f"{file_path}/data/malicious5.pickle",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{pickle_file_path}/data/malicious2_v4.pkl"
+                "posix", "system", f"{file_path}/data/malicious2_v4.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "socket", "create_connection", f"{pickle_file_path}/data/malicious7.pkl"
+                "socket", "create_connection", f"{file_path}/data/malicious7.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "requests.api", "get", f"{pickle_file_path}/data/malicious6.pkl"
+                "requests.api", "get", f"{file_path}/data/malicious6.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "compile", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "compile", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "eval", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.MEDIUM,
             OperatorIssueDetails(
-                "__builtin__", "globals", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "globals", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "apply", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "apply", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "getattr", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "getattr", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.MEDIUM,
             OperatorIssueDetails(
-                "__builtin__", "dict", f"{pickle_file_path}/data/malicious0.pkl"
+                "__builtin__", "dict", f"{file_path}/data/malicious0.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{pickle_file_path}/data/malicious2_v3.pkl"
+                "posix", "system", f"{file_path}/data/malicious2_v3.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "httplib", "HTTPSConnection", f"{pickle_file_path}/data/malicious3.pkl"
+                "httplib", "HTTPSConnection", f"{file_path}/data/malicious3.pkl"
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{pickle_file_path}/data/malicious2_v0.pkl"
+                "posix", "system", f"{file_path}/data/malicious2_v0.pkl"
             ),
         ),
     }
     ms = Modelscan()
-    p = Path(f"{pickle_file_path}/data/")
+    p = Path(f"{file_path}/data/")
     ms.scan_path(p)
     compare_results(ms.issues.all_issues, expected)
 
@@ -725,10 +797,10 @@ def test_scan_keras(keras_file_path: Any) -> None:
     assert ms.issues.all_issues == expected
 
 
-def test_main(pickle_file_path: Any) -> None:
+def test_main(file_path: Any) -> None:
     argv = sys.argv
     try:
-        sys.argv = ["modelscan", "-p", f"{pickle_file_path}/data/benign0_v3.pkl"]
+        sys.argv = ["modelscan", "-p", f"{file_path}/data/benign0_v3.pkl"]
         assert cli() == 0
         importlib.import_module("modelscan.scanner")
     except SystemExit:
