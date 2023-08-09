@@ -1,4 +1,12 @@
 ![ModelScan Banner](https://github.com/protectai/modelscan/raw/main/imgs/PAI-ModelScan-banner-080323-space.png)
+[![bandit](https://github.com/protectai/modelscan/actions/workflows/bandit.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/bandit.yml)
+[![build](https://github.com/protectai/modelscan/actions/workflows/build.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/build.yml)
+[![black](https://github.com/protectai/modelscan/actions/workflows/black.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/black.yml)
+[![mypy](https://github.com/protectai/modelscan/actions/workflows/mypy.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/mypy.yml)
+[![tests](https://github.com/protectai/modelscan/actions/workflows/test.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/test.yml)
+[![Supported Versions](https://img.shields.io/pypi/pyversions/modelscan.svg)](https://pypi.org/project/modelscan)
+[![pypi Version](https://img.shields.io/pypi/v/modelscan)](https://pypi.org/project/modelscan)
+[![License: Apache 2.0](https://img.shields.io/crates/l/apa)](https://opensource.org/license/apache-2-0/)
 # ModelScan: Protection Against Model Serialization Attacks
 Machine Learning (ML) models are shared publicly over the internet, within teams and across teams. The rise of Foundation Models have resulted in public ML models being increasingly consumed for further training/fine tuning. ML Models are increasingly used to make critical decisions and power mission-critical applications.
 Despite this, models are not scanned with the rigor of a PDF file in your inbox.
