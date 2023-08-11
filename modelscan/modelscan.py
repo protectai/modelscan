@@ -28,6 +28,7 @@ class Modelscan:
             and issubclass(member, ScanBase)
             and not inspect.isabstract(member)
         ]
+
         self.supported_extensions = set()
         for scan in self.supported_model_scans:
             self.supported_extensions.update(scan.supported_extensions())
@@ -43,7 +44,11 @@ class Modelscan:
         if path.is_dir():
             self._scan_directory(path)
         elif _is_zipfile(path) or path.suffix in self._supported_zip_extensions():
-            self._scan_zip(path)
+            is_keras_file = True if path.suffix == ".keras" else False
+            if is_keras_file:
+                self._scan_source(source=path, extension=path.suffix)
+            else:
+                self._scan_zip(path)
         else:
             self._scan_source(source=path, extension=path.suffix)
 
