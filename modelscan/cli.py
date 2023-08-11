@@ -7,6 +7,7 @@ import click
 
 from modelscan.modelscan import Modelscan
 from modelscan.reports import ConsoleReport
+from modelscan._version import __version__
 
 logger = logging.getLogger("modelscan")
 
@@ -18,6 +19,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     context_settings=CONTEXT_SETTINGS,
     help="Modelscan detects machine learning model files that perform suspicious actions",
 )
+@click.version_option(__version__, "-v", "--version")
 @click.option(
     "-p",
     "--path",
