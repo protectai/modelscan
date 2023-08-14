@@ -33,7 +33,7 @@ class KerasScan(SavedModelScan):
         # Added return to pass the failing mypy test: Missing return statement
         return [], [
             ModelScanError(
-                SavedModelScan.name(),
+                KerasScan.name(),
                 f"Unable to scan .keras file",  # Not sure if this is a representative message for ModelScanError
             )
         ]
