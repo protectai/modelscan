@@ -42,6 +42,12 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     default="INFO",
     help="level of log messages to display (default: INFO)",
 )
+@click.option(
+    "--show-skipped",
+    is_flag=True,
+    default=False,
+    help="Print a list of files that were skipped during the scan",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -49,6 +55,7 @@ def cli(
     # url: Optional[str],
     huggingface: Optional[str],
     path: Optional[str],
+    show_skipped: bool,
 ) -> int:
     logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -72,7 +79,12 @@ def cli(
             raise click.UsageError(
                 "Command line must include either a path or a Hugging Face model"
             )
-        ConsoleReport.generate(modelscan.issues, modelscan.errors)
+        ConsoleReport.generate(
+            modelscan.issues,
+            modelscan.errors,
+            modelscan._skipped,
+            show_skipped=show_skipped,
+        )
         return 0
 
     except click.UsageError as e:
