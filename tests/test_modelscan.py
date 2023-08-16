@@ -176,8 +176,14 @@ def file_path(tmp_path_factory: Any) -> Any:
 
 
 @pytest.fixture(scope="session")
-def keras_file_path(tmp_path_factory: Any) -> Any:
+def keras_file_extensions() -> List[str]:
+    return ["h5", "keras"]
+
+
+@pytest.fixture(scope="session")
+def keras_file_path(tmp_path_factory: Any, keras_file_extensions: List[str]) -> Any:
     # Create a simple model.
+
     inputs = keras.Input(shape=(32,))
     outputs = keras.layers.Dense(1)(inputs)
     keras_model = keras.Model(inputs, outputs)
@@ -191,7 +197,8 @@ def keras_file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("keras")
     with open(f"{tmp}/safe", "wb") as fo:
         pickle.dump(keras_model, fo)
-    keras_model.save(f"{tmp}/safe.h5")
+    for extension in keras_file_extensions:
+        keras_model.save(f"{tmp}/safe.{extension}")
 
     # Inject code with the command
     command = "exec"
@@ -213,7 +220,8 @@ conn = http.client.HTTPSConnection("protectai.com")"""
     malicious_model = tf.keras.Model(inputs=keras_model.inputs, outputs=[new_layer])
     malicious_model.compile(optimizer="adam", loss="mean_squared_error")
 
-    malicious_model.save(f"{tmp}/unsafe.h5")
+    for extension in keras_file_extensions:
+        malicious_model.save(f"{tmp}/unsafe.{extension}")
 
     return tmp
 
@@ -747,23 +755,42 @@ def test_scan_huggingface_model() -> None:
 # def test_scan_tf() -> None:
 
 
-def test_scan_keras(keras_file_path: Any) -> None:
+@pytest.mark.parametrize("file_extension", [".h5", ".keras"], ids=["h5", "keras"])
+def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
     ms = Modelscan()
-    ms.scan_path(Path(f"{keras_file_path}/safe.h5"))
+    ms.scan_path(Path(f"{keras_file_path}/safe{file_extension}"))
     assert ms.issues.all_issues == []
 
-    expected = [
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.MEDIUM,
-            OperatorIssueDetails(
-                "Keras",
-                "Lambda",
-                f"{keras_file_path}/unsafe.h5",
-            ),
+    if file_extension == ".keras":
+        expected = [
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.MEDIUM,
+                OperatorIssueDetails(
+                    "Keras",
+                    "Lambda",
+                    f"{keras_file_path}/unsafe.keras:config.json",
+                ),
+            )
+        ]
+        ms._scan_source(
+            Path(f"{keras_file_path}/unsafe{file_extension}"),
+            extension=file_extension,
         )
-    ]
-    ms.scan_path(Path(f"{keras_file_path}/unsafe.h5"))
+    else:
+        expected = [
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.MEDIUM,
+                OperatorIssueDetails(
+                    "Keras",
+                    "Lambda",
+                    f"{keras_file_path}/unsafe{file_extension}",
+                ),
+            )
+        ]
+        ms.scan_path(Path(f"{keras_file_path}/unsafe{file_extension}"))
+    print(ms.issues.add_issues)
     assert ms.issues.all_issues == expected
 
 
