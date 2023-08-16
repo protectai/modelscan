@@ -75,16 +75,20 @@ def cli(
                 "Command line must include either a path or a Hugging Face model"
             )
         ConsoleReport.generate(modelscan.issues, modelscan.errors)
-        return 0
+
+        if modelscan.issues.all_issues:
+            sys.exit(1)
+        else:
+            sys.exit(0)
 
     except click.UsageError as e:
         click.echo(e)
         click.echo(ctx.get_help())
-        return 2
+        sys.exit(2)
 
     except Exception as e:
         logger.exception(f"Exception: {e}")
-        return 2
+        sys.exit(2)
 
 
 if __name__ == "__main__":

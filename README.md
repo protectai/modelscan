@@ -143,6 +143,11 @@ it allows an attacker to read our AWS credentials and write them to another plac
 
 That is a firm NO for usage.
 
+The CLI exit status codes are (a-la [ClamAV](https://www.clamav.net/)):
+- `0`: scan did not find malware
+- `1`: scan found malware
+- `2`: scan failed
+
 ## Integrating ModelScan In Your ML Pipelines and CI/CD Pipelines
 
 Ad-hoc scanning is a great first step, please drill it into yourself, peers, and friends to do
