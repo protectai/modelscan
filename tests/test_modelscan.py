@@ -769,7 +769,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
-                    f"{keras_file_path}/unsafe.keras:config.json",
+                    f"{keras_file_path}/unsafe{file_extension}:config.json",
                 ),
             )
         ]
@@ -790,7 +790,6 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
             )
         ]
         ms.scan_path(Path(f"{keras_file_path}/unsafe{file_extension}"))
-    print(ms.issues.add_issues)
     assert ms.issues.all_issues == expected
 
 
