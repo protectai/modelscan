@@ -11,6 +11,7 @@ from typing import List, Union, Optional, IO
 from modelscan.error import Error
 from modelscan.issues import Issues, Issue
 from modelscan import models
+from modelscan.models.keras.scan import KerasScan
 from modelscan.models.scan import ScanBase
 from modelscan.tools.utils import _http_get, _is_zipfile
 
@@ -28,6 +29,7 @@ class Modelscan:
             and issubclass(member, ScanBase)
             and not inspect.isabstract(member)
         ]
+
         self.supported_extensions = set()
         for scan in self.supported_model_scans:
             self.supported_extensions.update(scan.supported_extensions())
@@ -44,7 +46,11 @@ class Modelscan:
         if path.is_dir():
             self._scan_directory(path)
         elif _is_zipfile(path) or path.suffix in self._supported_zip_extensions():
-            self._scan_zip(path)
+            is_keras_file = path.suffix in KerasScan.supported_extensions()
+            if is_keras_file:
+                self._scan_source(source=path, extension=path.suffix)
+            else:
+                self._scan_zip(path)
         else:
             self._scan_source(source=path, extension=path.suffix)
 

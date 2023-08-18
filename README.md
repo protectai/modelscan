@@ -94,7 +94,7 @@ At present, ModelScan supports any Pickle derived format and many others:
 | Pytorch | [torch.save() and torch.load()](https://pytorch.org/tutorials/beginner/saving_loading_models.html )| Pickle                              | Yes 
 | Tensorflow| [tf.saved_model.save()](https://www.tensorflow.org/guide/saved_model)| Protocol Buffer                     | Yes 
 | Keras| [keras.models.save(save_format= 'h5')](https://www.tensorflow.org/guide/keras/serialization_and_saving)| HD5 (Hierarchical Data Format)      | Yes 
-| | [keras.models.save(save_format= 'keras')](https://www.tensorflow.org/guide/keras/serialization_and_saving)| Keras V3 (Hierarchical Data Format) | No
+| | [keras.models.save(save_format= 'keras')](https://www.tensorflow.org/guide/keras/serialization_and_saving)| Keras V3 (Hierarchical Data Format) | Yes
 | Classic ML Libraries (Sklearn, XGBoost etc.)| pickle.dump(), dill.dump(), joblib.dump(), cloudpickle.dump() | Pickle, Cloudpickle, Dill, Joblib   | Yes 
 
 
