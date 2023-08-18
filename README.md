@@ -143,10 +143,12 @@ it allows an attacker to read our AWS credentials and write them to another plac
 
 That is a firm NO for usage.
 
-The CLI exit status codes are (a-la [ClamAV](https://www.clamav.net/)):
-- `0`: scan did not find malware
-- `1`: scan found malware
-- `2`: scan failed
+The CLI exit status codes are:
+- `0`: Scan completed successfully, no vulnerabilities found
+- `1`: Scan completed successfully, vulnerabilities found
+- `2`: Scan failed, modelscan threw an error while scanning
+- `3`: No supported files were passed to the tool
+- `4`: Usage error, CLI was passed invalid or incomplete options
 
 ## Integrating ModelScan In Your ML Pipelines and CI/CD Pipelines
 

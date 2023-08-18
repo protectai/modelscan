@@ -15,8 +15,16 @@ logger = logging.getLogger("modelscan")
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
+# redefine format_usage so the appropriate command name shows up
+class ModelscanCommand(click.Command):
+    def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        pieces = self.collect_usage_pieces(ctx)
+        formatter.write_usage("modelscan", " ".join(pieces))
+
+
 @click.command(
     context_settings=CONTEXT_SETTINGS,
+    cls=ModelscanCommand,
     help="Modelscan detects machine learning model files that perform suspicious actions",
 )
 @click.version_option(__version__, "-v", "--version")
@@ -58,38 +66,62 @@ def cli(
     if log is not None:
         logger.setLevel(getattr(logging, log))
 
+    modelscan = Modelscan()
+    if path is not None:
+        pathlibPath = Path().cwd() if path == "." else Path(path).absolute()
+        if not pathlibPath.exists():
+            raise FileNotFoundError(f"Path {path} does not exist")
+        else:
+            modelscan.scan_path(pathlibPath)
+    # elif url is not None:
+    #     modelscan.scan_url(url)
+    elif huggingface is not None:
+        modelscan.scan_huggingface_model(huggingface)
+    else:
+        raise click.UsageError(
+            "Command line must include either a path or a Hugging Face model"
+        )
+    ConsoleReport.generate(modelscan.issues, modelscan.errors)
+
+    # exit code 3 if no supported files were passed
+    if not modelscan.scanned:
+        return 3
+    # exit code 2 if scan encountered errors
+    elif modelscan.errors:
+        return 2
+    # exit code 1 if scan completed successfully and vulnerabilities were found
+    elif modelscan.issues.all_issues:
+        return 1
+    # exit code 0 if scan completed successfully and no vulnerabilities were found
+    else:
+        return 0
+
+
+def main() -> None:
     try:
-        modelscan = Modelscan()
-        if path is not None:
-            pathlibPath = Path().cwd() if path == "." else Path(path).absolute()
-            if not pathlibPath.exists():
-                raise FileNotFoundError(f"Path {path} does not exist")
-            else:
-                modelscan.scan_path(pathlibPath)
-        # elif url is not None:
-        #     modelscan.scan_url(url)
-        elif huggingface is not None:
-            modelscan.scan_huggingface_model(huggingface)
-        else:
-            raise click.UsageError(
-                "Command line must include either a path or a Hugging Face model"
-            )
-        ConsoleReport.generate(modelscan.issues, modelscan.errors)
+        result = cli.main(standalone_mode=False)
 
-        if modelscan.issues.all_issues:
-            sys.exit(1)
-        else:
-            sys.exit(0)
-
-    except click.UsageError as e:
-        click.echo(e)
-        click.echo(ctx.get_help())
-        sys.exit(2)
+    except (
+        click.UsageError,
+        click.BadParameter,
+        click.BadOptionUsage,
+        click.NoSuchOption,
+        click.ClickException,
+    ) as e:
+        click.echo(f"Usage Error: {e}")
+        with click.Context(cli) as ctx:
+            click.echo(cli.get_help(ctx))
+        # exit code 4 for CLI usage errors
+        result = 4
 
     except Exception as e:
-        logger.exception(f"Exception: {e}")
-        sys.exit(2)
+        click.echo(f"Exception: {e}")
+        # exit code 2 if scan throws exceptions
+        result = 2
+
+    finally:
+        sys.exit(result)
 
 
 if __name__ == "__main__":
-    sys.exit(cli())
+    main()

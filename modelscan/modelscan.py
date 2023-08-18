@@ -38,6 +38,7 @@ class Modelscan:
         self._issues = Issues()
         self._errors: List[Error] = []
         self._skipped: List[str] = []
+        self._scanned: List[str] = []
 
     def scan_path(self, path: Path) -> None:
         if path.is_dir():
@@ -108,6 +109,7 @@ class Modelscan:
             if extension in scan.supported_extensions():
                 logger.info(f"Scanning {source} using {scan.name()} model scan")
                 issues, errors = scan.scan(source=source, data=data)
+                self._scanned.append(str(source))
 
         self._issues.add_issues(issues)
         self._errors.extend(errors)
@@ -137,3 +139,7 @@ class Modelscan:
     @property
     def errors(self) -> List[Error]:
         return self._errors
+
+    @property
+    def scanned(self) -> List[str]:
+        return self._scanned
