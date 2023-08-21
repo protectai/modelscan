@@ -5,3 +5,4 @@ from modelscan.models.pickle.scan import (
     PyTorchScan,
 )
 from modelscan.models.saved_model.scan import SavedModelScan
+from modelscan.models.keras.scan import KerasScan
