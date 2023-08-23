@@ -92,26 +92,3 @@ def get_magic_number(data: IO[bytes]) -> Optional[int]:
     except ValueError:
         return None
     return None
-
-
-# TODO we can rewrite this function with better error logging and move it
-# modelscan/tools/utils.py
-def _http_get(url: str) -> bytes:
-    parsed_url = urllib.parse.urlparse(url)
-    path_and_query = parsed_url.path + (
-        "?" + parsed_url.query if len(parsed_url.query) > 0 else ""
-    )
-
-    conn = http.client.HTTPSConnection(parsed_url.netloc)
-    try:
-        conn.request("GET", path_and_query)
-        response = conn.getresponse()
-        if response.status == 302:  # Follow redirections
-            return _http_get(response.headers["Location"])
-        elif response.status >= 400:
-            raise RuntimeError(
-                f"HTTP {response.status} ({response.reason}) calling GET {parsed_url.scheme}://{parsed_url.netloc}{path_and_query}"
-            )
-        return response.read()
-    finally:
-        conn.close()
