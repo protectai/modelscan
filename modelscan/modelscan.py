@@ -13,7 +13,8 @@ from modelscan.issues import Issues, Issue
 from modelscan import models
 from modelscan.models.keras.scan import KerasScan
 from modelscan.models.scan import ScanBase
-from modelscan.tools.utils import _http_get, _is_zipfile
+from modelscan.tools.utils import _is_zipfile
+from modelscan.utils import fetch_huggingface_repo_files, read_huggingface_file
 
 logger = logging.getLogger("modelscan")
 
@@ -33,8 +34,9 @@ class Modelscan:
         self.supported_extensions = set()
         for scan in self.supported_model_scans:
             self.supported_extensions.update(scan.supported_extensions())
-
+        self.supported_zip_extensions = set([".zip", ".npz"])
         logger.debug(f"Supported model files {self.supported_extensions}")
+        logger.debug(f"Supported zip model files {self.supported_zip_extensions}")
 
         # Output
         self._issues = Issues()
@@ -45,7 +47,7 @@ class Modelscan:
     def scan_path(self, path: Path) -> None:
         if path.is_dir():
             self._scan_directory(path)
-        elif _is_zipfile(path) or path.suffix in self._supported_zip_extensions():
+        elif _is_zipfile(path) or path.suffix in self.supported_zip_extensions:
             is_keras_file = path.suffix in KerasScan.supported_extensions()
             if is_keras_file:
                 self._scan_source(source=path, extension=path.suffix)
@@ -61,31 +63,39 @@ class Modelscan:
 
     def scan_huggingface_model(self, repo_id: str) -> None:
         # List model files
-        model = json.loads(
-            _http_get(f"https://huggingface.co/api/models/{repo_id}").decode("utf-8")
-        )
-        file_names = [
-            file_name
-            for file_name in (sibling.get("rfilename") for sibling in model["siblings"])
-            if file_name is not None
-        ]
+        file_names = fetch_huggingface_repo_files(repo_id)
+        if not file_names:
+            logger.error(f"Hugging face repo {repo_id} didn't return any files")
+            return
 
-        # Scan model files
         for file_name in file_names:
+            fq_file_name = f"{repo_id}/{file_name}"
             file_ext = os.path.splitext(file_name)[1]
-            url = f"https://huggingface.co/{repo_id}/resolve/main/{file_name}"
-            data = io.BytesIO(_http_get(url))
             if (
-                _is_zipfile(source=url, data=data)
-                or file_ext in self._supported_zip_extensions()
+                file_ext not in self.supported_extensions
+                and file_ext not in self.supported_zip_extensions
             ):
-                self._scan_zip(source=url, data=data)
+                logger.debug(f"Skipping: {fq_file_name} is not supported")
+                self._skipped.append(fq_file_name)
+                continue
+
+            raw_bytes = read_huggingface_file(repo_id, file_name)
+            if not raw_bytes:
+                logger.debug(f"Skipping: Failed to read {fq_file_name}")
+                self._skipped.append(fq_file_name)
+                continue
+
+            data = io.BytesIO(raw_bytes)
+            if (
+                _is_zipfile(source=fq_file_name, data=data)
+                or file_ext in self.supported_zip_extensions
+            ):
+                try:
+                    self._scan_zip(source=fq_file_name, data=data)
+                except:
+                    logger.debug(f"Skipped: Failed to read")
             else:
-                self._scan_source(
-                    source=url,
-                    extension=file_ext,
-                    data=data,
-                )
+                self._scan_source(source=fq_file_name, extension=file_ext, data=data)
 
     def scan_url(self, url: str) -> None:
         # Todo: before it was just scanning scanning_pickle_bytes
@@ -123,20 +133,20 @@ class Modelscan:
     def _scan_zip(
         self, source: Union[str, Path], data: Optional[IO[bytes]] = None
     ) -> None:
-        with zipfile.ZipFile(data or source, "r") as zip:
-            file_names = zip.namelist()
-            for file_name in file_names:
-                file_ext = os.path.splitext(file_name)[1]
-                with zip.open(file_name, "r") as file_io:
-                    self._scan_source(
-                        source=f"{source}:{file_name}",
-                        extension=file_ext,
-                        data=file_io,
-                    )
-
-    @staticmethod
-    def _supported_zip_extensions() -> List[str]:
-        return [".zip", ".npz"]
+        try:
+            with zipfile.ZipFile(data or source, "r") as zip:
+                file_names = zip.namelist()
+                for file_name in file_names:
+                    file_ext = os.path.splitext(file_name)[1]
+                    with zip.open(file_name, "r") as file_io:
+                        self._scan_source(
+                            source=f"{source}:{file_name}",
+                            extension=file_ext,
+                            data=file_io,
+                        )
+        except zipfile.BadZipFile as e:
+            logger.debug(f"Skipping zip file {source}, due to error", e, exc_info=True)
+            self._skipped.append(str(source))
 
     @property
     def issues(self) -> Issues:
@@ -147,5 +157,5 @@ class Modelscan:
         return self._errors
 
     @property
-    def scanned(self) -> List[str]:
-        return self._scanned
+    def skipped(self) -> List[str]:
+        return self._skipped

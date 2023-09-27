@@ -1,7 +1,7 @@
 VERSION ?= $(shell dunamai from git --style pep440 --format "{base}.dev{distance}+{commit}")
 
 install-dev:
-	poetry install --with dev --extras "tensorflow h5py"
+	poetry install --with dev --with test --extras "tensorflow h5py"
 	pre-commit install
 
 install:

@@ -22,6 +22,8 @@ class Report(metaclass=abc.ABCMeta):
     def generate(
         issues: Issues,
         errors: List[Error],
+        skipped: List[str],
+        show_skipped: bool = False,
     ) -> Optional[str]:
         """
         Generate report for the given codebase.
@@ -39,6 +41,8 @@ class ConsoleReport(Report):
     def generate(
         issues: Issues,
         errors: List[Error],
+        skipped: List[str],
+        show_skipped: bool = False,
     ) -> None:
         issues_by_severity = issues.group_by_severity()
         print("\n[blue]--- Summary ---")
@@ -67,3 +71,13 @@ class ConsoleReport(Report):
             for index, error in enumerate(errors):
                 print(f"\nError {index+1}:")
                 print(str(error))
+
+        if len(skipped) > 0:
+            print("\n[blue]--- Skipped --- ")
+            print(
+                f"\nTotal skipped: {len(skipped)} - run with --show-skipped to see the full list."
+            )
+            if show_skipped:
+                print(f"\nSkipped files list:\n")
+                for file_name in skipped:
+                    print(str(file_name))
