@@ -96,7 +96,7 @@ def cli(
     )
 
     # exit code 3 if no supported files were passed
-    if not modelscan._scanned:
+    if not modelscan.scanned:
         return 3
     # exit code 2 if scan encountered errors
     elif modelscan.errors:

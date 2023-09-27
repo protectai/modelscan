@@ -157,5 +157,9 @@ class Modelscan:
         return self._errors
 
     @property
+    def scanned(self) -> List[str]:
+        return self._scanned
+
+    @property
     def skipped(self) -> List[str]:
         return self._skipped
