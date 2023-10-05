@@ -113,14 +113,8 @@ def main() -> None:
     try:
         result = cli.main(standalone_mode=False)
 
-    except (
-        click.UsageError,
-        click.BadParameter,
-        click.BadOptionUsage,
-        click.NoSuchOption,
-        click.ClickException,
-    ) as e:
-        click.echo(f"Usage Error: {e}")
+    except (click.ClickException,) as e:
+        click.echo(f"Error: {e}")
         with click.Context(cli) as ctx:
             click.echo(cli.get_help(ctx))
         # exit code 4 for CLI usage errors

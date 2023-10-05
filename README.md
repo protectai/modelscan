@@ -130,6 +130,14 @@ Remember models are just like any other form of digital media, you should scan c
 **NOTE**: LLMs are large files, it can take a few minutes to download them before scanning. Expect the process
 to take just a few minutes to complete. 
 
+##### CLI Exit Codes
+The CLI exit status codes are:
+- `0`: Scan completed successfully, no vulnerabilities found
+- `1`: Scan completed successfully, vulnerabilities found
+- `2`: Scan failed, modelscan threw an error while scanning
+- `3`: No supported files were passed to the tool
+- `4`: Usage error, CLI was passed invalid or incomplete options
+
 ### Understanding The Results
 
 Once a scan has been completed you'll see output like this if an issue is found:
@@ -142,13 +150,6 @@ to the creator of this model to determine what they expected this to do. In this
 it allows an attacker to read our AWS credentials and write them to another place. 
 
 That is a firm NO for usage.
-
-The CLI exit status codes are:
-- `0`: Scan completed successfully, no vulnerabilities found
-- `1`: Scan completed successfully, vulnerabilities found
-- `2`: Scan failed, modelscan threw an error while scanning
-- `3`: No supported files were passed to the tool
-- `4`: Usage error, CLI was passed invalid or incomplete options
 
 ## Integrating ModelScan In Your ML Pipelines and CI/CD Pipelines
 
