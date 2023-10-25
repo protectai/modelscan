@@ -136,7 +136,7 @@ def _list_globals(
             if op_name == "MEMOIZE" and n > 0:
                 memo[len(memo)] = ops[n - 1][1]
 
-            if op_name == "GLOBAL":
+            if op_name in ["GLOBAL", "INST"]:
                 globals.add(tuple(op_value.split(" ", 1)))
             elif op_name == "STACK_GLOBAL":
                 values: List[str] = []
