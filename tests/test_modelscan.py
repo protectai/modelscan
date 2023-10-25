@@ -172,6 +172,11 @@ def file_path(tmp_path_factory: Any) -> Any:
         pickle.dumps(Malicious1(), protocol=4),
     )
 
+    malicious10_pickle_bytes = (
+        b"(S'print(\"Injection running\")'\ni__builtin__\nexec\n."
+    )
+    initialize_data_file(f"{tmp}/data/malicious10.pkl", malicious10_pickle_bytes)
+
     return tmp
 
 
@@ -577,6 +582,19 @@ def test_scan_pickle_operators(file_path: Any) -> None:
     malicious9.scan_path(Path(f"{file_path}/data/malicious9.pkl"))
     assert malicious9.issues.all_issues == expected_malicious9
 
+    expected_malicious10 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "__builtin__", "exec", f"{file_path}/data/malicious10.pkl"
+            ),
+        )
+    ]
+    malicious10 = Modelscan()
+    malicious10.scan_path(Path(f"{file_path}/data/malicious10.pkl"))
+    assert malicious10.issues.all_issues == expected_malicious10
+
 
 def test_scan_directory_path(file_path: str) -> None:
     expected = {
@@ -726,6 +744,13 @@ def test_scan_directory_path(file_path: str) -> None:
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
                 "posix", "system", f"{file_path}/data/malicious2_v0.pkl"
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "__builtin__", "exec", f"{file_path}/data/malicious10.pkl"
             ),
         ),
     }
