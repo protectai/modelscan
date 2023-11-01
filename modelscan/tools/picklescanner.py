@@ -133,7 +133,7 @@ def _list_globals(
             op_name = op[0].name
             op_value: str = op[1]
 
-            if op_name == "MEMOIZE" and n > 0:
+            if op_name in ["MEMOIZE", "PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
                 memo[len(memo)] = ops[n - 1][1]
 
             if op_name in ["GLOBAL", "INST"]:
@@ -141,7 +141,12 @@ def _list_globals(
             elif op_name == "STACK_GLOBAL":
                 values: List[str] = []
                 for offset in range(1, n):
-                    if ops[n - offset][0].name == "MEMOIZE":
+                    if ops[n - offset][0].name in [
+                        "MEMOIZE",
+                        "PUT",
+                        "BINPUT",
+                        "LONG_BINPUT",
+                    ]:
                         continue
                     if ops[n - offset][0].name in ["GET", "BINGET", "LONG_BINGET"]:
                         values.append(memo[int(ops[n - offset][1])])
