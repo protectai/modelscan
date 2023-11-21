@@ -38,13 +38,8 @@ class ModelscanCommand(click.Command):
 # @click.option(
 #     "-u", "--url", type=str, default=None, help="URL to the file or folder to scan"
 # )
-@click.option(
-    "-hf",
-    "--huggingface",
-    type=str,
-    default=None,
-    help="Name of the Hugging Face model to scan",
-)
+
+
 @click.option(
     "-l",
     "--log",
@@ -63,7 +58,6 @@ def cli(
     ctx: click.Context,
     log: str,
     # url: Optional[str],
-    huggingface: Optional[str],
     path: Optional[str],
     show_skipped: bool,
 ) -> int:
@@ -82,12 +76,8 @@ def cli(
             modelscan.scan_path(pathlibPath)
     # elif url is not None:
     #     modelscan.scan_url(url)
-    elif huggingface is not None:
-        modelscan.scan_huggingface_model(huggingface)
     else:
-        raise click.UsageError(
-            "Command line must include either a path or a Hugging Face model"
-        )
+        raise click.UsageError("Command line must include a path")
     ConsoleReport.generate(
         modelscan.issues,
         modelscan.errors,
