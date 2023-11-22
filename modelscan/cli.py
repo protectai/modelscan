@@ -35,11 +35,6 @@ class ModelscanCommand(click.Command):
     default=None,
     help="Path to the file or folder to scan",
 )
-# @click.option(
-#     "-u", "--url", type=str, default=None, help="URL to the file or folder to scan"
-# )
-
-
 @click.option(
     "-l",
     "--log",
@@ -57,7 +52,6 @@ class ModelscanCommand(click.Command):
 def cli(
     ctx: click.Context,
     log: str,
-    # url: Optional[str],
     path: Optional[str],
     show_skipped: bool,
 ) -> int:
@@ -74,8 +68,7 @@ def cli(
             raise FileNotFoundError(f"Path {path} does not exist")
         else:
             modelscan.scan_path(pathlibPath)
-    # elif url is not None:
-    #     modelscan.scan_url(url)
+
     else:
         raise click.UsageError("Command line must include a path")
     ConsoleReport.generate(
