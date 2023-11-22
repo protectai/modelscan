@@ -54,15 +54,17 @@ class H5Scan(SavedModelScan):
     def _get_keras_h5_operator_names(source: Union[str, Path]) -> List[str]:
         # Todo: source isn't guaranteed to be a file
         with h5py.File(source, "r") as model_hdf5:
-            lambda_code = [
-                layer.get("config", {}).get("function", {})
-                for layer in json.loads(model_hdf5.attrs["model_config"])["config"][
-                    "layers"
-                ]
-                if layer["class_name"] == "Lambda"
-            ]
+            model_config = json.loads(model_hdf5.attrs["model_config"])
+            layers = model_config["config"]["layers"]
+            lambda_layers = []
+            for layer in layers:
+                if layer["class_name"] == "Lambda":
+                    lambda_layers.append(layer.get("config", {}).get("function", {}))
 
-        return ["Lambda"] if lambda_code else []
+        if lambda_layers:
+            return ["Lambda"] * len(lambda_layers)
+
+        return []
 
     @staticmethod
     def supported_extensions() -> List[str]:

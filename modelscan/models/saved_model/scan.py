@@ -66,7 +66,7 @@ class SavedModelScan(ScanBase):
         saved_metadata = SavedMetadata()
         saved_metadata.ParseFromString(data.read())
 
-        lambda_code = [
+        lambda_layers = [
             layer.get("config", {}).get("function", {}).get("items", {})
             for layer in [
                 json.loads(node.metadata)
@@ -76,8 +76,10 @@ class SavedModelScan(ScanBase):
             if layer["class_name"] == "Lambda"
         ]
 
-        # if lambda code is not empty list that means there has been some code injection in Keras layer
-        return ["Lambda"] if lambda_code else []
+        if lambda_layers:
+            return ["Lambda"] * len(lambda_layers)
+
+        return []
 
     @staticmethod
     def _get_tensorflow_operator_names(data: IO[bytes]) -> List[str]:

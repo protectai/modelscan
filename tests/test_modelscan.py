@@ -21,12 +21,7 @@ import zipfile
 from modelscan.modelscan import Modelscan
 from modelscan.cli import cli
 from modelscan.error import ModelScanError
-from modelscan.issues import (
-    Issue,
-    IssueCode,
-    IssueSeverity,
-    OperatorIssueDetails,
-)
+from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
     scan_numpy,
@@ -220,9 +215,12 @@ conn = http.client.HTTPSConnection("protectai.com")"""
         or x
     )
     input_to_new_layer = keras.layers.Dense(1)(keras_model.layers[-1].output)
-    new_layer = keras.layers.Lambda(attack)(input_to_new_layer)
+    first_lambda_layer = keras.layers.Lambda(attack)(input_to_new_layer)
+    second_lambda_layer = keras.layers.Lambda(attack)(first_lambda_layer)
 
-    malicious_model = tf.keras.Model(inputs=keras_model.inputs, outputs=[new_layer])
+    malicious_model = tf.keras.Model(
+        inputs=keras_model.inputs, outputs=[second_lambda_layer]
+    )
     malicious_model.compile(optimizer="adam", loss="mean_squared_error")
 
     for extension in keras_file_extensions:
@@ -796,7 +794,16 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                     "Lambda",
                     f"{keras_file_path}/unsafe{file_extension}:config.json",
                 ),
-            )
+            ),
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.MEDIUM,
+                OperatorIssueDetails(
+                    "Keras",
+                    "Lambda",
+                    f"{keras_file_path}/unsafe{file_extension}:config.json",
+                ),
+            ),
         ]
         ms._scan_source(
             Path(f"{keras_file_path}/unsafe{file_extension}"),
@@ -812,9 +819,19 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                     "Lambda",
                     f"{keras_file_path}/unsafe{file_extension}",
                 ),
-            )
+            ),
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.MEDIUM,
+                OperatorIssueDetails(
+                    "Keras",
+                    "Lambda",
+                    f"{keras_file_path}/unsafe{file_extension}",
+                ),
+            ),
         ]
         ms.scan_path(Path(f"{keras_file_path}/unsafe{file_extension}"))
+
     assert ms.issues.all_issues == expected
 
 

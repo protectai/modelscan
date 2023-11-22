@@ -60,16 +60,19 @@ class KerasScan(SavedModelScan):
     ) -> List[str]:
         try:
             model_config_data = json.load(data)
-            lambda_code = [
+            lambda_layers = [
                 layer.get("config", {}).get("function", {})
                 for layer in model_config_data["config"]["layers"]
                 if layer["class_name"] == "Lambda"
             ]
+            if lambda_layers:
+                return ["Lambda"] * len(lambda_layers)
+
         except json.JSONDecodeError as e:
             logger.error(f"Not a valid JSON data from source: {source}, error: {e}")
             return []
 
-        return ["Lambda"] if lambda_code else []
+        return []
 
     @staticmethod
     def supported_extensions() -> List[str]:
