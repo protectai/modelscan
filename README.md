@@ -13,7 +13,7 @@ Despite this, models are not scanned with the rigor of a PDF file in your inbox.
 
 This needs to change, and proper tooling is the first step.
 
-![ModelScan Preview](https://github.com/protectai/modelscan/raw/main/imgs/modelscan_hf_demo.gif)
+![ModelScan Preview](/imgs/modelscan-unsafe-model.gif)
 
 ModelScan is an open source project that scans models to determine if they contain 
 unsafe code. It is the first model scanning tool to support multiple model formats. 
@@ -32,12 +32,6 @@ With it installed, scan a model:
 
 ```bash
 modelscan -p /path/to/model_file.h5
-```
-
-Or if you want to scan all the models in a Hugging Face Repository:
-
-```bash
-modelscan -hf owner/model-repository-name
 ```
 
 ## Why You Should Scan Models
@@ -75,8 +69,7 @@ ModelScan ranks the unsafe code as:
 * MEDIUM
 * LOW
 
-Things are ranked consistently if the models are local or stored in Hugging Face
-![ModelScan Flow Chart](https://github.com/protectai/modelscan/raw/main/imgs/model_scan_flow_chart.png)
+![ModelScan Flow Chart](/imgs/model_scan_flow_chart.png)
 
 If an issue is detected, reach out to the author's of the model immediately to determine the cause.
 
@@ -123,7 +116,7 @@ ModelScan supports the following arguments via the CLI:
 | ```modelscan -h ```                   | -h or --help         | View usage help                            |
 | ```modelscan -v ```                   | -v or --version      | View version information                   |
 | ```modelscan -p /path/to/model_file```| -p or --path         | Scan a locally stored model                |
-| ```modelscan -hf repo/model_file```   |-hf or --huggingface  | Scan all the models in a Hugging Face model repository| 
+
 
 Remember models are just like any other form of digital media, you should scan content from any untrusted source before use.
 
