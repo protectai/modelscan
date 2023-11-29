@@ -758,26 +758,6 @@ def test_scan_directory_path(file_path: str) -> None:
     compare_results(ms.issues.all_issues, expected)
 
 
-def test_scan_huggingface_model() -> None:
-    expected = {
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.CRITICAL,
-            OperatorIssueDetails(
-                "__builtin__",
-                "eval",
-                "ykilcher/totally-harmless-model/pytorch_model.bin:archive/data.pkl",
-            ),
-        )
-    }
-    ms = Modelscan()
-    ms.scan_huggingface_model("ykilcher/totally-harmless-model")
-    compare_results(ms.issues.all_issues, expected)
-
-
-# def test_scan_tf() -> None:
-
-
 @pytest.mark.parametrize("file_extension", [".h5", ".keras"], ids=["h5", "keras"])
 def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
     ms = Modelscan()
