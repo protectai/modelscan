@@ -55,7 +55,7 @@ class H5Scan(SavedModelScan):
         # Todo: source isn't guaranteed to be a file
         with h5py.File(source, "r") as model_hdf5:
             try:
-                model_config = json.loads(model_hdf5.attrs.get("model_config",{}))
+                model_config = json.loads(model_hdf5.attrs.get("model_config", {}))
                 layers = model_config.get("config", {}).get("layers", {})
                 lambda_layers = []
                 for layer in layers:
