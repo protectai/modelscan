@@ -62,8 +62,8 @@ class KerasScan(SavedModelScan):
             model_config_data = json.load(data)
             lambda_layers = [
                 layer.get("config", {}).get("function", {})
-                for layer in model_config_data["config"]["layers"]
-                if layer["class_name"] == "Lambda"
+                for layer in model_config_data.get("config", {}).get("layers", {})
+                if layer.get("class_name", {}) == "Lambda"
             ]
             if lambda_layers:
                 return ["Lambda"] * len(lambda_layers)
