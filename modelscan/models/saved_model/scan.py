@@ -1,6 +1,7 @@
 # scan pb files for both tensorflow and keras
 
 import json
+import logging
 from pathlib import Path
 
 from typing import IO, List, Set, Tuple, Union, Optional, Dict
@@ -19,6 +20,8 @@ except ImportError:
 from modelscan.error import Error, ModelScanError
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.models.scan import ScanBase
+
+logger = logging.getLogger("modelscan")
 
 
 class SavedModelScan(ScanBase):
@@ -49,7 +52,9 @@ class SavedModelScan(ScanBase):
         # Default is a tensorflow model file
         if file_name == "keras_metadata.pb":
             machine_learning_library_name = "Keras"
-            operators_in_model = SavedModelScan._get_keras_pb_operator_names(data=data)
+            operators_in_model = SavedModelScan._get_keras_pb_operator_names(
+                data, source
+            )
 
         else:
             machine_learning_library_name = "Tensorflow"
@@ -62,22 +67,30 @@ class SavedModelScan(ScanBase):
         )
 
     @staticmethod
-    def _get_keras_pb_operator_names(data: IO[bytes]) -> List[str]:
+    def _get_keras_pb_operator_names(
+        data: IO[bytes], source: Union[str, Path]
+    ) -> List[str]:
         saved_metadata = SavedMetadata()
         saved_metadata.ParseFromString(data.read())
 
-        lambda_code = [
-            layer.get("config", {}).get("function", {}).get("items", {})
-            for layer in [
-                json.loads(node.metadata)
-                for node in saved_metadata.nodes
-                if node.identifier == "_tf_keras_layer"
+        try:
+            lambda_layers = [
+                layer.get("config", {}).get("function", {}).get("items", {})
+                for layer in [
+                    json.loads(node.metadata)
+                    for node in saved_metadata.nodes
+                    if node.identifier == "_tf_keras_layer"
+                ]
+                if layer.get("class_name", {}) == "Lambda"
             ]
-            if layer["class_name"] == "Lambda"
-        ]
+        except json.JSONDecodeError as e:
+            logger.error(f"Not a valid JSON data from source: {source}, error: {e}")
+            return []
 
-        # if lambda code is not empty list that means there has been some code injection in Keras layer
-        return ["Lambda"] if lambda_code else []
+        if lambda_layers:
+            return ["Lambda"] * len(lambda_layers)
+
+        return []
 
     @staticmethod
     def _get_tensorflow_operator_names(data: IO[bytes]) -> List[str]:
