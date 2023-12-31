@@ -4,8 +4,7 @@ import json
 import logging
 from pathlib import Path
 
-from typing import IO, List, Set, Tuple, Union, Optional, Dict
-
+from typing import IO, List, Set, Union, Optional, Dict, Any
 
 try:
     import tensorflow
@@ -17,53 +16,49 @@ except ImportError:
     tensorflow_installed = False
 
 
-from modelscan.error import Error, ModelScanError
+from modelscan.error import ModelScanError
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
-from modelscan.models.scan import ScanBase
+from modelscan.scanners.scan import ScanBase, ScanResults
 
 logger = logging.getLogger("modelscan")
 
 
 class SavedModelScan(ScanBase):
-    @staticmethod
     def scan(
+        self,
         source: Union[str, Path],
         data: Optional[IO[bytes]] = None,
-    ) -> Tuple[List[Issue], List[Error]]:
-        if not tensorflow_installed:
-            return [], [
-                ModelScanError(
-                    SavedModelScan.name(),
-                    f"File: {source} \nTo scan an tensorflow file, please install modelscan with tensorflow extras. 'pip install \"modelscan\[tensorflow]\"' if you are using pip.",
-                )
-            ]
+    ) -> Optional[ScanResults]:
+        if (
+            not Path(source).suffix
+            in self._settings[SavedModelScan.full_name()]["supported_extensions"]
+        ):
+            return None
 
         if data:
-            return SavedModelScan._scan(source, data)
+            results = self._scan(source, data)
 
-        with open(source, "rb") as file_io:
-            return SavedModelScan._scan(source, data=file_io)
+        else:
+            with open(source, "rb") as file_io:
+                results = self._scan(source, data=file_io)
 
-    @staticmethod
-    def _scan(
-        source: Union[str, Path], data: IO[bytes]
-    ) -> Tuple[List[Issue], List[Error]]:
+        return self.label_results(results)
+
+    def _scan(self, source: Union[str, Path], data: IO[bytes]) -> ScanResults:
         file_name = str(source).split("/")[-1]
         # Default is a tensorflow model file
         if file_name == "keras_metadata.pb":
             machine_learning_library_name = "Keras"
-            operators_in_model = SavedModelScan._get_keras_pb_operator_names(
-                data, source
+            operators_in_model = self._get_keras_pb_operator_names(
+                data=data, source=source
             )
 
         else:
             machine_learning_library_name = "Tensorflow"
-            operators_in_model = SavedModelScan._get_tensorflow_operator_names(
-                data=data
-            )
+            operators_in_model = self._get_tensorflow_operator_names(data=data)
 
         return SavedModelScan._check_for_unsafe_tf_keras_operator(
-            machine_learning_library_name, operators_in_model, source
+            machine_learning_library_name, operators_in_model, source, self._settings
         )
 
     @staticmethod
@@ -92,8 +87,7 @@ class SavedModelScan(ScanBase):
 
         return []
 
-    @staticmethod
-    def _get_tensorflow_operator_names(data: IO[bytes]) -> List[str]:
+    def _get_tensorflow_operator_names(self, data: IO[bytes]) -> List[str]:
         saved_model = SavedModel()
         saved_model.ParseFromString(data.read())
 
@@ -112,13 +106,15 @@ class SavedModelScan(ScanBase):
     # This function checks for malicious operators in both Keras and Tensorflow
     @staticmethod
     def _check_for_unsafe_tf_keras_operator(
-        module_name: str, raw_operator: List[str], source: Union[str, Path]
-    ) -> Tuple[List[Issue], List[Error]]:
-        unsafe_operators: Dict[str, IssueSeverity] = {
-            "ReadFile": IssueSeverity.HIGH,
-            "WriteFile": IssueSeverity.HIGH,
-            "Lambda": IssueSeverity.MEDIUM,
-        }
+        module_name: str,
+        raw_operator: List[str],
+        source: Union[str, Path],
+        settings: Dict[str, Any],
+    ) -> ScanResults:
+        unsafe_operators: Dict[str, IssueSeverity] = settings[
+            SavedModelScan.full_name()
+        ]["unsafe_tf_keras_operators"]
+
         issues: List[Issue] = []
         all_operators = tensorflow.raw_ops.__dict__.keys()
         all_safe_operators = [
@@ -142,12 +138,23 @@ class SavedModelScan(ScanBase):
                     ),
                 )
             )
-        return issues, []
-
-    @staticmethod
-    def supported_extensions() -> List[str]:
-        return [".pb"]
+        return ScanResults(issues, [])
 
     @staticmethod
     def name() -> str:
         return "saved_model"
+
+    @staticmethod
+    def full_name() -> str:
+        return "modelscan.scanners.SavedModelScan"
+
+    @staticmethod
+    def handle_binary_dependencies(
+        settings: Optional[Dict[str, Any]] = None
+    ) -> Optional[ModelScanError]:
+        if not tensorflow_installed:
+            return ModelScanError(
+                SavedModelScan.name(),
+                f"To use {SavedModelScan.full_name()}, please install modelscan with tensorflow extras. 'pip install \"modelscan\[tensorflow]\"' if you are using pip.",
+            )
+        return None
