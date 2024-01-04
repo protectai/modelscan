@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import IO, List, Tuple, Union, Optional
+from typing import IO, List, Union, Optional, Dict, Any
 
 try:
     import h5py
@@ -10,49 +10,46 @@ try:
 except ImportError:
     h5py_installed = False
 
-from modelscan.error import Error, ModelScanError
-from modelscan.issues import Issue
-from modelscan.models.saved_model.scan import SavedModelScan
+from modelscan.error import ModelScanError
+from modelscan.scanners.scan import ScanResults
+from modelscan.scanners.saved_model.scan import SavedModelScan
 
 logger = logging.getLogger("modelscan")
 
 
 class H5Scan(SavedModelScan):
-    @staticmethod
     def scan(
+        self,
         source: Union[str, Path],
         data: Optional[IO[bytes]] = None,
-    ) -> Tuple[List[Issue], List[Error]]:
-        if not h5py_installed:
-            return [], [
-                ModelScanError(
-                    SavedModelScan.name(),
-                    f"File: {source} \nTo scan an h5py file, please install modelscan with h5py extras. 'pip install \"modelscan\[h5py]\"' if you are using pip.",
-                )
-            ]
+    ) -> Optional[ScanResults]:
+        if (
+            not Path(source).suffix
+            in self._settings[H5Scan.full_name()]["supported_extensions"]
+        ):
+            return None
 
         if data:
             logger.warning(
                 "H5 scanner got data bytes. It only support direct file scanning."
             )
+            return None
 
-        return H5Scan._scan_keras_h5_file(source)
+        return self.label_results(self._scan_keras_h5_file(source))
 
-    @staticmethod
-    def _scan_keras_h5_file(
-        source: Union[str, Path]
-    ) -> Tuple[List[Issue], List[Error]]:
+    def _scan_keras_h5_file(self, source: Union[str, Path]) -> ScanResults:
         machine_learning_library_name = "Keras"
-        operators_in_model = H5Scan._get_keras_h5_operator_names(source)
+        operators_in_model = self._get_keras_h5_operator_names(source)
         return H5Scan._check_for_unsafe_tf_keras_operator(
             module_name=machine_learning_library_name,
             raw_operator=operators_in_model,
             source=source,
+            settings=self._settings,
         )
 
-    @staticmethod
-    def _get_keras_h5_operator_names(source: Union[str, Path]) -> List[str]:
+    def _get_keras_h5_operator_names(self, source: Union[str, Path]) -> List[str]:
         # Todo: source isn't guaranteed to be a file
+
         with h5py.File(source, "r") as model_hdf5:
             try:
                 model_config = json.loads(model_hdf5.attrs.get("model_config", {}))
@@ -73,9 +70,20 @@ class H5Scan(SavedModelScan):
         return []
 
     @staticmethod
-    def supported_extensions() -> List[str]:
-        return [".h5"]
-
-    @staticmethod
     def name() -> str:
         return "hdf5"
+
+    @staticmethod
+    def full_name() -> str:
+        return "modelscan.scanners.H5Scan"
+
+    @staticmethod
+    def handle_binary_dependencies(
+        settings: Optional[Dict[str, Any]] = None
+    ) -> Optional[ModelScanError]:
+        if not h5py_installed:
+            return ModelScanError(
+                SavedModelScan.name(),
+                f"To use {H5Scan.full_name()}, please install modelscan with h5py extras. 'pip install \"modelscan\[h5py]\"' if you are using pip.",
+            )
+        return None

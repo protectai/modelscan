@@ -14,18 +14,26 @@ import subprocess
 import sys
 import tensorflow as tf
 from tensorflow import keras
-from typing import Any, List, Set
+from typing import Any, List, Set, Dict
 from test_utils import generate_dill_unsafe_file, generate_unsafe_pickle_file
 import zipfile
 
-from modelscan.modelscan import Modelscan
+from modelscan.modelscan import ModelScan
 from modelscan.cli import cli
-from modelscan.error import ModelScanError
-from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
+from modelscan.issues import (
+    Issue,
+    IssueCode,
+    IssueSeverity,
+    OperatorIssueDetails,
+)
 from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
     scan_numpy,
 )
+from modelscan.scanners.saved_model.scan import SavedModelScan
+from modelscan.settings import DEFAULT_SETTINGS
+
+settings: Dict[str, Any] = DEFAULT_SETTINGS["scanners"]  # type: ignore[assignment]
 
 
 class Malicious1:
@@ -271,7 +279,9 @@ def test_scan_pickle_bytes() -> None:
         )
     ]
     assert (
-        scan_pickle_bytes(io.BytesIO(pickle.dumps(Malicious1())), "file.pkl")[0]
+        scan_pickle_bytes(
+            io.BytesIO(pickle.dumps(Malicious1())), "file.pkl", settings
+        ).issues
         == expected
     )
 
@@ -287,21 +297,21 @@ def test_scan_zip(zip_file_path: Any) -> None:
         )
     ]
 
-    ms = Modelscan()
+    ms = ModelScan()
     ms._scan_zip(f"{zip_file_path}/test.zip")
     assert ms.issues.all_issues == expected
 
 
 def test_scan_pytorch(pytorch_file_path: Any) -> None:
-    bad_pytorch = Modelscan()
-    bad_pytorch.scan_path(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
+    bad_pytorch = ModelScan()
+    bad_pytorch.scan(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
     assert bad_pytorch.issues.all_issues == []
     assert [error.scan_name for error in bad_pytorch.errors] == ["pytorch"]  # type: ignore[attr-defined]
 
 
 def test_scan_numpy(numpy_file_path: Any) -> None:
     with open(f"{numpy_file_path}/safe_numpy.npy", "rb") as f:
-        assert scan_numpy(io.BytesIO(f.read()), "safe_numpy.npy")[0] == []
+        assert scan_numpy(io.BytesIO(f.read()), "safe_numpy.npy", settings).issues == []
 
     expected = {
         Issue(
@@ -313,19 +323,20 @@ def test_scan_numpy(numpy_file_path: Any) -> None:
 
     with open(f"{numpy_file_path}/unsafe_numpy.npy", "rb") as f:
         compare_results(
-            scan_numpy(io.BytesIO(f.read()), "unsafe_numpy.npy")[0], expected
+            scan_numpy(io.BytesIO(f.read()), "unsafe_numpy.npy", settings).issues,
+            expected,
         )
 
 
 def test_scan_file_path(file_path: Any) -> None:
-    benign_pickle = Modelscan()
-    benign_pickle.scan_path(Path(f"{file_path}/data/benign0_v3.pkl"))
-    benign_dill = Modelscan()
-    benign_dill.scan_path(Path(f"{file_path}/data/benign0_v3.dill"))
+    benign_pickle = ModelScan()
+    benign_pickle.scan(Path(f"{file_path}/data/benign0_v3.pkl"))
+    benign_dill = ModelScan()
+    benign_dill.scan(Path(f"{file_path}/data/benign0_v3.dill"))
     assert benign_pickle.issues.all_issues == []
     assert benign_dill.issues.all_issues == []
 
-    malicious0 = Modelscan()
+    malicious0 = ModelScan()
     expected_malicious0 = {
         Issue(
             IssueCode.UNSAFE_OPERATOR,
@@ -356,7 +367,7 @@ def test_scan_file_path(file_path: Any) -> None:
             ),
         ),
     }
-    malicious0.scan_path(Path(f"{file_path}/data/malicious0.pkl"))
+    malicious0.scan(Path(f"{file_path}/data/malicious0.pkl"))
     compare_results(malicious0.issues.all_issues, expected_malicious0)
 
 
@@ -427,21 +438,21 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious1_v0 = Modelscan()
-    malicious1_v3 = Modelscan()
-    malicious1_v4 = Modelscan()
-    malicious1_v0_dill = Modelscan()
-    malicious1_v3_dill = Modelscan()
-    malicious1_v4_dill = Modelscan()
+    malicious1_v0 = ModelScan()
+    malicious1_v3 = ModelScan()
+    malicious1_v4 = ModelScan()
+    malicious1_v0_dill = ModelScan()
+    malicious1_v3_dill = ModelScan()
+    malicious1_v4_dill = ModelScan()
 
-    malicious1 = Modelscan()
-    malicious1_v0.scan_path(Path(f"{file_path}/data/malicious1_v0.pkl"))
-    malicious1_v3.scan_path(Path(f"{file_path}/data/malicious1_v3.pkl"))
-    malicious1_v4.scan_path(Path(f"{file_path}/data/malicious1_v4.pkl"))
-    malicious1_v0_dill.scan_path(Path(f"{file_path}/data/malicious1_v0.dill"))
-    malicious1_v3_dill.scan_path(Path(f"{file_path}/data/malicious1_v3.dill"))
-    malicious1_v4_dill.scan_path(Path(f"{file_path}/data/malicious1_v4.dill"))
-    malicious1.scan_path(Path(f"{file_path}/data/malicious1.zip"))
+    malicious1 = ModelScan()
+    malicious1_v0.scan(Path(f"{file_path}/data/malicious1_v0.pkl"))
+    malicious1_v3.scan(Path(f"{file_path}/data/malicious1_v3.pkl"))
+    malicious1_v4.scan(Path(f"{file_path}/data/malicious1_v4.pkl"))
+    malicious1_v0_dill.scan(Path(f"{file_path}/data/malicious1_v0.dill"))
+    malicious1_v3_dill.scan(Path(f"{file_path}/data/malicious1_v3.dill"))
+    malicious1_v4_dill.scan(Path(f"{file_path}/data/malicious1_v4.dill"))
+    malicious1.scan(Path(f"{file_path}/data/malicious1.zip"))
     assert malicious1_v0.issues.all_issues == expected_malicious1_v0
     assert malicious1_v3.issues.all_issues == expected_malicious1_v3
     assert malicious1_v4.issues.all_issues == expected_malicious1_v4
@@ -477,12 +488,12 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious2_v0 = Modelscan()
-    malicious2_v3 = Modelscan()
-    malicious2_v4 = Modelscan()
-    malicious2_v0.scan_path(Path(f"{file_path}/data/malicious2_v0.pkl"))
-    malicious2_v3.scan_path(Path(f"{file_path}/data/malicious2_v3.pkl"))
-    malicious2_v4.scan_path(Path(f"{file_path}/data/malicious2_v4.pkl"))
+    malicious2_v0 = ModelScan()
+    malicious2_v3 = ModelScan()
+    malicious2_v4 = ModelScan()
+    malicious2_v0.scan(Path(f"{file_path}/data/malicious2_v0.pkl"))
+    malicious2_v3.scan(Path(f"{file_path}/data/malicious2_v3.pkl"))
+    malicious2_v4.scan(Path(f"{file_path}/data/malicious2_v4.pkl"))
     assert malicious2_v0.issues.all_issues == expected_malicious2_v0
     assert malicious2_v3.issues.all_issues == expected_malicious2_v3
     assert malicious2_v4.issues.all_issues == expected_malicious2_v4
@@ -498,8 +509,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious3 = Modelscan()
-    malicious3.scan_path(Path(f"{file_path}/data/malicious3.pkl"))
+    malicious3 = ModelScan()
+    malicious3.scan(Path(f"{file_path}/data/malicious3.pkl"))
     assert malicious3.issues.all_issues == expected_malicious3
 
     expected_malicious4 = [
@@ -511,8 +522,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious4 = Modelscan()
-    malicious4.scan_path(Path(f"{file_path}/data/malicious4.pickle"))
+    malicious4 = ModelScan()
+    malicious4.scan(Path(f"{file_path}/data/malicious4.pickle"))
     assert malicious4.issues.all_issues == expected_malicious4
 
     expected_malicious5 = [
@@ -526,8 +537,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious5 = Modelscan()
-    malicious5.scan_path(Path(f"{file_path}/data/malicious5.pickle"))
+    malicious5 = ModelScan()
+    malicious5.scan(Path(f"{file_path}/data/malicious5.pickle"))
     assert malicious5.issues.all_issues == expected_malicious5
 
     expected_malicious6 = [
@@ -539,8 +550,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious6 = Modelscan()
-    malicious6.scan_path(Path(f"{file_path}/data/malicious6.pkl"))
+    malicious6 = ModelScan()
+    malicious6.scan(Path(f"{file_path}/data/malicious6.pkl"))
     assert malicious6.issues.all_issues == expected_malicious6
 
     expected_malicious7 = [
@@ -552,8 +563,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious7 = Modelscan()
-    malicious7.scan_path(Path(f"{file_path}/data/malicious7.pkl"))
+    malicious7 = ModelScan()
+    malicious7.scan(Path(f"{file_path}/data/malicious7.pkl"))
     assert malicious7.issues.all_issues == expected_malicious7
 
     expected_malicious8 = [
@@ -565,8 +576,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious8 = Modelscan()
-    malicious8.scan_path(Path(f"{file_path}/data/malicious8.pkl"))
+    malicious8 = ModelScan()
+    malicious8.scan(Path(f"{file_path}/data/malicious8.pkl"))
     assert malicious8.issues.all_issues == expected_malicious8
 
     expected_malicious9 = [
@@ -576,8 +587,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             OperatorIssueDetails("sys", "exit", f"{file_path}/data/malicious9.pkl"),
         )
     ]
-    malicious9 = Modelscan()
-    malicious9.scan_path(Path(f"{file_path}/data/malicious9.pkl"))
+    malicious9 = ModelScan()
+    malicious9.scan(Path(f"{file_path}/data/malicious9.pkl"))
     assert malicious9.issues.all_issues == expected_malicious9
 
     expected_malicious10 = [
@@ -589,8 +600,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious10 = Modelscan()
-    malicious10.scan_path(Path(f"{file_path}/data/malicious10.pkl"))
+    malicious10 = ModelScan()
+    malicious10.scan(Path(f"{file_path}/data/malicious10.pkl"))
     assert malicious10.issues.all_issues == expected_malicious10
 
 
@@ -752,16 +763,16 @@ def test_scan_directory_path(file_path: str) -> None:
             ),
         ),
     }
-    ms = Modelscan()
+    ms = ModelScan()
     p = Path(f"{file_path}/data/")
-    ms.scan_path(p)
+    ms.scan(p)
     compare_results(ms.issues.all_issues, expected)
 
 
 @pytest.mark.parametrize("file_extension", [".h5", ".keras"], ids=["h5", "keras"])
 def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
-    ms = Modelscan()
-    ms.scan_path(Path(f"{keras_file_path}/safe{file_extension}"))
+    ms = ModelScan()
+    ms.scan(Path(f"{keras_file_path}/safe{file_extension}"))
     assert ms.issues.all_issues == []
 
     if file_extension == ".keras":
@@ -787,7 +798,6 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         ]
         ms._scan_source(
             Path(f"{keras_file_path}/unsafe{file_extension}"),
-            extension=file_extension,
         )
     else:
         expected = [
@@ -810,7 +820,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 ),
             ),
         ]
-        ms.scan_path(Path(f"{keras_file_path}/unsafe{file_extension}"))
+        ms._scan_path(Path(f"{keras_file_path}/unsafe{file_extension}"))
 
     assert ms.issues.all_issues == expected
 

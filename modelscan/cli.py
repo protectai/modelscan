@@ -5,7 +5,7 @@ from typing import Optional
 
 import click
 
-from modelscan.modelscan import Modelscan
+from modelscan.modelscan import ModelScan
 from modelscan.reports import ConsoleReport
 from modelscan._version import __version__
 
@@ -61,14 +61,13 @@ def cli(
     if log is not None:
         logger.setLevel(getattr(logging, log))
 
-    modelscan = Modelscan()
+    modelscan = ModelScan()
     if path is not None:
         pathlibPath = Path().cwd() if path == "." else Path(path).absolute()
         if not pathlibPath.exists():
             raise FileNotFoundError(f"Path {path} does not exist")
         else:
-            modelscan.scan_path(pathlibPath)
-
+            modelscan.scan(pathlibPath)
     else:
         raise click.UsageError("Command line must include a path")
     ConsoleReport.generate(
