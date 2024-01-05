@@ -111,9 +111,9 @@ class SavedModelScan(ScanBase):
         source: Union[str, Path],
         settings: Dict[str, Any],
     ) -> ScanResults:
-        unsafe_operators: Dict[str, IssueSeverity] = settings[
-            SavedModelScan.full_name()
-        ]["unsafe_tf_keras_operators"]
+        unsafe_operators: Dict[str, Any] = settings[SavedModelScan.full_name()][
+            "unsafe_tf_keras_operators"
+        ]
 
         issues: List[Issue] = []
         all_operators = tensorflow.raw_ops.__dict__.keys()
@@ -125,7 +125,7 @@ class SavedModelScan(ScanBase):
             if op in unsafe_operators:
                 severity = unsafe_operators[op]
             elif op not in all_safe_operators:
-                severity = IssueSeverity.MEDIUM
+                severity = IssueSeverity[unsafe_operators[op]]
             else:
                 continue
 

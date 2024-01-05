@@ -1,13 +1,16 @@
 import logging
 import sys
+import os
 from pathlib import Path
 from typing import Optional
+from tomlkit import parse
 
 import click
 
 from modelscan.modelscan import ModelScan
 from modelscan.reports import ConsoleReport
 from modelscan._version import __version__
+from modelscan.settings import SettingsUtils, DEFAULT_SETTINGS
 
 logger = logging.getLogger("modelscan")
 
@@ -15,18 +18,16 @@ logger = logging.getLogger("modelscan")
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
-# redefine format_usage so the appropriate command name shows up
-class ModelscanCommand(click.Command):
-    def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
-        pieces = self.collect_usage_pieces(ctx)
-        formatter.write_usage("modelscan", " ".join(pieces))
-
-
-@click.command(
+@click.group(
+    "cli",
     context_settings=CONTEXT_SETTINGS,
-    cls=ModelscanCommand,
     help="Modelscan detects machine learning model files that perform suspicious actions",
 )
+def cli() -> None:
+    pass
+
+
+@cli.command("scan", help="Scan a machine learning model file")
 @click.version_option(__version__, "-v", "--version")
 @click.option(
     "-p",
@@ -48,12 +49,18 @@ class ModelscanCommand(click.Command):
     default=False,
     help="Print a list of files that were skipped during the scan",
 )
+@click.option(
+    "--settings-file",
+    type=click.Path(exists=True, dir_okay=False),
+    help="Specify a settings file to use for the scan. Defaults to [PATH]/settings.toml.",
+)
 @click.pass_context
-def cli(
-    ctx: click.Context,
-    log: str,
-    path: Optional[str],
-    show_skipped: bool,
+def scan(
+        ctx: click.Context,
+        log: str,
+        path: Optional[str],
+        show_skipped: bool,
+        settings_file: Optional[str],
 ) -> int:
     logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -61,7 +68,23 @@ def cli(
     if log is not None:
         logger.setLevel(getattr(logging, log))
 
-    modelscan = ModelScan()
+    settings_file_path = Path(
+        settings_file if settings_file else f"{path}/settings.toml"
+    )
+
+    settings = DEFAULT_SETTINGS
+
+    if settings_file_path and settings_file_path.is_file():
+        with open(settings_file_path) as sf:
+            settings = parse(sf.read()).unwrap()
+            click.echo(f"Detected settings file. Using {settings_file_path}.")
+    else:
+        click.echo(
+            f"No settings file detected at {settings_file_path}. Using defaults."
+        )
+
+    modelscan = ModelScan(settings=settings)
+
     if path is not None:
         pathlibPath = Path().cwd() if path == "." else Path(path).absolute()
         if not pathlibPath.exists():
@@ -89,6 +112,35 @@ def cli(
     # exit code 0 if scan completed successfully and no vulnerabilities were found
     else:
         return 0
+
+
+@cli.command("create-settings", help="Create a modelscan settings file")
+@click.option(
+    "-f", "--force", is_flag=True, help="Overwrite existing settings file if it exists."
+)
+@click.option(
+    "-l",
+    "--location",
+    type=click.Path(dir_okay=False, writable=True),
+    help="The specific filepath to write the settings.toml file.",
+)
+def create_settings(force: bool, location: Optional[str]) -> None:
+    working_dir = os.getcwd()
+    settings_path = os.path.join(working_dir, "settings.toml")
+
+    if location:
+        settings_path = location
+
+    try:
+        open(settings_path)
+        if force:
+            with open(settings_path, "w") as settings_file:
+                settings_file.write(SettingsUtils.get_default_settings_as_toml())
+        else:
+            logger.warning("settings.toml file detected. Exiting")
+    except FileNotFoundError:
+        with open(settings_path, "w") as settings_file:
+            settings_file.write(SettingsUtils.get_default_settings_as_toml())
 
 
 def main() -> None:
