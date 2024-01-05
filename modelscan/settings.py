@@ -1,4 +1,7 @@
-from modelscan.issues import IssueSeverity
+import tomlkit
+
+from typing import Any
+
 
 DEFAULT_SCANNERS = [
     "modelscan.scanners.H5Scan",
@@ -24,9 +27,9 @@ DEFAULT_SETTINGS = {
             "enabled": True,
             "supported_extensions": [".pb"],
             "unsafe_tf_keras_operators": {
-                "ReadFile": IssueSeverity.HIGH,
-                "WriteFile": IssueSeverity.HIGH,
-                "Lambda": IssueSeverity.MEDIUM,
+                "ReadFile": "HIGH",
+                "WriteFile": "HIGH",
+                "Lambda": "MEDIUM",
             },
         },
         "modelscan.scanners.NumpyScan": {
@@ -50,7 +53,7 @@ DEFAULT_SETTINGS = {
         },
         "unsafe_globals": {
             "CRITICAL": {
-                "__builtin__": {
+                "__builtin__": [
                     "eval",
                     "compile",
                     "getattr",
@@ -58,8 +61,8 @@ DEFAULT_SETTINGS = {
                     "exec",
                     "open",
                     "breakpoint",
-                },  # Pickle versions 0, 1, 2 have those function under '__builtin__'
-                "builtins": {
+                ],  # Pickle versions 0, 1, 2 have those function under '__builtin__'
+                "builtins": [
                     "eval",
                     "compile",
                     "getattr",
@@ -67,7 +70,7 @@ DEFAULT_SETTINGS = {
                     "exec",
                     "open",
                     "breakpoint",
-                },  # Pickle versions 3, 4 have those function under 'builtins'
+                ],  # Pickle versions 3, 4 have those function under 'builtins'
                 "runpy": "*",
                 "os": "*",
                 "nt": "*",  # Alias for 'os' on Windows. Includes os.system()
@@ -87,3 +90,14 @@ DEFAULT_SETTINGS = {
         },
     },
 }
+
+
+class SettingsUtils:
+    @staticmethod
+    def get_default_settings_as_toml() -> Any:
+        toml_settings = tomlkit.dumps(DEFAULT_SETTINGS)
+
+        # Add settings file header
+        toml_settings = f"# ModelScan settings file\n\n{toml_settings}"
+
+        return toml_settings

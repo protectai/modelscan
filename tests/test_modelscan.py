@@ -30,7 +30,6 @@ from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
     scan_numpy,
 )
-from modelscan.scanners.saved_model.scan import SavedModelScan
 from modelscan.settings import DEFAULT_SETTINGS
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS["scanners"]  # type: ignore[assignment]
@@ -826,6 +825,18 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
 
 
 def test_main(file_path: Any) -> None:
+    argv = sys.argv
+    try:
+        sys.argv = ["modelscan", "scan", "-p", f"{file_path}/data/benign0_v3.pkl"]
+        assert cli() == 0
+        importlib.import_module("modelscan.scanner")
+    except SystemExit:
+        pass
+    finally:
+        sys.argv = argv
+
+
+def test_main_defaultgroup(file_path: Any) -> None:
     argv = sys.argv
     try:
         sys.argv = ["modelscan", "-p", f"{file_path}/data/benign0_v3.pkl"]

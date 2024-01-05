@@ -82,15 +82,13 @@ This will be expanding continually, so look out for changes in our release notes
 
 At present, ModelScan supports any Pickle derived format and many others:
 
-| ML Library | API | Serialization Format                | modelscan support 
-| ----| ----|-------------------------------------| ----|
-| Pytorch | [torch.save() and torch.load()](https://pytorch.org/tutorials/beginner/saving_loading_models.html )| Pickle                              | Yes 
-| Tensorflow| [tf.saved_model.save()](https://www.tensorflow.org/guide/saved_model)| Protocol Buffer                     | Yes 
-| Keras| [keras.models.save(save_format= 'h5')](https://www.tensorflow.org/guide/keras/serialization_and_saving)| HD5 (Hierarchical Data Format)      | Yes 
-| | [keras.models.save(save_format= 'keras')](https://www.tensorflow.org/guide/keras/serialization_and_saving)| Keras V3 (Hierarchical Data Format) | Yes
-| Classic ML Libraries (Sklearn, XGBoost etc.)| pickle.dump(), dill.dump(), joblib.dump(), cloudpickle.dump() | Pickle, Cloudpickle, Dill, Joblib   | Yes 
-
-
+| ML Library                                   | API                                                                                                        | Serialization Format                | modelscan support |
+|----------------------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------|-------------------|
+| Pytorch                                      | [torch.save() and torch.load()](https://pytorch.org/tutorials/beginner/saving_loading_models.html )        | Pickle                              | Yes               |
+| Tensorflow                                   | [tf.saved_model.save()](https://www.tensorflow.org/guide/saved_model)                                      | Protocol Buffer                     | Yes               |
+| Keras                                        | [keras.models.save(save_format= 'h5')](https://www.tensorflow.org/guide/keras/serialization_and_saving)    | HD5 (Hierarchical Data Format)      | Yes               |
+|                                              | [keras.models.save(save_format= 'keras')](https://www.tensorflow.org/guide/keras/serialization_and_saving) | Keras V3 (Hierarchical Data Format) | Yes               |
+| Classic ML Libraries (Sklearn, XGBoost etc.) | pickle.dump(), dill.dump(), joblib.dump(), cloudpickle.dump()                                              | Pickle, Cloudpickle, Dill, Joblib   | Yes               |
 
 ### Installation 
 ModelScan is installed on your systems as a Python package(Python 3.8 to 3.11 supported). As shown from above you can install
@@ -111,17 +109,16 @@ modelscan = ">=0.1.1"
 
 ModelScan supports the following arguments via the CLI:
 
-| Usage                                 | Argument             | Explanation                                | 
-|---------------------------------------|----------------------| -------------------------------------------|
-| ```modelscan -h ```                   | -h or --help         | View usage help                            |
-| ```modelscan -v ```                   | -v or --version      | View version information                   |
-| ```modelscan -p /path/to/model_file```| -p or --path         | Scan a locally stored model                |
+| Usage                                                                            | Argument         | Explanation                                             | 
+|----------------------------------------------------------------------------------|------------------|---------------------------------------------------------|
+| ```modelscan -h ```                                                              | -h or --help     | View usage help                                         |
+| ```modelscan -v ```                                                              | -v or --version  | View version information                                |
+| ```modelscan -p /path/to/model_file```                                           | -p or --path     | Scan a locally stored model                             |
+| ```modelscan -p /path/to/model_file --settings-file ./modelscan-settings.toml``` | --settings-file  | Scan a locally stored model using custom configurations |
+| ```modelscan create-settings-file```                                             | -l or --location | Create a configurable settings file                     |
 
 
 Remember models are just like any other form of digital media, you should scan content from any untrusted source before use.
-
-**NOTE**: LLMs are large files, it can take a few minutes to download them before scanning. Expect the process
-to take just a few minutes to complete. 
 
 ##### CLI Exit Codes
 The CLI exit status codes are:

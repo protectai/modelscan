@@ -1,13 +1,17 @@
 import logging
 import sys
+import os
 from pathlib import Path
 from typing import Optional
+from tomlkit import parse
 
 import click
 
 from modelscan.modelscan import ModelScan
 from modelscan.reports import ConsoleReport
 from modelscan._version import __version__
+from modelscan.settings import SettingsUtils, DEFAULT_SETTINGS
+from modelscan.tools.cli_utils import DefaultGroup
 
 logger = logging.getLogger("modelscan")
 
@@ -15,18 +19,30 @@ logger = logging.getLogger("modelscan")
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
-# redefine format_usage so the appropriate command name shows up
-class ModelscanCommand(click.Command):
-    def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
-        pieces = self.collect_usage_pieces(ctx)
-        formatter.write_usage("modelscan", " ".join(pieces))
-
-
-@click.command(
+@click.group(
+    "cli",
+    cls=DefaultGroup,
+    default="scan",
     context_settings=CONTEXT_SETTINGS,
-    cls=ModelscanCommand,
-    help="Modelscan detects machine learning model files that perform suspicious actions",
+    help="""
+    Modelscan detects machine learning model files that perform suspicious actions.
+    
+    To scan a model file or directory, simply point toward your desired path:
+    `modelscan -p /path/to/model_file.h5` 
+    
+    Scanning is the default action. If you'd like more information on configurations run:
+    `modelscan scan --help`
+    
+    You can also create a configurable settings file using:
+    `modelscan create-settings-file`
+    
+    """,
+    default_if_no_args=True,
 )
+def cli() -> None:
+    pass
+
+
 @click.version_option(__version__, "-v", "--version")
 @click.option(
     "-p",
@@ -48,12 +64,21 @@ class ModelscanCommand(click.Command):
     default=False,
     help="Print a list of files that were skipped during the scan",
 )
+@click.option(
+    "--settings-file",
+    type=click.Path(exists=True, dir_okay=False),
+    help="Specify a settings file to use for the scan. Defaults to ./modelscan-settings.toml.",
+)
+@cli.command(
+    help="[Default] Scan a model file or diretory for ability to execute suspicious actions. "
+)  # type: ignore
 @click.pass_context
-def cli(
+def scan(
     ctx: click.Context,
     log: str,
     path: Optional[str],
     show_skipped: bool,
+    settings_file: Optional[str],
 ) -> int:
     logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -61,7 +86,23 @@ def cli(
     if log is not None:
         logger.setLevel(getattr(logging, log))
 
-    modelscan = ModelScan()
+    settings_file_path = Path(
+        settings_file if settings_file else f"{os.getcwd()}/modelscan-settings.toml"
+    )
+
+    settings = DEFAULT_SETTINGS
+
+    if settings_file_path and settings_file_path.is_file():
+        with open(settings_file_path) as sf:
+            settings = parse(sf.read()).unwrap()
+            click.echo(f"Detected settings file. Using {settings_file_path}. \n")
+    else:
+        click.echo(
+            f"No settings file detected at {settings_file_path}. Using defaults. \n"
+        )
+
+    modelscan = ModelScan(settings=settings)
+
     if path is not None:
         pathlibPath = Path().cwd() if path == "." else Path(path).absolute()
         if not pathlibPath.exists():
@@ -89,6 +130,37 @@ def cli(
     # exit code 0 if scan completed successfully and no vulnerabilities were found
     else:
         return 0
+
+
+@cli.command("create-settings-file", help="Create a modelscan settings file")  # type: ignore
+@click.option(
+    "-f", "--force", is_flag=True, help="Overwrite existing settings file if it exists."
+)
+@click.option(
+    "-l",
+    "--location",
+    type=click.Path(dir_okay=False, writable=True),
+    help="The specific filepath to write the settings file.",
+)
+def create_settings(force: bool, location: Optional[str]) -> None:
+    working_dir = os.getcwd()
+    settings_path = os.path.join(working_dir, "modelscan-settings.toml")
+
+    if location:
+        settings_path = location
+
+    try:
+        open(settings_path)
+        if force:
+            with open(settings_path, "w") as settings_file:
+                settings_file.write(SettingsUtils.get_default_settings_as_toml())
+        else:
+            logger.warning(
+                f"{settings_path} file already exists. Please use `--force` flag if you intend to overwrite it."
+            )
+    except FileNotFoundError:
+        with open(settings_path, "w") as settings_file:
+            settings_file.write(SettingsUtils.get_default_settings_as_toml())
 
 
 def main() -> None:
