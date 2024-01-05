@@ -71,7 +71,7 @@ def cli() -> None:
 )
 @cli.command(
     help="[Default] Scan a model file or diretory for ability to execute suspicious actions. "
-)
+)  # type: ignore
 @click.pass_context
 def scan(
     ctx: click.Context,
@@ -132,7 +132,7 @@ def scan(
         return 0
 
 
-@cli.command("create-settings-file", help="Create a modelscan settings file")
+@cli.command("create-settings-file", help="Create a modelscan settings file")  # type: ignore
 @click.option(
     "-f", "--force", is_flag=True, help="Overwrite existing settings file if it exists."
 )
