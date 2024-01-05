@@ -66,6 +66,9 @@ class Issue:
             and str(self.details.source) == str(other.details.source)  # type: ignore[attr-defined]
         )
 
+    def __repr__(self):
+        return str(self.severity) + str(self.details)
+
     def __hash__(self) -> int:
         return hash(
             str(self.code)

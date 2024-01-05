@@ -123,9 +123,9 @@ class SavedModelScan(ScanBase):
 
         for op in raw_operator:
             if op in unsafe_operators:
-                severity = unsafe_operators[op]
-            elif op not in all_safe_operators:
                 severity = IssueSeverity[unsafe_operators[op]]
+            elif op not in all_safe_operators:
+                severity = IssueSeverity.MEDIUM
             else:
                 continue
 
