@@ -30,7 +30,6 @@ from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
     scan_numpy,
 )
-from modelscan.scanners.saved_model.scan import SavedModelScan
 from modelscan.settings import DEFAULT_SETTINGS
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS["scanners"]  # type: ignore[assignment]
