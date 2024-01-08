@@ -78,6 +78,7 @@ DEFAULT_SETTINGS = {
                 "socket": "*",
                 "subprocess": "*",
                 "sys": "*",
+                "operator": "attrgetter",  # Ex of code execution: operator.attrgetter("system")(__import__("os"))("echo pwned")
             },
             "HIGH": {
                 "webbrowser": "*",  # Includes webbrowser.open()
