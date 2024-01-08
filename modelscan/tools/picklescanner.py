@@ -52,7 +52,7 @@ def _list_globals(
 ) -> Set[Tuple[str, str]]:
     globals: Set[Any] = set()
 
-    memo: Dict[int, str] = {}
+    memo: Dict[Union[int, str], str] = {}
     # Scan the data for pickle buffers, stopping when parsing fails or stops making progress
     last_byte = b"dummy"
     while last_byte != b"":
@@ -72,10 +72,11 @@ def _list_globals(
             op_name = op[0].name
             op_value: str = op[1]
 
-            if op_name in ["MEMOIZE", "PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
+            if op_name == "MEMOIZE" and n > 0:
                 memo[len(memo)] = ops[n - 1][1]
-
-            if op_name in ["GLOBAL", "INST"]:
+            elif op_name in ["PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
+                memo[op_value] = ops[n - 1][1]
+            elif op_name in ("GLOBAL", "INST"):
                 globals.add(tuple(op_value.split(" ", 1)))
             elif op_name == "STACK_GLOBAL":
                 values: List[str] = []
