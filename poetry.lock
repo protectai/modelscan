@@ -1642,7 +1642,7 @@ files = [
 name = "tensorflow-io-gcs-filesystem"
 version = "0.34.0"
 description = "TensorFlow IO"
-optional = false
+optional = true
 python-versions = ">=3.7, <3.12"
 files = [
     {file = "tensorflow_io_gcs_filesystem-0.34.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:d831702fbb270996b27cda7fde06e0825b2ea81fd8dd3ead35242f4f8b3889b8"},
@@ -2040,4 +2040,4 @@ tensorflow = ["tensorflow", "tensorflow-macos"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "f78ea1c7062ffc83b7b8c107f5601377fa913d9be3551dc0fe2d0a1d7e350ae8"
+content-hash = "2037550758fa4d239a49c4ddb39e4aa224da1e71c2fbc236f08e2f823609bbb3"
