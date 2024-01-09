@@ -2039,5 +2039,5 @@ tensorflow = ["tensorflow", "tensorflow-macos"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8,<3.12"
-content-hash = "2037550758fa4d239a49c4ddb39e4aa224da1e71c2fbc236f08e2f823609bbb3"
+python-versions = ">=3.8,<3.13"
+content-hash = "42e7e6bdda7ded89b2e52f10dd0bd7c50f0d0a6cbee76ac50e1bc99e0f60cadf"
