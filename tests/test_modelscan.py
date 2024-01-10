@@ -341,7 +341,6 @@ def numpy_file_path(tmp_path_factory: Any) -> Any:
 
 
 def compare_results(resultList: List[Issue], expectedSet: Set[Issue]) -> None:
-    print(expectedSet)
     for result in resultList:
         assert result in expectedSet
     resultSet = set(resultList)
