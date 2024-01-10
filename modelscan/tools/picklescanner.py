@@ -134,45 +134,41 @@ def scan_pickle_bytes(
         )
 
     logger.debug("Global imports in %s: %s", source, raw_globals)
+    severities = {
+        "CRITICAL": IssueSeverity.CRITICAL,
+        "HIGH": IssueSeverity.HIGH,
+        "MEDIUM": IssueSeverity.MEDIUM,
+        "LOW": IssueSeverity.LOW,
+    }
 
     for rg in raw_globals:
         global_module, global_name, severity = rg[0], rg[1], None
-        unsafe_critical_filter = settings["unsafe_globals"]["CRITICAL"].get(
-            global_module
-        )
-        unsafe_high_filter = settings["unsafe_globals"]["HIGH"].get(global_module)
-        unsafe_medium_filter = settings["unsafe_globals"]["MEDIUM"].get(global_module)
-        unsafe_low_filter = settings["unsafe_globals"]["LOW"].get(global_module)
-        if unsafe_critical_filter is not None and (
-            unsafe_critical_filter == "*" or global_name in unsafe_critical_filter
-        ):
-            severity = IssueSeverity.CRITICAL
-
-        elif unsafe_high_filter is not None and (
-            unsafe_high_filter == "*" or global_name in unsafe_high_filter
-        ):
-            severity = IssueSeverity.HIGH
-        elif unsafe_medium_filter is not None and (
-            unsafe_medium_filter == "*" or global_name in unsafe_medium_filter
-        ):
-            severity = IssueSeverity.MEDIUM
-        elif unsafe_low_filter is not None and (
-            unsafe_low_filter == "*" or global_name in unsafe_low_filter
-        ):
-            severity = IssueSeverity.LOW
-        elif "unknown" in global_module or "unknown" in global_name:
-            severity = IssueSeverity.MEDIUM
-        else:
-            continue
-        issues.append(
-            Issue(
-                code=IssueCode.UNSAFE_OPERATOR,
-                severity=severity,
-                details=OperatorIssueDetails(
-                    module=global_module, operator=global_name, source=source
-                ),
+        for severity_name in severities:
+            if global_module not in settings["unsafe_globals"][severity_name]:
+                continue
+            filter = settings["unsafe_globals"][severity_name][global_module]
+            if filter == "*":
+                severity = severities[severity_name]
+                break
+            for filter_value in filter:
+                if filter_value in global_name:
+                    severity = severities[severity_name]
+                    break
+            else:
+                continue
+            break
+        if "unknown" in global_module or "unknown" in global_name:
+            severity = IssueSeverity.CRITICAL  # we must assume it is RCE
+        if severity is not None:
+            issues.append(
+                Issue(
+                    code=IssueCode.UNSAFE_OPERATOR,
+                    severity=severity,
+                    details=OperatorIssueDetails(
+                        module=global_module, operator=global_name, source=source
+                    ),
+                )
             )
-        )
     return ScanResults(issues, [])
 
 

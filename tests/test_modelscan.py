@@ -80,6 +80,52 @@ class Malicious8:
         return sys.exit, (0,)
 
 
+def malicious12_gen() -> bytes:
+    p = pickle.PROTO + b"\x05"
+
+    # stack = [pickle.loads]
+    p += pickle.GLOBAL + b"pickle\nloads\n"
+
+    # stack = [pickle.loads, p2]
+    p2 = (
+        pickle.PROTO
+        + b"\x05"
+        + pickle.GLOBAL
+        + b"os\nsystem\n"
+        + pickle.UNICODE
+        + b"echo pwned!!!\n"
+        + pickle.TUPLE1
+        + pickle.REDUCE
+        + pickle.STOP
+    )
+    p += pickle.BINBYTES + len(p2).to_bytes(4, "little") + p2
+
+    # stack = [pickle.loads, (p2,)]
+    p += pickle.TUPLE1
+
+    # stack = [pickle.loads(p2)]
+    p += pickle.REDUCE
+
+    # return None
+    p += pickle.POP
+    p += pickle.NONE
+
+    p += pickle.STOP
+    return p
+
+
+def malicious13_gen() -> bytes:
+    p = pickle.PROTO + b"\x05"
+
+    p += pickle.GLOBAL + b"builtins\neval.__call__\n"
+    p += pickle.UNICODE + b'__import__("os").system("echo pwned!!!")\n'
+    p += pickle.TUPLE1
+    p += pickle.REDUCE
+
+    p += pickle.STOP
+    return p
+
+
 def initialize_pickle_file(path: str, obj: Any, version: int) -> None:
     if not os.path.exists(path):
         with open(path, "wb") as file:
@@ -209,6 +255,10 @@ def file_path(tmp_path_factory: Any) -> Any:
     )
     initialize_data_file(f"{tmp}/data/malicious10.pkl", malicious10_pickle_bytes)
 
+    initialize_data_file(f"{tmp}/data/malicious12.pkl", malicious12_gen())
+
+    initialize_data_file(f"{tmp}/data/malicious13.pkl", malicious13_gen())
+
     return tmp
 
 
@@ -291,6 +341,7 @@ def numpy_file_path(tmp_path_factory: Any) -> Any:
 
 
 def compare_results(resultList: List[Issue], expectedSet: Set[Issue]) -> None:
+    print(expectedSet)
     for result in resultList:
         assert result in expectedSet
     resultSet = set(resultList)
@@ -643,6 +694,30 @@ def test_scan_pickle_operators(file_path: Any) -> None:
     malicious11 = ModelScan()
     malicious11.scan(Path(f"{file_path}/data/malicious11.pkl"))
     assert malicious11.issues.all_issues == expected_malicious11
+    expected_malicious12 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "pickle", "loads", f"{file_path}/data/malicious12.pkl"
+            ),
+        )
+    ]
+    malicious12 = ModelScan()
+    malicious12.scan(Path(f"{file_path}/data/malicious12.pkl"))
+    assert malicious12.issues.all_issues == expected_malicious12
+    expected_malicious13 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins", "eval.__call__", f"{file_path}/data/malicious13.pkl"
+            ),
+        )
+    ]
+    malicious13 = ModelScan()
+    malicious13.scan(Path(f"{file_path}/data/malicious13.pkl"))
+    assert malicious13.issues.all_issues == expected_malicious13
 
 
 def test_scan_directory_path(file_path: str) -> None:
@@ -806,6 +881,20 @@ def test_scan_directory_path(file_path: str) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails("os", "system", f"{file_path}/data/malicious11.pkl"),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "pickle", "loads", f"{file_path}/data/malicious12.pkl"
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins", "eval.__call__", f"{file_path}/data/malicious13.pkl"
+            ),
         ),
     }
     ms = ModelScan()
