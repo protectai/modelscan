@@ -32,7 +32,7 @@ from modelscan.tools.picklescanner import (
 )
 from modelscan.settings import DEFAULT_SETTINGS
 
-settings: Dict[str, Any] = DEFAULT_SETTINGS["scanners"]  # type: ignore[assignment]
+settings: Dict[str, Any] = DEFAULT_SETTINGS
 
 
 class Malicious1:

@@ -21,7 +21,7 @@ class KerasScan(SavedModelScan):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings[KerasScan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][KerasScan.full_name()]["supported_extensions"]
         ):
             return None
 
