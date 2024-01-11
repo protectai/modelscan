@@ -72,7 +72,6 @@ class ModelScan:
         path: Union[str, Path],
     ) -> Dict[str, Any]:
         self._issues = Issues()
-        self._errors = []
         self._skipped = []
         self._scanned = []
         self._input_path = str(path)
