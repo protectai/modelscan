@@ -142,3 +142,6 @@ class OperatorIssueDetails(IssueDetails):
             "source": f"{str(self.source)}",
             "scanner": f"{self.scanner}",
         }
+
+    def __repr__(self) -> str:
+        return f"<OperatorIssueDetails(module={self.module}, operator={self.operator}, source={str(self.source)})>"
