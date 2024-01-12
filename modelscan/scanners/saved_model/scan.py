@@ -35,6 +35,10 @@ class SavedModelScan(ScanBase):
         ):
             return None
 
+        dep_error = self.handle_binary_dependencies()
+        if dep_error:
+            return ScanResults([], [dep_error])
+
         if data:
             results = self._scan(source, data)
 
