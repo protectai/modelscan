@@ -36,8 +36,6 @@ class ModelScan:
         self._load_scanners()
 
     def _load_scanners(self) -> None:
-        scanner_classes: Dict[str, ScanBase] = {}
-
         for scanner_path, scanner_settings in self._settings["scanners"].items():
             if (
                 "enabled" in scanner_settings.keys()
@@ -48,8 +46,10 @@ class ModelScan:
                     imported_module = importlib.import_module(
                         name=modulename, package=classname
                     )
-                    scanner_class = getattr(imported_module, classname)
-                    scanner_classes[scanner_path] = scanner_class
+
+                    scanner_class: ScanBase = getattr(imported_module, classname)
+                    self._scanners_to_run.append(scanner_class)
+
                 except Exception as e:
                     logger.error(f"Error importing scanner {scanner_path}")
                     self._init_errors.append(
@@ -57,13 +57,6 @@ class ModelScan:
                             scanner_path, f"Error importing scanner {scanner_path}: {e}"
                         )
                     )
-
-        scanners_to_run: List[ScanBase] = []
-        for scanner_class, scanner in scanner_classes.items():
-            is_enabled: bool = self._settings["scanners"][scanner_class]["enabled"]
-            if is_enabled:
-                scanners_to_run.append(scanner)
-        self._scanners_to_run = scanners_to_run
 
     def scan(
         self,
