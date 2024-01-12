@@ -29,6 +29,10 @@ class H5Scan(SavedModelScan):
         ):
             return None
 
+        dep_error = self.handle_binary_dependencies()
+        if dep_error:
+            return ScanResults([], [dep_error])
+
         if data:
             logger.warning(
                 "H5 scanner got data bytes. It only support direct file scanning."

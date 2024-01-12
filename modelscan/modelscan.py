@@ -25,6 +25,7 @@ class ModelScan:
         # Output
         self._issues = Issues()
         self._errors: List[Error] = []
+        self._init_errors: List[Error] = []
         self._skipped: List[str] = []
         self._scanned: List[str] = []
         self._input_path: str = ""
@@ -51,7 +52,7 @@ class ModelScan:
                     scanner_classes[scanner_path] = scanner_class
                 except Exception as e:
                     logger.error(f"Error importing scanner {scanner_path}")
-                    self._errors.append(
+                    self._init_errors.append(
                         ModelScanError(
                             scanner_path, f"Error importing scanner {scanner_path}: {e}"
                         )
@@ -59,15 +60,9 @@ class ModelScan:
 
         scanners_to_run: List[ScanBase] = []
         for scanner_class, scanner in scanner_classes.items():
-            dep_error = scanner.handle_binary_dependencies()
-            if dep_error:
-                logger.info(
-                    f"Skipping {scanner.full_name()} as it is missing dependencies"
-                )
-                self._errors.append(dep_error)
-            else:
+            is_enabled: bool = self._settings["scanners"][scanner_class]["enabled"]
+            if is_enabled:
                 scanners_to_run.append(scanner)
-
         self._scanners_to_run = scanners_to_run
 
     def scan(
@@ -76,6 +71,7 @@ class ModelScan:
     ) -> Dict[str, Any]:
         self._issues = Issues()
         self._errors = []
+        self._errors.extend(self._init_errors)
         self._skipped = []
         self._scanned = []
         self._input_path = str(path)

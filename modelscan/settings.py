@@ -53,6 +53,7 @@ DEFAULT_SETTINGS = {
                 "exec",
                 "open",
                 "breakpoint",
+                "__import__",
             ],  # Pickle versions 0, 1, 2 have those function under '__builtin__'
             "builtins": [
                 "eval",
@@ -62,6 +63,7 @@ DEFAULT_SETTINGS = {
                 "exec",
                 "open",
                 "breakpoint",
+                "__import__",
             ],  # Pickle versions 3, 4 have those function under 'builtins'
             "runpy": "*",
             "os": "*",
@@ -70,7 +72,11 @@ DEFAULT_SETTINGS = {
             "socket": "*",
             "subprocess": "*",
             "sys": "*",
-            "operator": "attrgetter",  # Ex of code execution: operator.attrgetter("system")(__import__("os"))("echo pwned")
+            "operator": [
+                "attrgetter",  # Ex of code execution: operator.attrgetter("system")(__import__("os"))("echo pwned")
+            ],
+            "pty": "*",
+            "pickle": "*",
         },
         "HIGH": {
             "webbrowser": "*",  # Includes webbrowser.open()
