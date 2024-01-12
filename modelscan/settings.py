@@ -1,8 +1,5 @@
 import tomlkit
 
-from typing import Any
-
-
 DEFAULT_SCANNERS = [
     "modelscan.scanners.H5Scan",
     "modelscan.scanners.KerasScan",
@@ -11,6 +8,7 @@ DEFAULT_SCANNERS = [
     "modelscan.scanners.PickleScan",
     "modelscan.scanners.PyTorchScan",
 ]
+from typing import Any
 
 DEFAULT_SETTINGS = {
     "supported_zip_extensions": [".zip", ".npz"],
@@ -94,6 +92,10 @@ DEFAULT_SETTINGS = {
             },
             "MEDIUM": {},
             "LOW": {},
+        },
+        "reporting_module": {
+            "module": "modelscan.reports.ConsoleReport",
+            "settings": {},
         },
     },
 }

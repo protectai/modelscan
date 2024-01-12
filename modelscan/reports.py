@@ -1,9 +1,11 @@
 import abc
 import logging
-from typing import List, Optional
+import json
+from typing import Optional, Dict, Any
 
 from rich import print
 
+from modelscan.modelscan import ModelScan
 from modelscan.error import Error
 from modelscan.issues import Issues, IssueSeverity
 
@@ -20,10 +22,9 @@ class Report(metaclass=abc.ABCMeta):
 
     @staticmethod
     def generate(
-        issues: Issues,
-        errors: List[Error],
-        skipped: List[str],
+        scan: ModelScan,
         show_skipped: bool = False,
+        settings: Dict[str, Any] = {},
     ) -> Optional[str]:
         """
         Generate report for the given codebase.
@@ -39,14 +40,13 @@ class Report(metaclass=abc.ABCMeta):
 class ConsoleReport(Report):
     @staticmethod
     def generate(
-        issues: Issues,
-        errors: List[Error],
-        skipped: List[str],
+        scan: ModelScan,
         show_skipped: bool = False,
+        settings: Dict[str, Any] = {},
     ) -> None:
-        issues_by_severity = issues.group_by_severity()
+        issues_by_severity = scan.issues.group_by_severity()
         print("\n[blue]--- Summary ---")
-        total_issue_count = len(issues.all_issues)
+        total_issue_count = len(scan.issues.all_issues)
         if total_issue_count > 0:
             print(f"\nTotal Issues: {total_issue_count}")
             print(f"\nTotal Issues By Severity:\n")
@@ -66,18 +66,37 @@ class ConsoleReport(Report):
         else:
             print("\n[green] No issues found! 🎉")
 
-        if len(errors) > 0:
+        if len(scan.errors) > 0:
             print("\n[red]--- Errors --- ")
-            for index, error in enumerate(errors):
+            for index, error in enumerate(scan.errors):
                 print(f"\nError {index+1}:")
                 print(str(error))
 
-        if len(skipped) > 0:
+        if len(scan.skipped) > 0:
             print("\n[blue]--- Skipped --- ")
             print(
-                f"\nTotal skipped: {len(skipped)} - run with --show-skipped to see the full list."
+                f"\nTotal skipped: {len(scan.skipped)} - run with --show-skipped to see the full list."
             )
             if show_skipped:
                 print(f"\nSkipped files list:\n")
-                for file_name in skipped:
+                for file_name in scan.skipped:
                     print(str(file_name))
+
+
+class JSONReport(Report):
+    @staticmethod
+    def generate(
+        scan: ModelScan,
+        show_skipped: bool = False,
+        settings: Dict[str, Any] = {},
+    ) -> None:
+        report: Dict[str, Any] = scan._generate_results()
+        if not show_skipped:
+            del report["skipped"]
+
+        print(json.dumps(report))
+
+        output = settings["output_file"]
+        if output:
+            with open(output, "w") as outfile:
+                json.dump(report, outfile)

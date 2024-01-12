@@ -111,12 +111,14 @@ def scan(
             modelscan.scan(pathlibPath)
     else:
         raise click.UsageError("Command line must include a path")
-    ConsoleReport.generate(
-        modelscan.issues,
-        modelscan.errors,
-        modelscan._skipped,
-        show_skipped=show_skipped,
-    )
+
+    # get reporting module
+
+    # ConsoleReport.generate(
+    #     scan=modelscan,
+    #     show_skipped=show_skipped,
+    #     settings=settings["reporting"]
+    # )
 
     # exit code 3 if no supported files were passed
     if not modelscan.scanned:
