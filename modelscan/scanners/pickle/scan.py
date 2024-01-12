@@ -20,7 +20,9 @@ class PyTorchScan(ScanBase):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings[PyTorchScan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][PyTorchScan.full_name()][
+                "supported_extensions"
+            ]
         ):
             return None
 
@@ -52,7 +54,7 @@ class NumpyScan(ScanBase):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings[NumpyScan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][NumpyScan.full_name()]["supported_extensions"]
         ):
             return None
 
@@ -81,7 +83,9 @@ class PickleScan(ScanBase):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings[PickleScan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][PickleScan.full_name()][
+                "supported_extensions"
+            ]
         ):
             return None
 

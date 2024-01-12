@@ -25,7 +25,7 @@ class H5Scan(SavedModelScan):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings[H5Scan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][H5Scan.full_name()]["supported_extensions"]
         ):
             return None
 
