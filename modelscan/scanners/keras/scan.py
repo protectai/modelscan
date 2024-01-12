@@ -25,6 +25,10 @@ class KerasScan(SavedModelScan):
         ):
             return None
 
+        dep_error = self.handle_binary_dependencies()
+        if dep_error:
+            return ScanResults([], [dep_error])
+
         try:
             with zipfile.ZipFile(data or source, "r") as zip:
                 file_names = zip.namelist()
