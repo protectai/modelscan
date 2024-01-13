@@ -23,7 +23,6 @@ class Report(metaclass=abc.ABCMeta):
     @staticmethod
     def generate(
         scan: ModelScan,
-        show_skipped: bool = False,
         settings: Dict[str, Any] = {},
     ) -> Optional[str]:
         """
@@ -41,7 +40,6 @@ class ConsoleReport(Report):
     @staticmethod
     def generate(
         scan: ModelScan,
-        show_skipped: bool = False,
         settings: Dict[str, Any] = {},
     ) -> None:
         issues_by_severity = scan.issues.group_by_severity()
@@ -77,7 +75,7 @@ class ConsoleReport(Report):
             print(
                 f"\nTotal skipped: {len(scan.skipped)} - run with --show-skipped to see the full list."
             )
-            if show_skipped:
+            if settings["show_skipped"]:
                 print(f"\nSkipped files list:\n")
                 for file_name in scan.skipped:
                     print(str(file_name))
@@ -87,11 +85,10 @@ class JSONReport(Report):
     @staticmethod
     def generate(
         scan: ModelScan,
-        show_skipped: bool = False,
         settings: Dict[str, Any] = {},
     ) -> None:
         report: Dict[str, Any] = scan._generate_results()
-        if not show_skipped:
+        if not settings["show_skipped"]:
             del report["skipped"]
 
         print(json.dumps(report))

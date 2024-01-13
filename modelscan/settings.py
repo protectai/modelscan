@@ -2,6 +2,10 @@ import tomlkit
 
 from typing import Any
 
+AVAILABLE_REPORTING_MODULES = {
+    "console": "modelscan.reports.ConsoleReport",
+    "json": "modelscan.reports.JSONReport",
+}
 
 DEFAULT_SETTINGS = {
     "supported_zip_extensions": [".zip", ".npz"],
@@ -86,11 +90,8 @@ DEFAULT_SETTINGS = {
         },
         "MEDIUM": {},
         "LOW": {},
-        "reporting_module": {
-            "module": "modelscan.reports.ConsoleReport",
-            "settings": {},
-        },
     },
+    "reporting": {"module": "modelscan.reports.ConsoleReport", "settings": {}},
 }
 
 

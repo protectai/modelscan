@@ -1,16 +1,21 @@
 import logging
 import sys
 import os
+import importlib
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 from tomlkit import parse
 
 import click
 
 from modelscan.modelscan import ModelScan
-from modelscan.reports import ConsoleReport
+from modelscan.reports import Report
 from modelscan._version import __version__
-from modelscan.settings import SettingsUtils, DEFAULT_SETTINGS
+from modelscan.settings import (
+    SettingsUtils,
+    DEFAULT_SETTINGS,
+    AVAILABLE_REPORTING_MODULES,
+)
 from modelscan.tools.cli_utils import DefaultGroup
 
 logger = logging.getLogger("modelscan")
@@ -69,6 +74,20 @@ def cli() -> None:
     type=click.Path(exists=True, dir_okay=False),
     help="Specify a settings file to use for the scan. Defaults to ./modelscan-settings.toml.",
 )
+@click.option(
+    "-f",
+    "--format",
+    type=click.Choice(["console", "json", "custom"]),
+    default="console",
+    help="Format of the output. Options are console or json (default: console)",
+)
+@click.option(
+    "-o",
+    "--output-file",
+    type=click.Path(),
+    default=None,
+    help="Optional json reporting output file",
+)
 @cli.command(
     help="[Default] Scan a model file or diretory for ability to execute suspicious actions. "
 )  # type: ignore
@@ -79,6 +98,8 @@ def scan(
     path: Optional[str],
     show_skipped: bool,
     settings_file: Optional[str],
+    format: str,
+    output_file: Path,
 ) -> int:
     logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -112,13 +133,25 @@ def scan(
     else:
         raise click.UsageError("Command line must include a path")
 
-    # get reporting module
+    report_settings: Dict[str, Any] = {}
+    if format == "custom":
+        reporting_module = settings["reporting"]["module"]  # type: ignore[index]
+        report_settings = settings["reporting"]["settings"]  # type: ignore[index]
+    else:
+        reporting_module = AVAILABLE_REPORTING_MODULES[format]
 
-    # ConsoleReport.generate(
-    #     scan=modelscan,
-    #     show_skipped=show_skipped,
-    #     settings=settings["reporting"]
-    # )
+    report_settings["show_skipped"] = show_skipped
+    report_settings["output_file"] = output_file
+
+    try:
+        (modulename, classname) = reporting_module.rsplit(".", 1)
+        imported_module = importlib.import_module(name=modulename, package=classname)
+
+        report_class: Report = getattr(imported_module, classname)
+        report_class.generate(scan=modelscan, settings=report_settings)
+
+    except Exception as e:
+        logger.error(f"Error generating report using {reporting_module}: {e}")
 
     # exit code 3 if no supported files were passed
     if not modelscan.scanned:
