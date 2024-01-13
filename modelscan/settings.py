@@ -1,14 +1,7 @@
 import tomlkit
 
-DEFAULT_SCANNERS = [
-    "modelscan.scanners.H5Scan",
-    "modelscan.scanners.KerasScan",
-    "modelscan.scanners.SavedModelScan",
-    "modelscan.scanners.NumpyScan",
-    "modelscan.scanners.PickleScan",
-    "modelscan.scanners.PyTorchScan",
-]
 from typing import Any
+
 
 DEFAULT_SETTINGS = {
     "supported_zip_extensions": [".zip", ".npz"],
@@ -49,50 +42,50 @@ DEFAULT_SETTINGS = {
             "enabled": True,
             "supported_extensions": [".bin", ".pt", ".pth", ".ckpt"],
         },
-        "unsafe_globals": {
-            "CRITICAL": {
-                "__builtin__": [
-                    "eval",
-                    "compile",
-                    "getattr",
-                    "apply",
-                    "exec",
-                    "open",
-                    "breakpoint",
-                    "__import__",
-                ],  # Pickle versions 0, 1, 2 have those function under '__builtin__'
-                "builtins": [
-                    "eval",
-                    "compile",
-                    "getattr",
-                    "apply",
-                    "exec",
-                    "open",
-                    "breakpoint",
-                    "__import__",
-                ],  # Pickle versions 3, 4 have those function under 'builtins'
-                "runpy": "*",
-                "os": "*",
-                "nt": "*",  # Alias for 'os' on Windows. Includes os.system()
-                "posix": "*",  # Alias for 'os' on Linux. Includes os.system()
-                "socket": "*",
-                "subprocess": "*",
-                "sys": "*",
-                "operator": [
-                    "attrgetter",  # Ex of code execution: operator.attrgetter("system")(__import__("os"))("echo pwned")
-                ],
-                "pty": "*",
-                "pickle": "*",
-            },
-            "HIGH": {
-                "webbrowser": "*",  # Includes webbrowser.open()
-                "httplib": "*",  # Includes http.client.HTTPSConnection()
-                "requests.api": "*",
-                "aiohttp.client": "*",
-            },
-            "MEDIUM": {},
-            "LOW": {},
+    },
+    "unsafe_globals": {
+        "CRITICAL": {
+            "__builtin__": [
+                "eval",
+                "compile",
+                "getattr",
+                "apply",
+                "exec",
+                "open",
+                "breakpoint",
+                "__import__",
+            ],  # Pickle versions 0, 1, 2 have those function under '__builtin__'
+            "builtins": [
+                "eval",
+                "compile",
+                "getattr",
+                "apply",
+                "exec",
+                "open",
+                "breakpoint",
+                "__import__",
+            ],  # Pickle versions 3, 4 have those function under 'builtins'
+            "runpy": "*",
+            "os": "*",
+            "nt": "*",  # Alias for 'os' on Windows. Includes os.system()
+            "posix": "*",  # Alias for 'os' on Linux. Includes os.system()
+            "socket": "*",
+            "subprocess": "*",
+            "sys": "*",
+            "operator": [
+                "attrgetter",  # Ex of code execution: operator.attrgetter("system")(__import__("os"))("echo pwned")
+            ],
+            "pty": "*",
+            "pickle": "*",
         },
+        "HIGH": {
+            "webbrowser": "*",  # Includes webbrowser.open()
+            "httplib": "*",  # Includes http.client.HTTPSConnection()
+            "requests.api": "*",
+            "aiohttp.client": "*",
+        },
+        "MEDIUM": {},
+        "LOW": {},
         "reporting_module": {
             "module": "modelscan.reports.ConsoleReport",
             "settings": {},

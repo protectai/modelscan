@@ -31,7 +31,9 @@ class SavedModelScan(ScanBase):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings[SavedModelScan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][SavedModelScan.full_name()][
+                "supported_extensions"
+            ]
         ):
             return None
 
@@ -115,9 +117,9 @@ class SavedModelScan(ScanBase):
         source: Union[str, Path],
         settings: Dict[str, Any],
     ) -> ScanResults:
-        unsafe_operators: Dict[str, Any] = settings[SavedModelScan.full_name()][
-            "unsafe_tf_keras_operators"
-        ]
+        unsafe_operators: Dict[str, Any] = settings["scanners"][
+            SavedModelScan.full_name()
+        ]["unsafe_tf_keras_operators"]
 
         issues: List[Issue] = []
         all_operators = tensorflow.raw_ops.__dict__.keys()

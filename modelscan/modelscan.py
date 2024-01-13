@@ -2,7 +2,7 @@ import logging
 import zipfile
 import importlib
 
-from modelscan.settings import DEFAULT_SCANNERS, DEFAULT_SETTINGS
+from modelscan.settings import DEFAULT_SETTINGS
 
 from pathlib import Path
 from typing import List, Union, Optional, IO, Dict, Tuple, Any
@@ -20,7 +20,6 @@ logger = logging.getLogger("modelscan")
 class ModelScan:
     def __init__(
         self,
-        scanners_to_load: List[str] = DEFAULT_SCANNERS,
         settings: Dict[str, Any] = DEFAULT_SETTINGS,
     ) -> None:
         # Output
@@ -34,32 +33,30 @@ class ModelScan:
         # Scanners
         self._scanners_to_run: List[ScanBase] = []
         self._settings: Dict[str, Any] = settings
-        self._load_scanners(scanners_to_load)
+        self._load_scanners()
 
-    def _load_scanners(self, scanners_to_load: List[str]) -> None:
-        scanner_classes: Dict[str, ScanBase] = {}
-        for scanner_path in scanners_to_load:
-            try:
-                (modulename, classname) = scanner_path.rsplit(".", 1)
-                imported_module = importlib.import_module(
-                    name=modulename, package=classname
-                )
-                scanner_class = getattr(imported_module, classname)
-                scanner_classes[scanner_path] = scanner_class
-            except Exception as e:
-                logger.error(f"Error importing scanner {scanner_path}")
-                self._init_errors.append(
-                    ModelScanError(
-                        scanner_path, f"Error importing scanner {scanner_path}: {e}"
+    def _load_scanners(self) -> None:
+        for scanner_path, scanner_settings in self._settings["scanners"].items():
+            if (
+                "enabled" in scanner_settings.keys()
+                and self._settings["scanners"][scanner_path]["enabled"]
+            ):
+                try:
+                    (modulename, classname) = scanner_path.rsplit(".", 1)
+                    imported_module = importlib.import_module(
+                        name=modulename, package=classname
                     )
-                )
 
-        scanners_to_run: List[ScanBase] = []
-        for scanner_class, scanner in scanner_classes.items():
-            is_enabled: bool = self._settings["scanners"][scanner_class]["enabled"]
-            if is_enabled:
-                scanners_to_run.append(scanner)
-        self._scanners_to_run = scanners_to_run
+                    scanner_class: ScanBase = getattr(imported_module, classname)
+                    self._scanners_to_run.append(scanner_class)
+
+                except Exception as e:
+                    logger.error(f"Error importing scanner {scanner_path}")
+                    self._init_errors.append(
+                        ModelScanError(
+                            scanner_path, f"Error importing scanner {scanner_path}: {e}"
+                        )
+                    )
 
     def scan(
         self,
@@ -109,7 +106,7 @@ class ModelScan:
     ) -> bool:
         scanned = False
         for scan_class in self._scanners_to_run:
-            scanner = scan_class(self._settings["scanners"])  # type: ignore[operator]
+            scanner = scan_class(self._settings)  # type: ignore[operator]
             scan_results = scanner.scan(
                 source=source,
                 data=data,
