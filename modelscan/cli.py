@@ -79,7 +79,7 @@ def cli() -> None:
     "--format",
     type=click.Choice(["console", "json", "custom"]),
     default="console",
-    help="Format of the output. Options are console or json (default: console)",
+    help="Format of the output. Options are console, json, or custom (to be defined in settings-file). Default is console.",
 )
 @click.option(
     "-o",
