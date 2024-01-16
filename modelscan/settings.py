@@ -2,7 +2,7 @@ import tomlkit
 
 from typing import Any
 
-AVAILABLE_REPORTING_MODULES = {
+DEFAULT_REPORTING_MODULES = {
     "console": "modelscan.reports.ConsoleReport",
     "json": "modelscan.reports.JSONReport",
 }
@@ -91,7 +91,10 @@ DEFAULT_SETTINGS = {
         "MEDIUM": {},
         "LOW": {},
     },
-    "reporting": {"module": "modelscan.reports.ConsoleReport", "settings": {}},
+    "reporting": {
+        "module": "modelscan.reports.ConsoleReport",
+        "settings": {},
+    },  # JSON reporting can be configured by changing "module" to "modelscan.reports.JSONReport" and adding an optional "output_file" field. For custom reporting modules, change "module" to the module name and add the applicable settings fields
 }
 
 

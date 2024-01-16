@@ -14,7 +14,7 @@ from modelscan._version import __version__
 from modelscan.settings import (
     SettingsUtils,
     DEFAULT_SETTINGS,
-    AVAILABLE_REPORTING_MODULES,
+    DEFAULT_REPORTING_MODULES,
 )
 from modelscan.tools.cli_utils import DefaultGroup
 
@@ -75,8 +75,7 @@ def cli() -> None:
     help="Specify a settings file to use for the scan. Defaults to ./modelscan-settings.toml.",
 )
 @click.option(
-    "-f",
-    "--format",
+    "--reporting-format",
     type=click.Choice(["console", "json", "custom"]),
     default="console",
     help="Format of the output. Options are console, json, or custom (to be defined in settings-file). Default is console.",
@@ -86,7 +85,7 @@ def cli() -> None:
     "--output-file",
     type=click.Path(),
     default=None,
-    help="Optional json reporting output file",
+    help="Optional file name for output report",
 )
 @cli.command(
     help="[Default] Scan a model file or diretory for ability to execute suspicious actions. "
@@ -98,7 +97,7 @@ def scan(
     path: Optional[str],
     show_skipped: bool,
     settings_file: Optional[str],
-    format: str,
+    reporting_format: str,
     output_file: Path,
 ) -> int:
     logger.setLevel(logging.INFO)
@@ -134,12 +133,12 @@ def scan(
         raise click.UsageError("Command line must include a path")
 
     report_settings: Dict[str, Any] = {}
-    if format == "custom":
+    if reporting_format == "custom":
         reporting_module = settings["reporting"]["module"]  # type: ignore[index]
-        report_settings = settings["reporting"]["settings"]  # type: ignore[index]
     else:
-        reporting_module = AVAILABLE_REPORTING_MODULES[format]
+        reporting_module = DEFAULT_REPORTING_MODULES[reporting_format]
 
+    report_settings = settings["reporting"]["settings"]  # type: ignore[index]
     report_settings["show_skipped"] = show_skipped
     report_settings["output_file"] = output_file
 
