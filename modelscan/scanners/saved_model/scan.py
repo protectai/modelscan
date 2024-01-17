@@ -87,6 +87,16 @@ class SavedModelScan(ScanBase):
             )
         return ScanResults(issues, [])
 
+    def handle_binary_dependencies(
+        self, settings: Optional[Dict[str, Any]] = None
+    ) -> Optional[ModelScanError]:
+        if not tensorflow_installed:
+            return ModelScanError(
+                self.name(),
+                f"To use {self.full_name()}, please install modelscan with tensorflow extras. 'pip install \"modelscan\[tensorflow]\"' if you are using pip.",
+            )
+        return None
+
     @staticmethod
     def name() -> str:
         return "saved_model"
@@ -94,17 +104,6 @@ class SavedModelScan(ScanBase):
     @staticmethod
     def full_name() -> str:
         return "modelscan.scanners.SavedModelScan"
-
-    @staticmethod
-    def handle_binary_dependencies(
-        settings: Optional[Dict[str, Any]] = None
-    ) -> Optional[ModelScanError]:
-        if not tensorflow_installed:
-            return ModelScanError(
-                SavedModelScan.name(),
-                f"To use {SavedModelScan.full_name()}, please install modelscan with tensorflow extras. 'pip install \"modelscan\[tensorflow]\"' if you are using pip.",
-            )
-        return None
 
 
 class SavedModelLambdaDetectScan(SavedModelScan):

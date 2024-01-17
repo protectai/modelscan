@@ -77,17 +77,8 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
 
         return []
 
-    @staticmethod
-    def name() -> str:
-        return "hdf5"
-
-    @staticmethod
-    def full_name() -> str:
-        return "modelscan.scanners.H5LambdaDetectScan"
-
-    @staticmethod
     def handle_binary_dependencies(
-        settings: Optional[Dict[str, Any]] = None
+        self, settings: Optional[Dict[str, Any]] = None
     ) -> Optional[ModelScanError]:
         if not h5py_installed:
             return ModelScanError(
@@ -95,3 +86,11 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                 f"To use {H5LambdaDetectScan.full_name()}, please install modelscan with h5py extras. 'pip install \"modelscan\[h5py]\"' if you are using pip.",
             )
         return None
+
+    @staticmethod
+    def name() -> str:
+        return "hdf5"
+
+    @staticmethod
+    def full_name() -> str:
+        return "modelscan.scanners.H5LambdaDetectScan"
