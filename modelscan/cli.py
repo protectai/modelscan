@@ -75,6 +75,7 @@ def cli() -> None:
     help="Specify a settings file to use for the scan. Defaults to ./modelscan-settings.toml.",
 )
 @click.option(
+    "-r",
     "--reporting-format",
     type=click.Choice(["console", "json", "custom"]),
     default="console",
