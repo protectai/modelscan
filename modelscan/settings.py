@@ -6,28 +6,34 @@ from typing import Any
 DEFAULT_SETTINGS = {
     "supported_zip_extensions": [".zip", ".npz"],
     "scanners": {
-        "modelscan.scanners.H5Scan": {
+        "modelscan.scanners.H5LambdaDetectScan": {
             "enabled": True,
             "supported_extensions": [".h5"],
         },
-        "modelscan.scanners.KerasScan": {
+        "modelscan.scanners.KerasLambdaDetectScan": {
             "enabled": True,
             "supported_extensions": [".keras"],
         },
-        "modelscan.scanners.SavedModelScan": {
+        "modelscan.scanners.SavedModelLambdaDetectScan": {
             "enabled": True,
             "supported_extensions": [".pb"],
-            "unsafe_tf_keras_operators": {
-                "ReadFile": "HIGH",
-                "WriteFile": "HIGH",
+            "unsafe_keras_operators": {
                 "Lambda": "MEDIUM",
             },
         },
-        "modelscan.scanners.NumpyScan": {
+        "modelscan.scanners.SavedModelTensorflowOpScan": {
+            "enabled": True,
+            "supported_extensions": [".pb"],
+            "unsafe_tf_operators": {
+                "ReadFile": "HIGH",
+                "WriteFile": "HIGH",
+            },
+        },
+        "modelscan.scanners.NumpyUnsafeOpScan": {
             "enabled": True,
             "supported_extensions": [".npy"],
         },
-        "modelscan.scanners.PickleScan": {
+        "modelscan.scanners.PickleUnsafeOpScan": {
             "enabled": True,
             "supported_extensions": [
                 ".pkl",
@@ -38,7 +44,7 @@ DEFAULT_SETTINGS = {
                 ".data",
             ],
         },
-        "modelscan.scanners.PyTorchScan": {
+        "modelscan.scanners.PyTorchUnsafeOpScan": {
             "enabled": True,
             "supported_extensions": [".bin", ".pt", ".pth", ".ckpt"],
         },

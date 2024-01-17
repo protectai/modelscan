@@ -7,13 +7,13 @@ from typing import IO, List, Union, Optional
 
 from modelscan.error import ModelScanError
 from modelscan.scanners.scan import ScanResults
-from modelscan.scanners.saved_model.scan import SavedModelScan
+from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
 
 
 logger = logging.getLogger("modelscan")
 
 
-class KerasScan(SavedModelScan):
+class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
     def scan(
         self,
         source: Union[str, Path],
@@ -21,7 +21,9 @@ class KerasScan(SavedModelScan):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings["scanners"][KerasScan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][KerasLambdaDetectScan.full_name()][
+                "supported_extensions"
+            ]
         ):
             return None
 
@@ -46,7 +48,7 @@ class KerasScan(SavedModelScan):
                 [],
                 [
                     ModelScanError(
-                        KerasScan.name(),
+                        KerasLambdaDetectScan.name(),
                         f"Skipping zip file {source}, due to error: {e}",
                     )
                 ],
@@ -57,7 +59,7 @@ class KerasScan(SavedModelScan):
             [],
             [
                 ModelScanError(
-                    KerasScan.name(),
+                    KerasLambdaDetectScan.name(),
                     f"Unable to scan .keras file",  # Not sure if this is a representative message for ModelScanError
                 )
             ],
@@ -68,11 +70,13 @@ class KerasScan(SavedModelScan):
     ) -> ScanResults:
         machine_learning_library_name = "Keras"
         operators_in_model = self._get_keras_operator_names(source, config_file)
-        return KerasScan._check_for_unsafe_tf_keras_operator(
+        return KerasLambdaDetectScan._check_for_unsafe_tf_keras_operator(
             module_name=machine_learning_library_name,
             raw_operator=operators_in_model,
             source=source,
-            settings=self._settings,
+            unsafe_operators=self._settings["scanners"][
+                SavedModelLambdaDetectScan.full_name()
+            ]["unsafe_keras_operators"],
         )
 
     def _get_keras_operator_names(
@@ -101,4 +105,4 @@ class KerasScan(SavedModelScan):
 
     @staticmethod
     def full_name() -> str:
-        return "modelscan.scanners.KerasScan"
+        return "modelscan.scanners.KerasLambdaDetectScan"
