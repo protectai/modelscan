@@ -2,12 +2,15 @@ import tomlkit
 
 from typing import Any
 
+from modelscan._version import __version__
+
 DEFAULT_REPORTING_MODULES = {
     "console": "modelscan.reports.ConsoleReport",
     "json": "modelscan.reports.JSONReport",
 }
 
 DEFAULT_SETTINGS = {
+    "modelscan_version": __version__,
     "supported_zip_extensions": [".zip", ".npz"],
     "scanners": {
         "modelscan.scanners.H5LambdaDetectScan": {
