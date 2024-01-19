@@ -12,10 +12,15 @@ import requests
 import socket
 import subprocess
 import sys
+import torch
 import tensorflow as tf
 from tensorflow import keras
 from typing import Any, List, Set, Dict
-from test_utils import generate_dill_unsafe_file, generate_unsafe_pickle_file
+from test_utils import (
+    generate_dill_unsafe_file,
+    generate_unsafe_pickle_file,
+    PyTorchTestModel,
+)
 import zipfile
 
 from modelscan.modelscan import ModelScan
@@ -166,6 +171,27 @@ def pytorch_file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("pytorch")
     # Fake PyTorch file (PNG file format) simulating https://huggingface.co/RectalWorm/loras_new/blob/main/Owl_Mage_no_background.pt
     initialize_data_file(f"{tmp}/bad_pytorch.pt", b"\211PNG\r\n\032\n")
+
+    # Safe PyTorch files in old and new (zip) formats
+    model = PyTorchTestModel()
+    torch.save(
+        model.state_dict(),
+        f=f"{tmp}/safe_zip_pytorch.pt",
+        _use_new_zipfile_serialization=True,
+    )
+    torch.save(
+        model.state_dict(),
+        f=f"{tmp}/safe_old_format_pytorch.pt",
+        _use_new_zipfile_serialization=False,
+    )
+
+    # Unsafe PyTorch files in new (zip) format
+    model.generate_unsafe_pytorch_file(
+        unsafe_file_path=f"{tmp}/unsafe_zip_pytorch.pt",
+        model_path=f"{tmp}/safe_zip_pytorch.pt",
+        zipfile=True,
+    )
+
     return tmp
 
 
@@ -382,10 +408,32 @@ def test_scan_zip(zip_file_path: Any) -> None:
 
 
 def test_scan_pytorch(pytorch_file_path: Any) -> None:
-    bad_pytorch = ModelScan()
-    bad_pytorch.scan(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
-    assert bad_pytorch.issues.all_issues == []
-    assert [error.scan_name for error in bad_pytorch.errors] == ["pytorch"]  # type: ignore[attr-defined]
+    ms = ModelScan()
+    ms.scan(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
+    assert ms.issues.all_issues == []
+    assert [error.scan_name for error in ms.errors] == ["pytorch"]  # type: ignore[attr-defined]
+
+    ms.scan(Path(f"{pytorch_file_path}/safe_zip_pytorch.pt"))
+    assert ms.issues.all_issues == []
+    assert ms.errors == []
+
+    ms.scan(Path(f"{pytorch_file_path}/safe_old_format_pytorch.pt"))
+    assert ms.issues.all_issues == []
+    assert ms.errors == []
+
+    unsafe_zip_path = f"{pytorch_file_path}/unsafe_zip_pytorch.pt"
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "posix", "system", f"{unsafe_zip_path}:unsafe_zip_pytorch/data.pkl"
+            ),
+        ),
+    ]
+    ms.scan(unsafe_zip_path)
+    assert ms.errors == []
+    assert ms.issues.all_issues == expected
 
 
 def test_scan_numpy(numpy_file_path: Any) -> None:
