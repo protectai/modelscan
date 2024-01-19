@@ -238,22 +238,9 @@ def generate_dill_unsafe_file(
     file_for_unsafe_model.close()
 
 
-class PyTorchTestModel(nn.Module):  # type: ignore[misc]
+class PyTorchTestModel:
     def __init__(self) -> None:
-        super().__init__()
-        self.flatten = nn.Flatten()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(28 * 28, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 10),
-        )
-
-    def forward(self, x: Any) -> Any:
-        x = self.flatten(x)
-        logits = self.linear_relu_stack(x)
-        return logits
+        self.model = nn.Module()
 
     def generate_unsafe_pytorch_file(
         self, unsafe_file_path: str, model_path: str, zipfile: bool = True

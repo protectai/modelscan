@@ -173,20 +173,20 @@ def pytorch_file_path(tmp_path_factory: Any) -> Any:
     initialize_data_file(f"{tmp}/bad_pytorch.pt", b"\211PNG\r\n\032\n")
 
     # Safe PyTorch files in old and new (zip) formats
-    model = PyTorchTestModel()
+    pt = PyTorchTestModel()
     torch.save(
-        model.state_dict(),
+        pt.model.state_dict(),
         f=f"{tmp}/safe_zip_pytorch.pt",
         _use_new_zipfile_serialization=True,
     )
     torch.save(
-        model.state_dict(),
+        pt.model.state_dict(),
         f=f"{tmp}/safe_old_format_pytorch.pt",
         _use_new_zipfile_serialization=False,
     )
 
     # Unsafe PyTorch files in new (zip) format
-    model.generate_unsafe_pytorch_file(
+    pt.generate_unsafe_pytorch_file(
         unsafe_file_path=f"{tmp}/unsafe_zip_pytorch.pt",
         model_path=f"{tmp}/safe_zip_pytorch.pt",
         zipfile=True,
