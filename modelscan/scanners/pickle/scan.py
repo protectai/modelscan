@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import IO, Union, Optional
 
 from modelscan.scanners.scan import ScanBase, ScanResults
+from modelscan.tools.utils import _is_zipfile
 from modelscan.tools.picklescanner import (
     scan_numpy,
     scan_pickle_bytes,
@@ -24,6 +25,9 @@ class PyTorchUnsafeOpScan(ScanBase):
                 "supported_extensions"
             ]
         ):
+            return None
+
+        if _is_zipfile(source):
             return None
 
         if data:
