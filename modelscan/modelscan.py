@@ -162,6 +162,11 @@ class ModelScan:
 
         report["errors"] = [str(error) for index, error in enumerate(self._errors)]
 
+        report["scanned"] = {"total_scanned": len(self._scanned)}
+        report["scanned"]["scanned_files"] = [
+            str(file_name) for file_name in self._scanned
+        ]
+
         report["skipped"] = {"total_skipped": len(self._skipped)}
         report["skipped"]["skipped_files"] = [
             str(file_name) for file_name in self._skipped
