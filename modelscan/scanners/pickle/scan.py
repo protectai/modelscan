@@ -13,7 +13,7 @@ from modelscan.tools.picklescanner import (
 logger = logging.getLogger("modelscan")
 
 
-class PyTorchScan(ScanBase):
+class PyTorchUnsafeOpScan(ScanBase):
     def scan(
         self,
         source: Union[str, Path],
@@ -21,7 +21,7 @@ class PyTorchScan(ScanBase):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings["scanners"][PyTorchScan.full_name()][
+            in self._settings["scanners"][PyTorchUnsafeOpScan.full_name()][
                 "supported_extensions"
             ]
         ):
@@ -47,10 +47,10 @@ class PyTorchScan(ScanBase):
 
     @staticmethod
     def full_name() -> str:
-        return "modelscan.scanners.PyTorchScan"
+        return "modelscan.scanners.PyTorchUnsafeOpScan"
 
 
-class NumpyScan(ScanBase):
+class NumpyUnsafeOpScan(ScanBase):
     def scan(
         self,
         source: Union[str, Path],
@@ -58,7 +58,9 @@ class NumpyScan(ScanBase):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings["scanners"][NumpyScan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][NumpyUnsafeOpScan.full_name()][
+                "supported_extensions"
+            ]
         ):
             return None
 
@@ -76,10 +78,10 @@ class NumpyScan(ScanBase):
 
     @staticmethod
     def full_name() -> str:
-        return "modelscan.scanners.NumpyScan"
+        return "modelscan.scanners.NumpyUnsafeOpScan"
 
 
-class PickleScan(ScanBase):
+class PickleUnsafeOpScan(ScanBase):
     def scan(
         self,
         source: Union[str, Path],
@@ -87,7 +89,7 @@ class PickleScan(ScanBase):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings["scanners"][PickleScan.full_name()][
+            in self._settings["scanners"][PickleUnsafeOpScan.full_name()][
                 "supported_extensions"
             ]
         ):
@@ -112,4 +114,4 @@ class PickleScan(ScanBase):
 
     @staticmethod
     def full_name() -> str:
-        return "modelscan.scanners.PickleScan"
+        return "modelscan.scanners.PickleUnsafeOpScan"
