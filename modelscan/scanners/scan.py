@@ -40,9 +40,8 @@ class ScanBase(metaclass=abc.ABCMeta):
     ) -> Optional[ScanResults]:
         raise NotImplementedError
 
-    @staticmethod
     def handle_binary_dependencies(
-        settings: Optional[Dict[str, Any]] = None
+        self, settings: Optional[Dict[str, Any]] = None
     ) -> Optional[ModelScanError]:
         """
         Implement this method if the plugin requires a binary dependency.

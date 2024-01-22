@@ -12,12 +12,12 @@ except ImportError:
 
 from modelscan.error import ModelScanError
 from modelscan.scanners.scan import ScanResults
-from modelscan.scanners.saved_model.scan import SavedModelScan
+from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
 
 logger = logging.getLogger("modelscan")
 
 
-class H5Scan(SavedModelScan):
+class H5LambdaDetectScan(SavedModelLambdaDetectScan):
     def scan(
         self,
         source: Union[str, Path],
@@ -25,7 +25,9 @@ class H5Scan(SavedModelScan):
     ) -> Optional[ScanResults]:
         if (
             not Path(source).suffix
-            in self._settings["scanners"][H5Scan.full_name()]["supported_extensions"]
+            in self._settings["scanners"][H5LambdaDetectScan.full_name()][
+                "supported_extensions"
+            ]
         ):
             return None
 
@@ -44,11 +46,13 @@ class H5Scan(SavedModelScan):
     def _scan_keras_h5_file(self, source: Union[str, Path]) -> ScanResults:
         machine_learning_library_name = "Keras"
         operators_in_model = self._get_keras_h5_operator_names(source)
-        return H5Scan._check_for_unsafe_tf_keras_operator(
+        return H5LambdaDetectScan._check_for_unsafe_tf_keras_operator(
             module_name=machine_learning_library_name,
             raw_operator=operators_in_model,
             source=source,
-            settings=self._settings,
+            unsafe_operators=self._settings["scanners"][
+                SavedModelLambdaDetectScan.full_name()
+            ]["unsafe_keras_operators"],
         )
 
     def _get_keras_h5_operator_names(self, source: Union[str, Path]) -> List[str]:
@@ -73,21 +77,20 @@ class H5Scan(SavedModelScan):
 
         return []
 
+    def handle_binary_dependencies(
+        self, settings: Optional[Dict[str, Any]] = None
+    ) -> Optional[ModelScanError]:
+        if not h5py_installed:
+            return ModelScanError(
+                H5LambdaDetectScan.name(),
+                f"To use {H5LambdaDetectScan.full_name()}, please install modelscan with h5py extras. 'pip install \"modelscan\[h5py]\"' if you are using pip.",
+            )
+        return None
+
     @staticmethod
     def name() -> str:
         return "hdf5"
 
     @staticmethod
     def full_name() -> str:
-        return "modelscan.scanners.H5Scan"
-
-    @staticmethod
-    def handle_binary_dependencies(
-        settings: Optional[Dict[str, Any]] = None
-    ) -> Optional[ModelScanError]:
-        if not h5py_installed:
-            return ModelScanError(
-                SavedModelScan.name(),
-                f"To use {H5Scan.full_name()}, please install modelscan with h5py extras. 'pip install \"modelscan\[h5py]\"' if you are using pip.",
-            )
-        return None
+        return "modelscan.scanners.H5LambdaDetectScan"
