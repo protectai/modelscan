@@ -176,8 +176,6 @@ class ModelScan:
 
     def is_compatible(self, path: str) -> bool:
         # Determines whether a file path is compatible with any of the available scanners
-        compatible: bool = False
-
         if Path(path).suffix in self._settings["supported_zip_extensions"]:
             return True
         for scanner_path, scanner_settings in self._settings["scanners"].items():
@@ -188,7 +186,7 @@ class ModelScan:
             ):
                 return True
 
-        return compatible
+        return False
 
     @property
     def issues(self) -> Issues:
