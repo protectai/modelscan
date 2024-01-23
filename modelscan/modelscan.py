@@ -174,6 +174,20 @@ class ModelScan:
 
         return report
 
+    def is_compatible(self, path: str) -> bool:
+        # Determines whether a single file path is compatible with any of the available scanners
+        compatible: bool = False
+
+        for scanner_path, scanner_settings in self._settings["scanners"].items():
+            if (
+                "supported_extensions" in scanner_settings.keys()
+                and Path(path).suffix
+                in self._settings["scanners"][scanner_path]["supported_extensions"]
+            ):
+                compatible = True
+
+        return compatible
+
     @property
     def issues(self) -> Issues:
         return self._issues
