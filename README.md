@@ -118,7 +118,6 @@ ModelScan supports the following arguments via the CLI:
 | ```modelscan create-settings-file```                                             | -l or --location | Create a configurable settings file                     |
 | ```modelscan -r```                                             | -r or --reporting-format | Format of the output. Options are console,       json, or custom (to be defined in settings-file). Default is console                    |
 | ```modelscan -r reporting-format -o file-name```                                             | -o or --output-file | Optional file name for output report                  |
-| ```modelscan -l```                          | -l, --log      | Level of log messages to display (default:INFO). Other options are CRITICAL, ERROR, WARNING, and DEBUG    |
 | ```modelscan --show-skipped```                          | --show-skipped | Print a list of files that were skipped      during the scan   |
 
 
