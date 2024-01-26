@@ -116,6 +116,10 @@ ModelScan supports the following arguments via the CLI:
 | ```modelscan -p /path/to/model_file```                                           | -p or --path     | Scan a locally stored model                             |
 | ```modelscan -p /path/to/model_file --settings-file ./modelscan-settings.toml``` | --settings-file  | Scan a locally stored model using custom configurations |
 | ```modelscan create-settings-file```                                             | -l or --location | Create a configurable settings file                     |
+| ```modelscan -r```                                             | -r or --reporting-format | Format of the output. Options are console,       json, or custom (to be defined in settings-file). Default is console.                    |
+| ```modelscan -r reporting-format -o file-name.format```                                             | -o or --output-file | Optional file name for output report                  |
+| ```modelscan -l```                          | -l, --log      | level of log messages to display (default:INFO). Other options are CRITICAL, ERROR, WARNING, and DEBUG    |
+| ```modelscan --show-skipped```                          | --show-skipped | Print a list of files that were skipped      during the scan   |
 
 
 Remember models are just like any other form of digital media, you should scan content from any untrusted source before use.
