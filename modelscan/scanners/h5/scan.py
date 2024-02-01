@@ -31,6 +31,10 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
         ):
             return None
 
+        with h5py.File(source, "r") as model_hdf5:
+            if not hasattr(model_hdf5, "model_config"):
+                return None  # skip file if there is no model_config
+
         dep_error = self.handle_binary_dependencies()
         if dep_error:
             return ScanResults([], [dep_error])
