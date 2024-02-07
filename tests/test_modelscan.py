@@ -15,11 +15,12 @@ import sys
 import torch
 import tensorflow as tf
 from tensorflow import keras
-from typing import Any, List, Set
+from typing import Any, List, Set, Dict
 from test_utils import (
     generate_dill_unsafe_file,
     generate_unsafe_pickle_file,
     MaliciousModule,
+    PyTorchTestModel,
 )
 import zipfile
 
@@ -39,7 +40,7 @@ from modelscan.settings import DEFAULT_SETTINGS
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS
 
-from modelscan.models.saved_model.scan import SavedModelScan
+from modelscan.scanners.saved_model.scan import SavedModelScan
 
 
 class Malicious1:
@@ -998,17 +999,16 @@ def test_scan_directory_path(file_path: str) -> None:
     "file_extension", [".h5", ".keras", ".pb"], ids=["h5", "keras", "pb"]
 )
 def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
-
     keras_file_path_parent_dir, safe_saved_model_dir, unsafe_saved_model_dir = (
         keras_file_path[0],
         keras_file_path[1],
         keras_file_path[2],
     )
-    ms = Modelscan()
+    ms = ModelScan()
     if file_extension == ".pb":
-        ms.scan_path(Path(f"{safe_saved_model_dir}"))
+        ms.scan(Path(f"{safe_saved_model_dir}"))
     else:
-        ms.scan_path(Path(f"{keras_file_path_parent_dir}/safe{file_extension}"))
+        ms.scan(Path(f"{keras_file_path_parent_dir}/safe{file_extension}"))
 
     assert ms.issues.all_issues == []
 
@@ -1029,16 +1029,11 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
-                    f"{keras_file_path}/unsafe{file_extension}:config.json",
+                    f"{keras_file_path_parent_dir}/unsafe{file_extension}:config.json",
                 ),
             ),
         ]
-        ms._scan_source(
-
-            Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"),
-            extension=file_extension,
-
-        )
+        ms.scan(Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"))
     elif file_extension == ".pb":
         file_name = "keras_metadata.pb"
         expected = [
@@ -1051,8 +1046,17 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                     f"{unsafe_saved_model_dir}/{file_name}",
                 ),
             ),
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.MEDIUM,
+                OperatorIssueDetails(
+                    "Keras",
+                    "Lambda",
+                    f"{unsafe_saved_model_dir}/{file_name}",
+                ),
+            ),
         ]
-        ms.scan_path(Path(f"{unsafe_saved_model_dir}"))
+        ms.scan(Path(f"{unsafe_saved_model_dir}"))
     else:
         expected = [
             Issue(
@@ -1070,12 +1074,12 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
-                    f"{keras_file_path}/unsafe{file_extension}",
+                    f"{keras_file_path_parent_dir}/unsafe{file_extension}",
                 ),
             ),
         ]
 
-        ms.scan_path(Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"))
+        ms.scan(Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"))
     assert ms.issues.all_issues == expected
 
 
@@ -1084,8 +1088,8 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
         tensorflow_file_path[0],
         tensorflow_file_path[1],
     )
-    ms = Modelscan()
-    ms.scan_path(Path(f"{safe_tensorflow_model_dir}"))
+    ms = ModelScan()
+    ms.scan(Path(f"{safe_tensorflow_model_dir}"))
     assert ms.issues.all_issues == []
 
     file_name = "saved_model.pb"
@@ -1109,8 +1113,7 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
             ),
         ),
     ]
-    ms.scan_path(Path(f"{unsafe_tensorflow_model_dir}"))
-
+    ms.scan(Path(f"{unsafe_tensorflow_model_dir}"))
 
     assert ms.issues.all_issues == expected
 

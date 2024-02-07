@@ -35,8 +35,6 @@ class MaliciousModule(keras.Model):  # type: ignore
         return res
 
 
-
-
 class PickleInject:
     """Pickle injection"""
 
