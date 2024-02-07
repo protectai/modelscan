@@ -21,9 +21,16 @@ class IssueCode(Enum):
 
 
 class IssueDetails(metaclass=abc.ABCMeta):
+    def __init__(self, scanner: str = "") -> None:
+        self.scanner = scanner
+
     @abc.abstractmethod
     def output_lines(self) -> List[str]:
-        raise NotImplemented
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def output_json(self) -> Dict[str, str]:
+        raise NotImplementedError
 
 
 class Issue:
@@ -58,6 +65,9 @@ class Issue:
             and self.details.operator == other.details.operator  # type: ignore[attr-defined]
             and str(self.details.source) == str(other.details.source)  # type: ignore[attr-defined]
         )
+
+    def __repr__(self) -> str:
+        return str(self.severity) + str(self.details)
 
     def __hash__(self) -> int:
         return hash(
@@ -110,13 +120,28 @@ class Issues:
 
 
 class OperatorIssueDetails(IssueDetails):
-    def __init__(self, module: str, operator: str, source: Union[Path, str]) -> None:
+    def __init__(
+        self, module: str, operator: str, source: Union[Path, str], scanner: str = ""
+    ) -> None:
         self.module = module
         self.operator = operator
         self.source = source
+        self.scanner = scanner
 
     def output_lines(self) -> List[str]:
         return [
             f"Description: Use of unsafe operator '{self.operator}' from module '{self.module}'",
             f"Source: {str(self.source)}",
         ]
+
+    def output_json(self) -> Dict[str, str]:
+        return {
+            "description": f"Use of unsafe operator '{self.operator}' from module '{self.module}'",
+            "operator": f"{self.operator}",
+            "module": f"{self.module}",
+            "source": f"{str(self.source)}",
+            "scanner": f"{self.scanner}",
+        }
+
+    def __repr__(self) -> str:
+        return f"<OperatorIssueDetails(module={self.module}, operator={self.operator}, source={str(self.source)})>"

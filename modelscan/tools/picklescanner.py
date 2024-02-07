@@ -9,6 +9,7 @@ import numpy as np
 
 from modelscan.error import Error, ModelScanError
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
+from modelscan.scanners.scan import ScanResults
 
 logger = logging.getLogger("modelscan")
 
@@ -23,68 +24,6 @@ class GenOpsError(Exception):
     def __str__(self) -> str:
         return self.msg
 
-
-_safe_globals: Dict[str, Set[str]] = {
-    "collections": {"OrderedDict"},
-    "torch": {
-        "LongStorage",
-        "FloatStorage",
-        "HalfStorage",
-        "QUInt2x4Storage",
-        "QUInt4x2Storage",
-        "QInt32Storage",
-        "QInt8Storage",
-        "QUInt8Storage",
-        "ComplexFloatStorage",
-        "ComplexDoubleStorage",
-        "DoubleStorage",
-        "BFloat16Storage",
-        "BoolStorage",
-        "CharStorage",
-        "ShortStorage",
-        "IntStorage",
-        "ByteStorage",
-    },
-    "torch._utils": {"_rebuild_tensor_v2"},
-}
-
-_unsafe_globals: Dict[str, Any] = {
-    "CRITICAL": {
-        "__builtin__": {
-            "eval",
-            "compile",
-            "getattr",
-            "apply",
-            "exec",
-            "open",
-            "breakpoint",
-        },  # Pickle versions 0, 1, 2 have those function under '__builtin__'
-        "builtins": {
-            "eval",
-            "compile",
-            "getattr",
-            "apply",
-            "exec",
-            "open",
-            "breakpoint",
-        },  # Pickle versions 3, 4 have those function under 'builtins'
-        "runpy": "*",
-        "os": "*",
-        "nt": "*",  # Alias for 'os' on Windows. Includes os.system()
-        "posix": "*",  # Alias for 'os' on Linux. Includes os.system()
-        "socket": "*",
-        "subprocess": "*",
-        "sys": "*",
-    },
-    "HIGH": {
-        "webbrowser": "*",  # Includes webbrowser.open()
-        "httplib": "*",  # Includes http.client.HTTPSConnection()
-        "requests.api": "*",
-        "aiohttp.client": "*",
-    },
-    "MEDIUM": {},
-    "LOW": {},
-}
 
 #
 # TODO: handle methods loading other Pickle files (either mark as suspicious, or follow calls to scan other files [preventing infinite loops])
@@ -113,7 +52,7 @@ def _list_globals(
 ) -> Set[Tuple[str, str]]:
     globals: Set[Any] = set()
 
-    memo: Dict[int, str] = {}
+    memo: Dict[Union[int, str], str] = {}
     # Scan the data for pickle buffers, stopping when parsing fails or stops making progress
     last_byte = b"dummy"
     while last_byte != b"":
@@ -133,10 +72,11 @@ def _list_globals(
             op_name = op[0].name
             op_value: str = op[1]
 
-            if op_name in ["MEMOIZE", "PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
+            if op_name == "MEMOIZE" and n > 0:
                 memo[len(memo)] = ops[n - 1][1]
-
-            if op_name in ["GLOBAL", "INST"]:
+            elif op_name in ["PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
+                memo[op_value] = ops[n - 1][1]
+            elif op_name in ("GLOBAL", "INST"):
                 globals.add(tuple(op_value.split(" ", 1)))
             elif op_name == "STACK_GLOBAL":
                 values: List[str] = []
@@ -178,63 +118,63 @@ def _list_globals(
 def scan_pickle_bytes(
     data: IO[bytes],
     source: Union[Path, str],
+    settings: Dict[str, Any],
     scan_name: str = "pickle",
     multiple_pickles: bool = True,
-) -> Tuple[List[Issue], List[Error]]:
+) -> ScanResults:
     """Disassemble a Pickle stream and report issues"""
 
     issues: List[Issue] = []
     try:
         raw_globals = _list_globals(data, multiple_pickles)
     except GenOpsError as e:
-        return issues, [
-            ModelScanError(scan_name, f"Error parsing pickle file {source}: {e}")
-        ]
+        return ScanResults(
+            issues,
+            [ModelScanError(scan_name, f"Error parsing pickle file {source}: {e}")],
+        )
 
     logger.debug("Global imports in %s: %s", source, raw_globals)
+    severities = {
+        "CRITICAL": IssueSeverity.CRITICAL,
+        "HIGH": IssueSeverity.HIGH,
+        "MEDIUM": IssueSeverity.MEDIUM,
+        "LOW": IssueSeverity.LOW,
+    }
 
     for rg in raw_globals:
         global_module, global_name, severity = rg[0], rg[1], None
-        unsafe_critical_filter = _unsafe_globals["CRITICAL"].get(global_module)
-        unsafe_high_filter = _unsafe_globals["HIGH"].get(global_module)
-        unsafe_medium_filter = _unsafe_globals["MEDIUM"].get(global_module)
-        unsafe_low_filter = _unsafe_globals["LOW"].get(global_module)
-        if unsafe_critical_filter is not None and (
-            unsafe_critical_filter == "*" or global_name in unsafe_critical_filter
-        ):
-            severity = IssueSeverity.CRITICAL
-
-        elif unsafe_high_filter is not None and (
-            unsafe_high_filter == "*" or global_name in unsafe_high_filter
-        ):
-            severity = IssueSeverity.HIGH
-        elif unsafe_medium_filter is not None and (
-            unsafe_medium_filter == "*" or global_name in unsafe_medium_filter
-        ):
-            severity = IssueSeverity.MEDIUM
-        elif unsafe_low_filter is not None and (
-            unsafe_low_filter == "*" or global_name in unsafe_low_filter
-        ):
-            severity = IssueSeverity.LOW
-        elif "unknown" in global_module or "unknown" in global_name:
-            severity = IssueSeverity.MEDIUM
-        else:
-            continue
-        issues.append(
-            Issue(
-                code=IssueCode.UNSAFE_OPERATOR,
-                severity=severity,
-                details=OperatorIssueDetails(
-                    module=global_module, operator=global_name, source=source
-                ),
+        for severity_name in severities:
+            if global_module not in settings["unsafe_globals"][severity_name]:
+                continue
+            filter = settings["unsafe_globals"][severity_name][global_module]
+            if filter == "*":
+                severity = severities[severity_name]
+                break
+            for filter_value in filter:
+                if filter_value in global_name:
+                    severity = severities[severity_name]
+                    break
+            else:
+                continue
+            break
+        if "unknown" in global_module or "unknown" in global_name:
+            severity = IssueSeverity.CRITICAL  # we must assume it is RCE
+        if severity is not None:
+            issues.append(
+                Issue(
+                    code=IssueCode.UNSAFE_OPERATOR,
+                    severity=severity,
+                    details=OperatorIssueDetails(
+                        module=global_module, operator=global_name, source=source
+                    ),
+                )
             )
-        )
-    return issues, []
+    return ScanResults(issues, [])
 
 
 def scan_numpy(
-    data: IO[bytes], source: Union[str, Path]
-) -> Tuple[List[Issue], List[Error]]:
+    data: IO[bytes], source: Union[str, Path], settings: Dict[str, Any]
+) -> ScanResults:
     # Code to distinguish from NumPy binary files and pickles.
     _ZIP_PREFIX = b"PK\x03\x04"
     _ZIP_SUFFIX = b"PK\x05\x06"  # empty zip files start with this
@@ -253,16 +193,16 @@ def scan_numpy(
         _, _, dtype = np.lib.format._read_array_header(data, version)  # type: ignore[attr-defined]
 
         if dtype.hasobject:
-            return scan_pickle_bytes(data, source, "numpy")
+            return scan_pickle_bytes(data, source, settings, "numpy")
         else:
-            return [], []
+            return ScanResults([], [])
     else:
-        return scan_pickle_bytes(data, source, "numpy")
+        return scan_pickle_bytes(data, source, settings, "numpy")
 
 
 def scan_pytorch(
-    data: IO[bytes], source: Union[str, Path]
-) -> Tuple[List[Issue], List[Error]]:
+    data: IO[bytes], source: Union[str, Path], settings: Dict[str, Any]
+) -> ScanResults:
     should_read_directly = _should_read_directly(data)
     if should_read_directly and data.tell() == 0:
         # try loading from tar
@@ -275,7 +215,7 @@ def scan_pytorch(
 
     magic = get_magic_number(data)
     if magic != MAGIC_NUMBER:
-        return [], [
-            ModelScanError("pytorch", f"Invalid magic number for file {source}")
-        ]
-    return scan_pickle_bytes(data, source, "pytorch", multiple_pickles=False)
+        return ScanResults(
+            [], [ModelScanError("pytorch", f"Invalid magic number for file {source}")]
+        )
+    return scan_pickle_bytes(data, source, settings, "pytorch", multiple_pickles=False)

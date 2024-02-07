@@ -4,6 +4,8 @@ import pickle
 import struct
 from typing import Any, Tuple
 import os
+import torch
+import torch.nn as nn
 import tensorflow as tf
 from tensorflow import keras
 
@@ -31,6 +33,8 @@ class MaliciousModule(keras.Model):  # type: ignore
             tf.print(tf.io.read_file(file))
 
         return res
+
+
 
 
 class PickleInject:
@@ -261,3 +265,23 @@ def generate_dill_unsafe_file(
     mypickler = DillInject._Pickler(file_for_unsafe_model, pickle_protocol, [payload])
     mypickler.dump(safe_model)
     file_for_unsafe_model.close()
+
+
+class PyTorchTestModel:
+    def __init__(self) -> None:
+        self.model = nn.Module()
+
+    def generate_unsafe_pytorch_file(
+        self, unsafe_file_path: str, model_path: str, zipfile: bool = True
+    ) -> None:
+        command = "system"
+        malicious_code = """cat ~/.aws/secrets
+            """
+
+        payload = get_pickle_payload(command, malicious_code)
+        torch.save(
+            torch.load(model_path),
+            f=unsafe_file_path,
+            pickle_module=PickleInject([payload]),
+            _use_new_zipfile_serialization=zipfile,
+        )

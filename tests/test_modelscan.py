@@ -12,6 +12,7 @@ import requests
 import socket
 import subprocess
 import sys
+import torch
 import tensorflow as tf
 from tensorflow import keras
 from typing import Any, List, Set
@@ -22,9 +23,8 @@ from test_utils import (
 )
 import zipfile
 
-from modelscan.modelscan import Modelscan
+from modelscan.modelscan import ModelScan
 from modelscan.cli import cli
-from modelscan.error import ModelScanError
 from modelscan.issues import (
     Issue,
     IssueCode,
@@ -35,6 +35,9 @@ from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
     scan_numpy,
 )
+from modelscan.settings import DEFAULT_SETTINGS
+
+settings: Dict[str, Any] = DEFAULT_SETTINGS
 
 from modelscan.models.saved_model.scan import SavedModelScan
 
@@ -84,6 +87,52 @@ class Malicious8:
         return sys.exit, (0,)
 
 
+def malicious12_gen() -> bytes:
+    p = pickle.PROTO + b"\x05"
+
+    # stack = [pickle.loads]
+    p += pickle.GLOBAL + b"pickle\nloads\n"
+
+    # stack = [pickle.loads, p2]
+    p2 = (
+        pickle.PROTO
+        + b"\x05"
+        + pickle.GLOBAL
+        + b"os\nsystem\n"
+        + pickle.UNICODE
+        + b"echo pwned!!!\n"
+        + pickle.TUPLE1
+        + pickle.REDUCE
+        + pickle.STOP
+    )
+    p += pickle.BINBYTES + len(p2).to_bytes(4, "little") + p2
+
+    # stack = [pickle.loads, (p2,)]
+    p += pickle.TUPLE1
+
+    # stack = [pickle.loads(p2)]
+    p += pickle.REDUCE
+
+    # return None
+    p += pickle.POP
+    p += pickle.NONE
+
+    p += pickle.STOP
+    return p
+
+
+def malicious13_gen() -> bytes:
+    p = pickle.PROTO + b"\x05"
+
+    p += pickle.GLOBAL + b"builtins\neval.__call__\n"
+    p += pickle.UNICODE + b'__import__("os").system("echo pwned!!!")\n'
+    p += pickle.TUPLE1
+    p += pickle.REDUCE
+
+    p += pickle.STOP
+    return p
+
+
 def initialize_pickle_file(path: str, obj: Any, version: int) -> None:
     if not os.path.exists(path):
         with open(path, "wb") as file:
@@ -124,6 +173,27 @@ def pytorch_file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("pytorch")
     # Fake PyTorch file (PNG file format) simulating https://huggingface.co/RectalWorm/loras_new/blob/main/Owl_Mage_no_background.pt
     initialize_data_file(f"{tmp}/bad_pytorch.pt", b"\211PNG\r\n\032\n")
+
+    # Safe PyTorch files in old and new (zip) formats
+    pt = PyTorchTestModel()
+    torch.save(
+        pt.model.state_dict(),
+        f=f"{tmp}/safe_zip_pytorch.pt",
+        _use_new_zipfile_serialization=True,
+    )
+    torch.save(
+        pt.model.state_dict(),
+        f=f"{tmp}/safe_old_format_pytorch.pt",
+        _use_new_zipfile_serialization=False,
+    )
+
+    # Unsafe PyTorch files in new (zip) format
+    pt.generate_unsafe_pytorch_file(
+        unsafe_file_path=f"{tmp}/unsafe_zip_pytorch.pt",
+        model_path=f"{tmp}/safe_zip_pytorch.pt",
+        zipfile=True,
+    )
+
     return tmp
 
 
@@ -172,6 +242,36 @@ def file_path(tmp_path_factory: Any) -> Any:
     initialize_pickle_file(f"{tmp}/data/malicious8.pkl", Malicious7(), 4)
     initialize_pickle_file(f"{tmp}/data/malicious9.pkl", Malicious8(), 4)
 
+    # Malicious Pickle from Capture-the-Flag challenge 'Misc/Safe Pickle' at https://imaginaryctf.org/Challenges
+    # GitHub Issue: https://github.com/mmaitre314/picklescan/issues/22
+    initialize_data_file(
+        f"{tmp}/data/malicious11.pkl",
+        b"".join(
+            [
+                pickle.UNICODE + b"os\n",
+                pickle.PUT + b"2\n",
+                pickle.POP,
+                pickle.UNICODE + b"system\n",
+                pickle.PUT + b"3\n",
+                pickle.POP,
+                pickle.UNICODE + b"torch\n",
+                pickle.PUT + b"0\n",
+                pickle.POP,
+                pickle.UNICODE + b"LongStorage\n",
+                pickle.PUT + b"1\n",
+                pickle.POP,
+                pickle.GET + b"2\n",
+                pickle.GET + b"3\n",
+                pickle.STACK_GLOBAL,
+                pickle.MARK,
+                pickle.UNICODE + b"cat flag.txt\n",
+                pickle.TUPLE,
+                pickle.REDUCE,
+                pickle.STOP,
+            ]
+        ),
+    )
+
     initialize_zip_file(
         f"{tmp}/data/malicious1.zip",
         "data.pkl",
@@ -182,6 +282,10 @@ def file_path(tmp_path_factory: Any) -> Any:
         b"(S'print(\"Injection running\")'\ni__builtin__\nexec\n."
     )
     initialize_data_file(f"{tmp}/data/malicious10.pkl", malicious10_pickle_bytes)
+
+    initialize_data_file(f"{tmp}/data/malicious12.pkl", malicious12_gen())
+
+    initialize_data_file(f"{tmp}/data/malicious13.pkl", malicious13_gen())
 
     return tmp
 
@@ -263,9 +367,12 @@ conn = http.client.HTTPSConnection("protectai.com")"""
         or x
     )
     input_to_new_layer = keras.layers.Dense(1)(keras_model.layers[-1].output)
-    new_layer = keras.layers.Lambda(attack)(input_to_new_layer)
+    first_lambda_layer = keras.layers.Lambda(attack)(input_to_new_layer)
+    second_lambda_layer = keras.layers.Lambda(attack)(first_lambda_layer)
 
-    malicious_model = tf.keras.Model(inputs=keras_model.inputs, outputs=[new_layer])
+    malicious_model = tf.keras.Model(
+        inputs=keras_model.inputs, outputs=[second_lambda_layer]
+    )
     malicious_model.compile(optimizer="adam", loss="mean_squared_error")
 
     for extension in keras_file_extensions:
@@ -321,7 +428,9 @@ def test_scan_pickle_bytes() -> None:
         )
     ]
     assert (
-        scan_pickle_bytes(io.BytesIO(pickle.dumps(Malicious1())), "file.pkl")[0]
+        scan_pickle_bytes(
+            io.BytesIO(pickle.dumps(Malicious1())), "file.pkl", settings
+        ).issues
         == expected
     )
 
@@ -337,21 +446,43 @@ def test_scan_zip(zip_file_path: Any) -> None:
         )
     ]
 
-    ms = Modelscan()
+    ms = ModelScan()
     ms._scan_zip(f"{zip_file_path}/test.zip")
     assert ms.issues.all_issues == expected
 
 
 def test_scan_pytorch(pytorch_file_path: Any) -> None:
-    bad_pytorch = Modelscan()
-    bad_pytorch.scan_path(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
-    assert bad_pytorch.issues.all_issues == []
-    assert [error.scan_name for error in bad_pytorch.errors] == ["pytorch"]  # type: ignore[attr-defined]
+    ms = ModelScan()
+    ms.scan(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
+    assert ms.issues.all_issues == []
+    assert [error.scan_name for error in ms.errors] == ["pytorch"]  # type: ignore[attr-defined]
+
+    ms.scan(Path(f"{pytorch_file_path}/safe_zip_pytorch.pt"))
+    assert ms.issues.all_issues == []
+    assert ms.errors == []
+
+    ms.scan(Path(f"{pytorch_file_path}/safe_old_format_pytorch.pt"))
+    assert ms.issues.all_issues == []
+    assert ms.errors == []
+
+    unsafe_zip_path = f"{pytorch_file_path}/unsafe_zip_pytorch.pt"
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "posix", "system", f"{unsafe_zip_path}:unsafe_zip_pytorch/data.pkl"
+            ),
+        ),
+    ]
+    ms.scan(unsafe_zip_path)
+    assert ms.errors == []
+    assert ms.issues.all_issues == expected
 
 
 def test_scan_numpy(numpy_file_path: Any) -> None:
     with open(f"{numpy_file_path}/safe_numpy.npy", "rb") as f:
-        assert scan_numpy(io.BytesIO(f.read()), "safe_numpy.npy")[0] == []
+        assert scan_numpy(io.BytesIO(f.read()), "safe_numpy.npy", settings).issues == []
 
     expected = {
         Issue(
@@ -363,19 +494,20 @@ def test_scan_numpy(numpy_file_path: Any) -> None:
 
     with open(f"{numpy_file_path}/unsafe_numpy.npy", "rb") as f:
         compare_results(
-            scan_numpy(io.BytesIO(f.read()), "unsafe_numpy.npy")[0], expected
+            scan_numpy(io.BytesIO(f.read()), "unsafe_numpy.npy", settings).issues,
+            expected,
         )
 
 
 def test_scan_file_path(file_path: Any) -> None:
-    benign_pickle = Modelscan()
-    benign_pickle.scan_path(Path(f"{file_path}/data/benign0_v3.pkl"))
-    benign_dill = Modelscan()
-    benign_dill.scan_path(Path(f"{file_path}/data/benign0_v3.dill"))
+    benign_pickle = ModelScan()
+    benign_pickle.scan(Path(f"{file_path}/data/benign0_v3.pkl"))
+    benign_dill = ModelScan()
+    benign_dill.scan(Path(f"{file_path}/data/benign0_v3.dill"))
     assert benign_pickle.issues.all_issues == []
     assert benign_dill.issues.all_issues == []
 
-    malicious0 = Modelscan()
+    malicious0 = ModelScan()
     expected_malicious0 = {
         Issue(
             IssueCode.UNSAFE_OPERATOR,
@@ -406,7 +538,7 @@ def test_scan_file_path(file_path: Any) -> None:
             ),
         ),
     }
-    malicious0.scan_path(Path(f"{file_path}/data/malicious0.pkl"))
+    malicious0.scan(Path(f"{file_path}/data/malicious0.pkl"))
     compare_results(malicious0.issues.all_issues, expected_malicious0)
 
 
@@ -477,21 +609,21 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious1_v0 = Modelscan()
-    malicious1_v3 = Modelscan()
-    malicious1_v4 = Modelscan()
-    malicious1_v0_dill = Modelscan()
-    malicious1_v3_dill = Modelscan()
-    malicious1_v4_dill = Modelscan()
+    malicious1_v0 = ModelScan()
+    malicious1_v3 = ModelScan()
+    malicious1_v4 = ModelScan()
+    malicious1_v0_dill = ModelScan()
+    malicious1_v3_dill = ModelScan()
+    malicious1_v4_dill = ModelScan()
 
-    malicious1 = Modelscan()
-    malicious1_v0.scan_path(Path(f"{file_path}/data/malicious1_v0.pkl"))
-    malicious1_v3.scan_path(Path(f"{file_path}/data/malicious1_v3.pkl"))
-    malicious1_v4.scan_path(Path(f"{file_path}/data/malicious1_v4.pkl"))
-    malicious1_v0_dill.scan_path(Path(f"{file_path}/data/malicious1_v0.dill"))
-    malicious1_v3_dill.scan_path(Path(f"{file_path}/data/malicious1_v3.dill"))
-    malicious1_v4_dill.scan_path(Path(f"{file_path}/data/malicious1_v4.dill"))
-    malicious1.scan_path(Path(f"{file_path}/data/malicious1.zip"))
+    malicious1 = ModelScan()
+    malicious1_v0.scan(Path(f"{file_path}/data/malicious1_v0.pkl"))
+    malicious1_v3.scan(Path(f"{file_path}/data/malicious1_v3.pkl"))
+    malicious1_v4.scan(Path(f"{file_path}/data/malicious1_v4.pkl"))
+    malicious1_v0_dill.scan(Path(f"{file_path}/data/malicious1_v0.dill"))
+    malicious1_v3_dill.scan(Path(f"{file_path}/data/malicious1_v3.dill"))
+    malicious1_v4_dill.scan(Path(f"{file_path}/data/malicious1_v4.dill"))
+    malicious1.scan(Path(f"{file_path}/data/malicious1.zip"))
     assert malicious1_v0.issues.all_issues == expected_malicious1_v0
     assert malicious1_v3.issues.all_issues == expected_malicious1_v3
     assert malicious1_v4.issues.all_issues == expected_malicious1_v4
@@ -527,12 +659,12 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious2_v0 = Modelscan()
-    malicious2_v3 = Modelscan()
-    malicious2_v4 = Modelscan()
-    malicious2_v0.scan_path(Path(f"{file_path}/data/malicious2_v0.pkl"))
-    malicious2_v3.scan_path(Path(f"{file_path}/data/malicious2_v3.pkl"))
-    malicious2_v4.scan_path(Path(f"{file_path}/data/malicious2_v4.pkl"))
+    malicious2_v0 = ModelScan()
+    malicious2_v3 = ModelScan()
+    malicious2_v4 = ModelScan()
+    malicious2_v0.scan(Path(f"{file_path}/data/malicious2_v0.pkl"))
+    malicious2_v3.scan(Path(f"{file_path}/data/malicious2_v3.pkl"))
+    malicious2_v4.scan(Path(f"{file_path}/data/malicious2_v4.pkl"))
     assert malicious2_v0.issues.all_issues == expected_malicious2_v0
     assert malicious2_v3.issues.all_issues == expected_malicious2_v3
     assert malicious2_v4.issues.all_issues == expected_malicious2_v4
@@ -548,8 +680,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious3 = Modelscan()
-    malicious3.scan_path(Path(f"{file_path}/data/malicious3.pkl"))
+    malicious3 = ModelScan()
+    malicious3.scan(Path(f"{file_path}/data/malicious3.pkl"))
     assert malicious3.issues.all_issues == expected_malicious3
 
     expected_malicious4 = [
@@ -561,8 +693,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious4 = Modelscan()
-    malicious4.scan_path(Path(f"{file_path}/data/malicious4.pickle"))
+    malicious4 = ModelScan()
+    malicious4.scan(Path(f"{file_path}/data/malicious4.pickle"))
     assert malicious4.issues.all_issues == expected_malicious4
 
     expected_malicious5 = [
@@ -576,8 +708,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious5 = Modelscan()
-    malicious5.scan_path(Path(f"{file_path}/data/malicious5.pickle"))
+    malicious5 = ModelScan()
+    malicious5.scan(Path(f"{file_path}/data/malicious5.pickle"))
     assert malicious5.issues.all_issues == expected_malicious5
 
     expected_malicious6 = [
@@ -589,8 +721,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious6 = Modelscan()
-    malicious6.scan_path(Path(f"{file_path}/data/malicious6.pkl"))
+    malicious6 = ModelScan()
+    malicious6.scan(Path(f"{file_path}/data/malicious6.pkl"))
     assert malicious6.issues.all_issues == expected_malicious6
 
     expected_malicious7 = [
@@ -602,8 +734,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious7 = Modelscan()
-    malicious7.scan_path(Path(f"{file_path}/data/malicious7.pkl"))
+    malicious7 = ModelScan()
+    malicious7.scan(Path(f"{file_path}/data/malicious7.pkl"))
     assert malicious7.issues.all_issues == expected_malicious7
 
     expected_malicious8 = [
@@ -615,8 +747,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious8 = Modelscan()
-    malicious8.scan_path(Path(f"{file_path}/data/malicious8.pkl"))
+    malicious8 = ModelScan()
+    malicious8.scan(Path(f"{file_path}/data/malicious8.pkl"))
     assert malicious8.issues.all_issues == expected_malicious8
 
     expected_malicious9 = [
@@ -626,8 +758,8 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             OperatorIssueDetails("sys", "exit", f"{file_path}/data/malicious9.pkl"),
         )
     ]
-    malicious9 = Modelscan()
-    malicious9.scan_path(Path(f"{file_path}/data/malicious9.pkl"))
+    malicious9 = ModelScan()
+    malicious9.scan(Path(f"{file_path}/data/malicious9.pkl"))
     assert malicious9.issues.all_issues == expected_malicious9
 
     expected_malicious10 = [
@@ -639,9 +771,44 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             ),
         )
     ]
-    malicious10 = Modelscan()
-    malicious10.scan_path(Path(f"{file_path}/data/malicious10.pkl"))
+    malicious10 = ModelScan()
+    malicious10.scan(Path(f"{file_path}/data/malicious10.pkl"))
     assert malicious10.issues.all_issues == expected_malicious10
+
+    expected_malicious11 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails("os", "system", f"{file_path}/data/malicious11.pkl"),
+        )
+    ]
+    malicious11 = ModelScan()
+    malicious11.scan(Path(f"{file_path}/data/malicious11.pkl"))
+    assert malicious11.issues.all_issues == expected_malicious11
+    expected_malicious12 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "pickle", "loads", f"{file_path}/data/malicious12.pkl"
+            ),
+        )
+    ]
+    malicious12 = ModelScan()
+    malicious12.scan(Path(f"{file_path}/data/malicious12.pkl"))
+    assert malicious12.issues.all_issues == expected_malicious12
+    expected_malicious13 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins", "eval.__call__", f"{file_path}/data/malicious13.pkl"
+            ),
+        )
+    ]
+    malicious13 = ModelScan()
+    malicious13.scan(Path(f"{file_path}/data/malicious13.pkl"))
+    assert malicious13.issues.all_issues == expected_malicious13
 
 
 def test_scan_directory_path(file_path: str) -> None:
@@ -801,10 +968,29 @@ def test_scan_directory_path(file_path: str) -> None:
                 "__builtin__", "exec", f"{file_path}/data/malicious10.pkl"
             ),
         ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails("os", "system", f"{file_path}/data/malicious11.pkl"),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "pickle", "loads", f"{file_path}/data/malicious12.pkl"
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins", "eval.__call__", f"{file_path}/data/malicious13.pkl"
+            ),
+        ),
     }
-    ms = Modelscan()
+    ms = ModelScan()
     p = Path(f"{file_path}/data/")
-    ms.scan_path(p)
+    ms.scan(p)
     compare_results(ms.issues.all_issues, expected)
 
 
@@ -812,6 +998,7 @@ def test_scan_directory_path(file_path: str) -> None:
     "file_extension", [".h5", ".keras", ".pb"], ids=["h5", "keras", "pb"]
 )
 def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
+
     keras_file_path_parent_dir, safe_saved_model_dir, unsafe_saved_model_dir = (
         keras_file_path[0],
         keras_file_path[1],
@@ -822,6 +1009,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         ms.scan_path(Path(f"{safe_saved_model_dir}"))
     else:
         ms.scan_path(Path(f"{keras_file_path_parent_dir}/safe{file_extension}"))
+
     assert ms.issues.all_issues == []
 
     if file_extension == ".keras":
@@ -834,11 +1022,22 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                     "Lambda",
                     f"{keras_file_path_parent_dir}/unsafe{file_extension}:config.json",
                 ),
-            )
+            ),
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.MEDIUM,
+                OperatorIssueDetails(
+                    "Keras",
+                    "Lambda",
+                    f"{keras_file_path}/unsafe{file_extension}:config.json",
+                ),
+            ),
         ]
         ms._scan_source(
+
             Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"),
             extension=file_extension,
+
         )
     elif file_extension == ".pb":
         file_name = "keras_metadata.pb"
@@ -864,8 +1063,18 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                     "Lambda",
                     f"{keras_file_path_parent_dir}/unsafe{file_extension}",
                 ),
-            )
+            ),
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.MEDIUM,
+                OperatorIssueDetails(
+                    "Keras",
+                    "Lambda",
+                    f"{keras_file_path}/unsafe{file_extension}",
+                ),
+            ),
         ]
+
         ms.scan_path(Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"))
     assert ms.issues.all_issues == expected
 
@@ -902,10 +1111,23 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
     ]
     ms.scan_path(Path(f"{unsafe_tensorflow_model_dir}"))
 
+
     assert ms.issues.all_issues == expected
 
 
 def test_main(file_path: Any) -> None:
+    argv = sys.argv
+    try:
+        sys.argv = ["modelscan", "scan", "-p", f"{file_path}/data/benign0_v3.pkl"]
+        assert cli() == 0
+        importlib.import_module("modelscan.scanner")
+    except SystemExit:
+        pass
+    finally:
+        sys.argv = argv
+
+
+def test_main_defaultgroup(file_path: Any) -> None:
     argv = sys.argv
     try:
         sys.argv = ["modelscan", "-p", f"{file_path}/data/benign0_v3.pkl"]
