@@ -50,7 +50,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
     def _scan_keras_h5_file(self, source: Union[str, Path]) -> Optional[ScanResults]:
         machine_learning_library_name = "Keras"
         operators_in_model = self._get_keras_h5_operator_names(source)
-        if not operators_in_model:
+        if operators_in_model is None:
             return None
         return H5LambdaDetectScan._check_for_unsafe_tf_keras_operator(
             module_name=machine_learning_library_name,
