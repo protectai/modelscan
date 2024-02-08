@@ -89,7 +89,7 @@ class JSONReport(Report):
     ) -> None:
         report: Dict[str, Any] = scan._generate_results()
         if not settings["show_skipped"]:
-            del report["skipped"]
+            del report["summary"]["skipped"]
 
         print(json.dumps(report))
 

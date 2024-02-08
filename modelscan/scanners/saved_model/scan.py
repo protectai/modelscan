@@ -81,7 +81,10 @@ class SavedModelScan(ScanBase):
                     code=IssueCode.UNSAFE_OPERATOR,
                     severity=severity,
                     details=OperatorIssueDetails(
-                        module=module_name, operator=op, source=source
+                        module=module_name,
+                        operator=op,
+                        source=source,
+                        severity=severity,
                     ),
                 )
             )

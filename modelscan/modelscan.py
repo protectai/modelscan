@@ -141,10 +141,6 @@ class ModelScan:
         issues_by_severity = self._issues.group_by_severity()
         total_issue_count = len(self._issues.all_issues)
 
-        report["modelscan_version"] = __version__
-        report["timestamp"] = datetime.now().isoformat()
-        report["input_path"] = self._input_path
-        report["total_issues"] = total_issue_count
         report["summary"] = {"total_issues_by_severity": {}}
         for severity in IssueSeverity:
             if severity.name in issues_by_severity:
@@ -154,23 +150,24 @@ class ModelScan:
             else:
                 report["summary"]["total_issues_by_severity"][severity.name] = 0
 
-        report["issues_by_severity"] = {}
-        for issue_key in issues_by_severity.keys():
-            report["issues_by_severity"][issue_key] = [
-                issue.details.output_json() for issue in issues_by_severity[issue_key]
-            ]
-
-        report["errors"] = [str(error) for index, error in enumerate(self._errors)]
-
-        report["scanned"] = {"total_scanned": len(self._scanned)}
-        report["scanned"]["scanned_files"] = [
+        report["summary"]["total_issues"] = total_issue_count
+        report["summary"]["input_path"] = self._input_path
+        report["summary"]["modelscan_version"] = __version__
+        report["summary"]["timestamp"] = datetime.now().isoformat()
+        report["summary"]["skipped"] = {"total_skipped": len(self._skipped)}
+        report["summary"]["skipped"]["skipped_files"] = [
+            str(file_name) for file_name in self._skipped
+        ]
+        report["summary"]["scanned"] = {"total_scanned": len(self._scanned)}
+        report["summary"]["scanned"]["scanned_files"] = [
             str(file_name) for file_name in self._scanned
         ]
 
-        report["skipped"] = {"total_skipped": len(self._skipped)}
-        report["skipped"]["skipped_files"] = [
-            str(file_name) for file_name in self._skipped
+        report["issues"] = [
+            issue.details.output_json() for issue in self._issues.all_issues
         ]
+
+        report["errors"] = [str(error) for index, error in enumerate(self._errors)]
 
         return report
 
