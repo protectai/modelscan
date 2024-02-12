@@ -64,6 +64,7 @@ class Issue:
             and self.details.module == other.details.module  # type: ignore[attr-defined]
             and self.details.operator == other.details.operator  # type: ignore[attr-defined]
             and str(self.details.source) == str(other.details.source)  # type: ignore[attr-defined]
+            and self.details.severity == other.severity  # type: ignore[attr-defined]
         )
 
     def __repr__(self) -> str:
@@ -76,6 +77,7 @@ class Issue:
             + str(self.details.module)  # type: ignore[attr-defined]
             + str(self.details.operator)  # type: ignore[attr-defined]
             + str(self.details.source)  # type: ignore[attr-defined]
+            + str(self.details.severity)  # type: ignore[attr-defined]
         )
 
     def print(self) -> None:
@@ -121,11 +123,17 @@ class Issues:
 
 class OperatorIssueDetails(IssueDetails):
     def __init__(
-        self, module: str, operator: str, source: Union[Path, str], scanner: str = ""
+        self,
+        module: str,
+        operator: str,
+        severity: IssueSeverity,
+        source: Union[Path, str],
+        scanner: str = "",
     ) -> None:
         self.module = module
         self.operator = operator
         self.source = source
+        self.severity = severity
         self.scanner = scanner
 
     def output_lines(self) -> List[str]:
@@ -141,7 +149,8 @@ class OperatorIssueDetails(IssueDetails):
             "module": f"{self.module}",
             "source": f"{str(self.source)}",
             "scanner": f"{self.scanner}",
+            "severity": f"{self.severity.name}",
         }
 
     def __repr__(self) -> str:
-        return f"<OperatorIssueDetails(module={self.module}, operator={self.operator}, source={str(self.source)})>"
+        return f"<OperatorIssueDetails(module={self.module}, operator={self.operator}, severity={self.severity.name}, source={str(self.source)})>"

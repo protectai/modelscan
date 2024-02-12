@@ -68,8 +68,8 @@ class ModelScan:
         self._skipped = []
         self._scanned = []
         self._input_path = str(path)
-
-        self._scan_path(Path(path))
+        pathlibPath = Path().cwd() if path == "." else Path(path).absolute()
+        self._scan_path(Path(pathlibPath))
         return self._generate_results()
 
     def _scan_path(
@@ -147,13 +147,13 @@ class ModelScan:
     def _generate_results(self) -> Dict[str, Any]:
         report: Dict[str, Any] = {}
 
+        absolute_path = Path(self._input_path).resolve()
+        if Path(self._input_path).is_file():
+            absolute_path = Path(absolute_path).parent
+
         issues_by_severity = self._issues.group_by_severity()
         total_issue_count = len(self._issues.all_issues)
 
-        report["modelscan_version"] = __version__
-        report["timestamp"] = datetime.now().isoformat()
-        report["input_path"] = self._input_path
-        report["total_issues"] = total_issue_count
         report["summary"] = {"total_issues_by_severity": {}}
         for severity in IssueSeverity:
             if severity.name in issues_by_severity:
@@ -163,23 +163,32 @@ class ModelScan:
             else:
                 report["summary"]["total_issues_by_severity"][severity.name] = 0
 
-        report["issues_by_severity"] = {}
-        for issue_key in issues_by_severity.keys():
-            report["issues_by_severity"][issue_key] = [
-                issue.details.output_json() for issue in issues_by_severity[issue_key]
-            ]
+        report["summary"]["total_issues"] = total_issue_count
+        report["summary"]["input_path"] = str(self._input_path)
+        report["summary"]["absolute_path"] = str(absolute_path)
+        report["summary"]["modelscan_version"] = __version__
+        report["summary"]["timestamp"] = datetime.now().isoformat()
+        report["summary"]["skipped"] = {"total_skipped": len(self._skipped)}
+        report["summary"]["skipped"]["skipped_files"] = [
+            str(Path(file_name).relative_to(Path(absolute_path)))
+            for file_name in self._skipped
+        ]
+        report["summary"]["scanned"] = {"total_scanned": len(self._scanned)}
+        report["summary"]["scanned"]["scanned_files"] = [
+            str(Path(file_name).relative_to(Path(absolute_path)))
+            for file_name in self._scanned
+        ]
+
+        report["issues"] = [
+            issue.details.output_json() for issue in self._issues.all_issues
+        ]
+
+        for issue in report["issues"]:
+            issue["source"] = str(
+                Path(issue["source"]).relative_to(Path(absolute_path))
+            )
 
         report["errors"] = [str(error) for index, error in enumerate(self._errors)]
-
-        report["scanned"] = {"total_scanned": len(self._scanned)}
-        report["scanned"]["scanned_files"] = [
-            str(file_name) for file_name in self._scanned
-        ]
-
-        report["skipped"] = {"total_skipped": len(self._skipped)}
-        report["skipped"]["skipped_files"] = [
-            str(file_name) for file_name in self._skipped
-        ]
 
         return report
 

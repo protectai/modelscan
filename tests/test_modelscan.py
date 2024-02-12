@@ -425,9 +425,12 @@ def test_scan_pickle_bytes() -> None:
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
-            OperatorIssueDetails("builtins", "eval", "file.pkl"),
+            OperatorIssueDetails(
+                "builtins", "eval", IssueSeverity.CRITICAL, "file.pkl"
+            ),
         )
     ]
+
     assert (
         scan_pickle_bytes(
             io.BytesIO(pickle.dumps(Malicious1())), "file.pkl", settings
@@ -442,7 +445,10 @@ def test_scan_zip(zip_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{zip_file_path}/test.zip:data.pkl"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{zip_file_path}/test.zip:data.pkl",
             ),
         )
     ]
@@ -472,7 +478,10 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{unsafe_zip_path}:unsafe_zip_pytorch/data.pkl"
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{unsafe_zip_path}:unsafe_zip_pytorch/data.pkl",
             ),
         ),
     ]
@@ -489,7 +498,9 @@ def test_scan_numpy(numpy_file_path: Any) -> None:
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
-            OperatorIssueDetails("builtins", "exec", "unsafe_numpy.npy"),
+            OperatorIssueDetails(
+                "builtins", "exec", IssueSeverity.CRITICAL, "unsafe_numpy.npy"
+            ),
         ),
     }
 
@@ -514,28 +525,40 @@ def test_scan_file_path(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "apply", f"{file_path}/data/malicious0.pkl"
+                "__builtin__",
+                "apply",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{file_path}/data/malicious0.pkl"
+                "__builtin__",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "compile", f"{file_path}/data/malicious0.pkl"
+                "__builtin__",
+                "compile",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "getattr", f"{file_path}/data/malicious0.pkl"
+                "__builtin__",
+                "getattr",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious0.pkl",
             ),
         ),
     }
@@ -550,7 +573,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{file_path}/data/malicious1_v0.pkl"
+                "__builtin__",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v0.pkl",
             ),
         )
     ]
@@ -559,7 +585,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1_v3.pkl"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v3.pkl",
             ),
         )
     ]
@@ -568,7 +597,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1_v4.pkl"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v4.pkl",
             ),
         )
     ]
@@ -578,7 +610,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{file_path}/data/malicious1_v0.dill"
+                "__builtin__",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v0.dill",
             ),
         )
     ]
@@ -587,7 +622,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1_v3.dill"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v3.dill",
             ),
         )
     ]
@@ -596,7 +634,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1_v4.dill"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v4.dill",
             ),
         )
     ]
@@ -606,7 +647,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1.zip:data.pkl"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1.zip:data.pkl",
             ),
         )
     ]
@@ -638,7 +682,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{file_path}/data/malicious2_v0.pkl"
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious2_v0.pkl",
             ),
         )
     ]
@@ -647,7 +694,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{file_path}/data/malicious2_v3.pkl"
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious2_v3.pkl",
             ),
         )
     ]
@@ -656,7 +706,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{file_path}/data/malicious2_v4.pkl"
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious2_v4.pkl",
             ),
         )
     ]
@@ -677,6 +730,7 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             OperatorIssueDetails(
                 "httplib",
                 "HTTPSConnection",
+                IssueSeverity.HIGH,
                 Path(f"{file_path}/data/malicious3.pkl"),
             ),
         )
@@ -690,7 +744,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "requests.api", "get", f"{file_path}/data/malicious4.pickle"
+                "requests.api",
+                "get",
+                IssueSeverity.HIGH,
+                f"{file_path}/data/malicious4.pickle",
             ),
         )
     ]
@@ -705,6 +762,7 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             OperatorIssueDetails(
                 "aiohttp.client",
                 "ClientSession",
+                IssueSeverity.HIGH,
                 f"{file_path}/data/malicious5.pickle",
             ),
         )
@@ -718,7 +776,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "requests.api", "get", f"{file_path}/data/malicious6.pkl"
+                "requests.api",
+                "get",
+                IssueSeverity.HIGH,
+                f"{file_path}/data/malicious6.pkl",
             ),
         )
     ]
@@ -731,7 +792,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "socket", "create_connection", f"{file_path}/data/malicious7.pkl"
+                "socket",
+                "create_connection",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious7.pkl",
             ),
         )
     ]
@@ -744,7 +808,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "subprocess", "run", f"{file_path}/data/malicious8.pkl"
+                "subprocess",
+                "run",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious8.pkl",
             ),
         )
     ]
@@ -756,7 +823,12 @@ def test_scan_pickle_operators(file_path: Any) -> None:
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
-            OperatorIssueDetails("sys", "exit", f"{file_path}/data/malicious9.pkl"),
+            OperatorIssueDetails(
+                "sys",
+                "exit",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious9.pkl",
+            ),
         )
     ]
     malicious9 = ModelScan()
@@ -768,7 +840,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "exec", f"{file_path}/data/malicious10.pkl"
+                "__builtin__",
+                "exec",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious10.pkl",
             ),
         )
     ]
@@ -780,7 +855,12 @@ def test_scan_pickle_operators(file_path: Any) -> None:
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
-            OperatorIssueDetails("os", "system", f"{file_path}/data/malicious11.pkl"),
+            OperatorIssueDetails(
+                "os",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious11.pkl",
+            ),
         )
     ]
     malicious11 = ModelScan()
@@ -791,7 +871,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "pickle", "loads", f"{file_path}/data/malicious12.pkl"
+                "pickle",
+                "loads",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious12.pkl",
             ),
         )
     ]
@@ -803,7 +886,10 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval.__call__", f"{file_path}/data/malicious13.pkl"
+                "builtins",
+                "eval.__call__",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious13.pkl",
             ),
         )
     ]
@@ -818,47 +904,70 @@ def test_scan_directory_path(file_path: str) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1.zip:data.pkl"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1.zip:data.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "subprocess", "run", f"{file_path}/data/malicious8.pkl"
+                "subprocess",
+                "run",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious8.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
-            OperatorIssueDetails("sys", "exit", f"{file_path}/data/malicious9.pkl"),
+            OperatorIssueDetails(
+                "sys",
+                "exit",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious9.pkl",
+            ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "requests.api", "get", f"{file_path}/data/malicious4.pickle"
+                "requests.api",
+                "get",
+                IssueSeverity.HIGH,
+                f"{file_path}/data/malicious4.pickle",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1_v3.pkl"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v3.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{file_path}/data/malicious1_v0.pkl"
+                "__builtin__",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1_v4.pkl"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v4.pkl",
             ),
         ),
         # dill based expected issues
@@ -866,21 +975,30 @@ def test_scan_directory_path(file_path: str) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1_v3.dill"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v3.dill",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{file_path}/data/malicious1_v0.dill"
+                "__builtin__",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v0.dill",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval", f"{file_path}/data/malicious1_v4.dill"
+                "builtins",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious1_v4.dill",
             ),
         ),
         Issue(
@@ -889,6 +1007,7 @@ def test_scan_directory_path(file_path: str) -> None:
             OperatorIssueDetails(
                 "aiohttp.client",
                 "ClientSession",
+                IssueSeverity.HIGH,
                 f"{file_path}/data/malicious5.pickle",
             ),
         ),
@@ -896,96 +1015,140 @@ def test_scan_directory_path(file_path: str) -> None:
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{file_path}/data/malicious2_v4.pkl"
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious2_v4.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "socket", "create_connection", f"{file_path}/data/malicious7.pkl"
+                "socket",
+                "create_connection",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious7.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "requests.api", "get", f"{file_path}/data/malicious6.pkl"
+                "requests.api",
+                "get",
+                IssueSeverity.HIGH,
+                f"{file_path}/data/malicious6.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "compile", f"{file_path}/data/malicious0.pkl"
+                "__builtin__",
+                "compile",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "eval", f"{file_path}/data/malicious0.pkl"
+                "__builtin__",
+                "eval",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "apply", f"{file_path}/data/malicious0.pkl"
+                "__builtin__",
+                "apply",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "getattr", f"{file_path}/data/malicious0.pkl"
+                "__builtin__",
+                "getattr",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{file_path}/data/malicious2_v3.pkl"
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious2_v3.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.HIGH,
             OperatorIssueDetails(
-                "httplib", "HTTPSConnection", f"{file_path}/data/malicious3.pkl"
+                "httplib",
+                "HTTPSConnection",
+                IssueSeverity.HIGH,
+                f"{file_path}/data/malicious3.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "posix", "system", f"{file_path}/data/malicious2_v0.pkl"
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious2_v0.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "__builtin__", "exec", f"{file_path}/data/malicious10.pkl"
-            ),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.CRITICAL,
-            OperatorIssueDetails("os", "system", f"{file_path}/data/malicious11.pkl"),
-        ),
-        Issue(
-            IssueCode.UNSAFE_OPERATOR,
-            IssueSeverity.CRITICAL,
-            OperatorIssueDetails(
-                "pickle", "loads", f"{file_path}/data/malicious12.pkl"
+                "__builtin__",
+                "exec",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious10.pkl",
             ),
         ),
         Issue(
             IssueCode.UNSAFE_OPERATOR,
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
-                "builtins", "eval.__call__", f"{file_path}/data/malicious13.pkl"
+                "os",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious11.pkl",
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "pickle",
+                "loads",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious12.pkl",
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "builtins",
+                "eval.__call__",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious13.pkl",
             ),
         ),
     }
@@ -1020,6 +1183,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
+                    IssueSeverity.MEDIUM,
                     f"{keras_file_path_parent_dir}/unsafe{file_extension}:config.json",
                 ),
             ),
@@ -1029,6 +1193,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
+                    IssueSeverity.MEDIUM,
                     f"{keras_file_path_parent_dir}/unsafe{file_extension}:config.json",
                 ),
             ),
@@ -1043,6 +1208,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
+                    IssueSeverity.MEDIUM,
                     f"{unsafe_saved_model_dir}/{file_name}",
                 ),
             ),
@@ -1052,6 +1218,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
+                    IssueSeverity.MEDIUM,
                     f"{unsafe_saved_model_dir}/{file_name}",
                 ),
             ),
@@ -1065,6 +1232,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
+                    IssueSeverity.MEDIUM,
                     f"{keras_file_path_parent_dir}/unsafe{file_extension}",
                 ),
             ),
@@ -1074,6 +1242,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 OperatorIssueDetails(
                     "Keras",
                     "Lambda",
+                    IssueSeverity.MEDIUM,
                     f"{keras_file_path_parent_dir}/unsafe{file_extension}",
                 ),
             ),
@@ -1100,6 +1269,7 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
             OperatorIssueDetails(
                 "Tensorflow",
                 "ReadFile",
+                IssueSeverity.HIGH,
                 f"{unsafe_tensorflow_model_dir}/{file_name}",
             ),
         ),
@@ -1109,6 +1279,7 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
             OperatorIssueDetails(
                 "Tensorflow",
                 "WriteFile",
+                IssueSeverity.HIGH,
                 f"{unsafe_tensorflow_model_dir}/{file_name}",
             ),
         ),
