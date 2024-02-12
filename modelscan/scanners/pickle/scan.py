@@ -27,7 +27,7 @@ class PyTorchUnsafeOpScan(ScanBase):
         ):
             return None
 
-        if _is_zipfile(source):
+        if _is_zipfile(source, data):
             return None
 
         if data:
