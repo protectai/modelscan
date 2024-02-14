@@ -165,7 +165,10 @@ def scan_pickle_bytes(
                     code=IssueCode.UNSAFE_OPERATOR,
                     severity=severity,
                     details=OperatorIssueDetails(
-                        module=global_module, operator=global_name, source=source
+                        module=global_module,
+                        operator=global_name,
+                        source=source,
+                        severity=severity,
                     ),
                 )
             )

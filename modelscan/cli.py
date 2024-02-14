@@ -129,7 +129,7 @@ def scan(
         if not pathlibPath.exists():
             raise FileNotFoundError(f"Path {path} does not exist")
         else:
-            modelscan.scan(pathlibPath)
+            modelscan.scan(path)
     else:
         raise click.UsageError("Command line must include a path")
 
