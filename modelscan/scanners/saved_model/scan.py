@@ -16,7 +16,7 @@ except ImportError:
     tensorflow_installed = False
 
 
-from modelscan.error import ModelScanError
+from modelscan.error import ModelScanError, ErrorCategories
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.scanners.scan import ScanBase, ScanResults
 
@@ -37,7 +37,15 @@ class SavedModelScan(ScanBase):
 
         dep_error = self.handle_binary_dependencies()
         if dep_error:
-            return ScanResults([], [dep_error])
+            return ScanResults(
+                [],
+                [
+                    ModelScanError(
+                        self.name(),
+                        f"To use {self.full_name()}, please install modelscan with tensorflow extras. 'pip install \"modelscan\[tensorflow]\"' if you are using pip.",
+                    )
+                ],
+            )
 
         if data:
             results = self._scan(source, data)
@@ -92,12 +100,9 @@ class SavedModelScan(ScanBase):
 
     def handle_binary_dependencies(
         self, settings: Optional[Dict[str, Any]] = None
-    ) -> Optional[ModelScanError]:
+    ) -> Optional[ErrorCategories]:
         if not tensorflow_installed:
-            return ModelScanError(
-                self.name(),
-                f"To use {self.full_name()}, please install modelscan with tensorflow extras. 'pip install \"modelscan\[tensorflow]\"' if you are using pip.",
-            )
+            return [ErrorCategories.DEPENDENCY.name]
         return None
 
     @staticmethod
@@ -117,6 +122,14 @@ class SavedModelLambdaDetectScan(SavedModelScan):
             operators_in_model = self._get_keras_pb_operator_names(
                 data=data, source=source
             )
+            if ErrorCategories.JSON_DATA.name in operators_in_model:
+                return ScanResults(
+                    [],
+                    [ModelScanError(self.name(), f"Not a valid JSON data", source)],
+                )
+
+            if operators_in_model is None:
+                return None
 
         else:
             return None
@@ -131,7 +144,7 @@ class SavedModelLambdaDetectScan(SavedModelScan):
     @staticmethod
     def _get_keras_pb_operator_names(
         data: IO[bytes], source: Union[str, Path]
-    ) -> List[str]:
+    ) -> List[Any]:
         saved_metadata = SavedMetadata()
         saved_metadata.ParseFromString(data.read())
 
@@ -147,7 +160,7 @@ class SavedModelLambdaDetectScan(SavedModelScan):
             ]
         except json.JSONDecodeError as e:
             logger.error(f"Not a valid JSON data from source: {source}, error: {e}")
-            return []
+            return [ErrorCategories.JSON_DATA.name]
 
         if lambda_layers:
             return ["Lambda"] * len(lambda_layers)

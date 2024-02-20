@@ -1253,13 +1253,26 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
             f"variables/variables.data-00000-of-00001",
             f"variables/variables.index",
         }
+        assert results["errors"] == []
+
+    elif file_extension == ".keras":
+        assert results["summary"]["scanned"]["scanned_files"] == [
+            f"safe{file_extension}",
+            f"safe{file_extension}:model.weights.h5",
+        ]
+        assert results["summary"]["skipped"]["skipped_files"] == []
+        assert results["errors"] == [
+            {
+                "description": "modelscan.scanners.H5LambdaDetectScan got data bytes. It only support direct file scanning.",
+                "source": "safe.keras:model.weights.h5",
+            }
+        ]
     else:
         assert results["summary"]["scanned"]["scanned_files"] == [
             f"safe{file_extension}"
         ]
         assert results["summary"]["skipped"]["skipped_files"] == []
-
-    assert results["errors"] == []
+        assert results["errors"] == []
 
     unsafe_filename = ""
     if file_extension == ".keras":
@@ -1287,6 +1300,13 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
             ),
         ]
         results = ms.scan(Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"))
+        assert ms.issues.all_issues == expected
+        assert results["errors"] == [
+            {
+                "description": "modelscan.scanners.H5LambdaDetectScan got data bytes. It only support direct file scanning.",
+                "source": "unsafe.keras:model.weights.h5",
+            }
+        ]
     elif file_extension == ".pb":
         file_name = "keras_metadata.pb"
         unsafe_filename = f"{unsafe_saved_model_dir}"
@@ -1313,6 +1333,17 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
             ),
         ]
         results = ms.scan(Path(f"{unsafe_saved_model_dir}"))
+        assert ms.issues.all_issues == expected
+        assert results["errors"] == []
+        assert set(results["summary"]["scanned"]["scanned_files"]) == {
+            f"fingerprint.pb",
+            f"keras_metadata.pb",
+            f"saved_model.pb",
+        }
+        assert set(results["summary"]["skipped"]["skipped_files"]) == {
+            f"variables/variables.data-00000-of-00001",
+            f"variables/variables.index",
+        }
     else:
         unsafe_filename = f"{keras_file_path_parent_dir}/unsafe{file_extension}"
         expected = [
@@ -1339,24 +1370,19 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         ]
 
         results = ms.scan(Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"))
-    assert ms.issues.all_issues == expected
-    assert results["errors"] == []
-
-    if file_extension == ".pb":
-        assert set(results["summary"]["scanned"]["scanned_files"]) == {
-            f"fingerprint.pb",
-            f"keras_metadata.pb",
-            f"saved_model.pb",
-        }
-        assert set(results["summary"]["skipped"]["skipped_files"]) == {
-            f"variables/variables.data-00000-of-00001",
-            f"variables/variables.index",
-        }
-    else:
-        assert results["summary"]["scanned"]["scanned_files"] == [
-            f"unsafe{file_extension}"
-        ]
+        assert ms.issues.all_issues == expected
+        assert results["errors"] == []
         assert results["summary"]["skipped"]["skipped_files"] == []
+        if file_extension == ".keras":
+            assert results["summary"]["scanned"]["scanned_files"] == [
+                f"unsafe{file_extension}",
+                f"unsafe{file_extension}:model.weights.h5",
+            ]
+
+        else:
+            assert results["summary"]["scanned"]["scanned_files"] == [
+                f"unsafe{file_extension}"
+            ]
 
 
 def test_scan_tensorflow(tensorflow_file_path: Any) -> None:

@@ -179,7 +179,18 @@ class ModelScan:
                 Path(issue["source"]).relative_to(Path(absolute_path))
             )
 
-        report["errors"] = [str(error) for index, error in enumerate(self._errors)]
+        all_errors = []
+
+        for err in self._errors:
+            error = {}
+            if err.message is not None:
+                error["description"] = err.message
+            if hasattr(err, "source"):
+                error["source"] = str(Path(err.source).relative_to(Path(absolute_path)))
+            if error:
+                all_errors.append(error)
+
+        report["errors"] = all_errors
 
         return report
 

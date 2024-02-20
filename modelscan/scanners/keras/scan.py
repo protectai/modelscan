@@ -2,10 +2,10 @@ import json
 import zipfile
 import logging
 from pathlib import Path
-from typing import IO, List, Union, Optional
+from typing import IO, List, Union, Optional, Any
 
 
-from modelscan.error import ModelScanError
+from modelscan.error import ModelScanError, ErrorCategories
 from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
 
@@ -29,7 +29,15 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
 
         dep_error = self.handle_binary_dependencies()
         if dep_error:
-            return ScanResults([], [dep_error])
+            return ScanResults(
+                [],
+                [
+                    ModelScanError(
+                        self.name(),
+                        f"To use {self.full_name()}, please install modelscan with dependencies.",
+                    )
+                ],
+            )
 
         try:
             with zipfile.ZipFile(data or source, "r") as zip:
@@ -48,8 +56,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
                 [],
                 [
                     ModelScanError(
-                        KerasLambdaDetectScan.name(),
-                        f"Skipping zip file {source}, due to error: {e}",
+                        self.name(), f"Skipping zip file due to error: {e}", source
                     )
                 ],
             )
@@ -59,8 +66,9 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
             [],
             [
                 ModelScanError(
-                    KerasLambdaDetectScan.name(),
+                    self.name(),
                     f"Unable to scan .keras file",  # Not sure if this is a representative message for ModelScanError
+                    source,
                 )
             ],
         )
@@ -70,6 +78,11 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
     ) -> ScanResults:
         machine_learning_library_name = "Keras"
         operators_in_model = self._get_keras_operator_names(source, config_file)
+        if ErrorCategories.JSON_DATA.name in operators_in_model:
+            return ScanResults(
+                [],
+                [ModelScanError(self.name(), f"Not a valid JSON data", source)],
+            )
         return KerasLambdaDetectScan._check_for_unsafe_tf_keras_operator(
             module_name=machine_learning_library_name,
             raw_operator=operators_in_model,
@@ -81,7 +94,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
 
     def _get_keras_operator_names(
         self, source: Union[str, Path], data: IO[bytes]
-    ) -> List[str]:
+    ) -> List[Any]:
         try:
             model_config_data = json.load(data)
             lambda_layers = [
@@ -95,7 +108,8 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
 
         except json.JSONDecodeError as e:
             logger.error(f"Not a valid JSON data from source: {source}, error: {e}")
-            return []
+
+            return [ErrorCategories.JSON_DATA.name]
 
         return []
 

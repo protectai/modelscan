@@ -130,7 +130,7 @@ def scan_pickle_bytes(
     except GenOpsError as e:
         return ScanResults(
             issues,
-            [ModelScanError(scan_name, f"Error parsing pickle file {source}: {e}")],
+            [ModelScanError(scan_name, f"Parsing error: {e}"), source],
         )
 
     logger.debug("Global imports in %s: %s", source, raw_globals)
@@ -219,6 +219,6 @@ def scan_pytorch(
     magic = get_magic_number(data)
     if magic != MAGIC_NUMBER:
         return ScanResults(
-            [], [ModelScanError("pytorch", f"Invalid magic number for file {source}")]
+            [], [ModelScanError("pytorch", f"Invalid magic number", source)]
         )
     return scan_pickle_bytes(data, source, settings, "pytorch", multiple_pickles=False)
