@@ -472,7 +472,11 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     assert results["summary"]["scanned"]["scanned_files"] == [
         f"safe_zip_pytorch.pt:safe_zip_pytorch/data.pkl"
     ]
-    assert results["summary"]["skipped"]["skipped_files"] == []
+    assert results["summary"]["skipped"]["skipped_files"] == [
+        "safe_zip_pytorch.pt:safe_zip_pytorch/byteorder",
+        "safe_zip_pytorch.pt:safe_zip_pytorch/version",
+        "safe_zip_pytorch.pt:safe_zip_pytorch/.data/serialization_id",
+    ]
     assert ms.issues.all_issues == []
     assert results["errors"] == []
 
@@ -499,9 +503,13 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     ]
     results = ms.scan(unsafe_zip_path)
     assert results["summary"]["scanned"]["scanned_files"] == [
-        f"unsafe_zip_pytorch.pt:unsafe_zip_pytorch/data.pkl"
+        f"unsafe_zip_pytorch.pt:unsafe_zip_pytorch/data.pkl",
     ]
-    assert results["summary"]["skipped"]["skipped_files"] == []
+    assert results["summary"]["skipped"]["skipped_files"] == [
+        "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/byteorder",
+        "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/version",
+        "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/.data/serialization_id",
+    ]
     assert ms.issues.all_issues == expected
     assert results["errors"] == []
 
@@ -1260,7 +1268,10 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
             f"safe{file_extension}",
             f"safe{file_extension}:model.weights.h5",
         ]
-        assert results["summary"]["skipped"]["skipped_files"] == []
+        assert results["summary"]["skipped"]["skipped_files"] == [
+            "safe.keras:metadata.json",
+            "safe.keras:config.json",
+        ]
         assert results["errors"] == [
             {
                 "description": "modelscan.scanners.H5LambdaDetectScan got data bytes. It only support direct file scanning.",
@@ -1271,7 +1282,16 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         assert results["summary"]["scanned"]["scanned_files"] == [
             f"safe{file_extension}"
         ]
-        assert results["summary"]["skipped"]["skipped_files"] == []
+
+        if file_extension == ".keras":
+            assert results["summary"]["skipped"]["skipped_files"] == [
+                f"safe{file_extension}:metadata.json",
+                f"safe{file_extension}:config.json",
+                f"safe{file_extension}:model.weights.h5",
+            ]
+        else:
+            assert results["summary"]["skipped"]["skipped_files"] == []
+
         assert results["errors"] == []
 
     unsafe_filename = ""
@@ -1370,6 +1390,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         ]
 
         results = ms.scan(Path(f"{keras_file_path_parent_dir}/unsafe{file_extension}"))
+
         assert ms.issues.all_issues == expected
         assert results["errors"] == []
         assert results["summary"]["skipped"]["skipped_files"] == []
