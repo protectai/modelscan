@@ -127,10 +127,19 @@ class ModelScan:
                 file_names = zip.namelist()
                 for file_name in file_names:
                     with zip.open(file_name, "r") as file_io:
-                        self._scan_source(
+                        scanned = self._scan_source(
                             source=f"{source}:{file_name}",
                             data=file_io,
                         )
+                        if not scanned:
+                            if _is_zipfile(file_name, data=file_io):
+                                self._errors.append(
+                                    ModelScanError(
+                                        "ModelScan",
+                                        f"{source}:{file_name} is a zip file. ModelScan does not support nested zip files.",
+                                    )
+                                )
+                            self._skipped.append(f"{source}:{file_name}")
         except zipfile.BadZipFile as e:
             logger.debug(f"Skipping zip file {source}, due to error", e, exc_info=True)
             self._skipped.append(str(source))
