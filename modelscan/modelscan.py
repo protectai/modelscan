@@ -128,15 +128,18 @@ class ModelScan:
             )
 
             if scan_results is not None:
+                scanned = True
                 logger.info(f"Scanning {source} using {scanner.full_name()} model scan")
                 if scan_results.errors:
                     self._errors.extend(scan_results.errors)
+                elif scan_results.issues:
+                    self._scanned.append(str(source))
+                    self._issues.add_issues(scan_results.issues)
+
                 elif scan_results.skipped:
                     self._skipped.extend(scan_results.skipped)
                 else:
                     self._scanned.append(str(source))
-                    self._issues.add_issues(scan_results.issues)
-                    scanned = True
 
         return scanned
 
