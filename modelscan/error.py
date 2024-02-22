@@ -3,12 +3,21 @@ from enum import Enum
 
 
 class ErrorCategories(Enum):
-    MODEL_FILE = 1
-    JSON_DATA = 2
-    DEPENDENCY = 3
+    MODEL_SCAN = 1
+    DEPENDENCY = 2
+    PATH = 3
+    NESTED_ZIP = 4
+    PICKLE_GENOPS = 5
+    MAGIC_NUMBER = 6
+    JSON_DECODE = 7
 
 
 class Error:
+    scan_name: str
+    category: ErrorCategories
+    message: Optional[str]
+    source: Optional[str]
+
     def __init__(self) -> None:
         pass
 
@@ -17,17 +26,15 @@ class Error:
 
 
 class ModelScanError(Error):
-    scan_name: str
-    message: Optional[str]
-    source: Optional[str]
-
     def __init__(
         self,
         scan_name: str,
+        category: ErrorCategories,
         message: Optional[str] = None,
         source: Optional[str] = None,
     ) -> None:
         self.scan_name = scan_name
+        self.category = category
         self.message = message or "None"
         self.source = str(source)
 

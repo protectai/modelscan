@@ -42,9 +42,11 @@ class SavedModelScan(ScanBase):
                 [
                     ModelScanError(
                         self.name(),
+                        ErrorCategories.DEPENDENCY,
                         f"To use {self.full_name()}, please install modelscan with tensorflow extras. 'pip install \"modelscan\[tensorflow]\"' if you are using pip.",
                     )
                 ],
+                [],
             )
 
         if data:
@@ -96,13 +98,13 @@ class SavedModelScan(ScanBase):
                     ),
                 )
             )
-        return ScanResults(issues, [])
+        return ScanResults(issues, [], [])
 
     def handle_binary_dependencies(
         self, settings: Optional[Dict[str, Any]] = None
-    ) -> Optional[ErrorCategories]:
+    ) -> Optional[str]:
         if not tensorflow_installed:
-            return [ErrorCategories.DEPENDENCY.name]
+            return ErrorCategories.DEPENDENCY.name
         return None
 
     @staticmethod
@@ -122,29 +124,35 @@ class SavedModelLambdaDetectScan(SavedModelScan):
             operators_in_model = self._get_keras_pb_operator_names(
                 data=data, source=source
             )
-            if ErrorCategories.JSON_DATA.name in operators_in_model:
-                return ScanResults(
-                    [],
-                    [ModelScanError(self.name(), f"Not a valid JSON data", source)],
-                )
+            if operators_in_model:
+                if "JSONDecodeError" in operators_in_model:
+                    return ScanResults(
+                        [],
+                        [
+                            ModelScanError(
+                                self.name(),
+                                ErrorCategories.JSON_DECODE,
+                                f"Not a valid JSON data",
+                                str(source),
+                            )
+                        ],
+                        [],
+                    )
 
-            if operators_in_model is None:
-                return None
+            return SavedModelScan._check_for_unsafe_tf_keras_operator(
+                machine_learning_library_name,
+                operators_in_model,
+                source,
+                self._settings["scanners"][self.full_name()]["unsafe_keras_operators"],
+            )
 
         else:
             return None
 
-        return SavedModelScan._check_for_unsafe_tf_keras_operator(
-            machine_learning_library_name,
-            operators_in_model,
-            source,
-            self._settings["scanners"][self.full_name()]["unsafe_keras_operators"],
-        )
-
     @staticmethod
     def _get_keras_pb_operator_names(
         data: IO[bytes], source: Union[str, Path]
-    ) -> List[Any]:
+    ) -> List[str]:
         saved_metadata = SavedMetadata()
         saved_metadata.ParseFromString(data.read())
 
@@ -158,12 +166,12 @@ class SavedModelLambdaDetectScan(SavedModelScan):
                 ]
                 if layer.get("class_name", {}) == "Lambda"
             ]
+            if lambda_layers:
+                return ["Lambda"] * len(lambda_layers)
+
         except json.JSONDecodeError as e:
             logger.error(f"Not a valid JSON data from source: {source}, error: {e}")
-            return [ErrorCategories.JSON_DATA.name]
-
-        if lambda_layers:
-            return ["Lambda"] * len(lambda_layers)
+            return ["JSONDecodeError"]
 
         return []
 
