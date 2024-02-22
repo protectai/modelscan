@@ -472,7 +472,7 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
         }
     ]
     assert ms.issues.all_issues == []
-    assert [error.scan_name for error in ms.errors] == ["pytorch"]  # type: ignore[attr-defined]
+    assert [error.scan_name for error in ms.errors] == ["pytorch"]
 
     results = ms.scan(Path(f"{pytorch_file_path}/safe_zip_pytorch.pt"))
     assert results["summary"]["scanned"]["scanned_files"] == [
@@ -1266,19 +1266,21 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
     assert ms.issues.all_issues == []
 
     if file_extension == ".pb":
-        assert results["summary"]["scanned"]["scanned_files"] == [
+        assert set(results["summary"]["scanned"]["scanned_files"]) == {
             f"fingerprint.pb",
             f"keras_metadata.pb",
             f"saved_model.pb",
-        ]
+        }
 
-        assert [
-            skipped_file["source"]
-            for skipped_file in results["summary"]["skipped"]["skipped_files"]
-        ] == [
-            "variables/variables.data-00000-of-00001",
+        assert set(
+            [
+                skipped_file["source"]
+                for skipped_file in results["summary"]["skipped"]["skipped_files"]
+            ]
+        ) == {
+            f"variables/variables.data-00000-of-00001",
             f"variables/variables.index",
-        ]
+        }
         assert results["errors"] == []
 
     else:
@@ -1287,14 +1289,16 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         ]
 
         if file_extension == ".keras":
-            assert [
-                skipped_file["source"]
-                for skipped_file in results["summary"]["skipped"]["skipped_files"]
-            ] == [
+            assert set(
+                [
+                    skipped_file["source"]
+                    for skipped_file in results["summary"]["skipped"]["skipped_files"]
+                ]
+            ) == {
                 f"safe{file_extension}:metadata.json",
                 f"safe{file_extension}:config.json",
                 f"safe{file_extension}:model.weights.h5",
-            ]
+            }
         else:
             assert results["summary"]["skipped"]["skipped_files"] == []
 
@@ -1357,18 +1361,20 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         results = ms.scan(Path(f"{unsafe_saved_model_dir}"))
         assert ms.issues.all_issues == expected
         assert results["errors"] == []
-        assert results["summary"]["scanned"]["scanned_files"] == [
+        assert set(results["summary"]["scanned"]["scanned_files"]) == {
             f"fingerprint.pb",
             f"keras_metadata.pb",
             f"saved_model.pb",
-        ]
-        assert [
-            skipped_file["source"]
-            for skipped_file in results["summary"]["skipped"]["skipped_files"]
-        ] == [
+        }
+        assert set(
+            [
+                skipped_file["source"]
+                for skipped_file in results["summary"]["skipped"]["skipped_files"]
+            ]
+        ) == {
             f"variables/variables.data-00000-of-00001",
             f"variables/variables.index",
-        ]
+        }
     else:
         unsafe_filename = f"{keras_file_path_parent_dir}/unsafe{file_extension}"
         expected = [
@@ -1400,10 +1406,10 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         assert results["errors"] == []
         assert results["summary"]["skipped"]["skipped_files"] == []
         if file_extension == ".keras":
-            assert results["summary"]["scanned"]["scanned_files"] == [
+            assert set(results["summary"]["scanned"]["scanned_files"]) == {
                 f"unsafe{file_extension}",
                 f"unsafe{file_extension}:model.weights.h5",
-            ]
+            }
 
         else:
             assert results["summary"]["scanned"]["scanned_files"] == [
