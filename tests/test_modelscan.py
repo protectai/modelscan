@@ -1425,18 +1425,20 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
     ms = ModelScan()
     results = ms.scan(Path(f"{safe_tensorflow_model_dir}"))
     assert ms.issues.all_issues == []
-    assert results["summary"]["scanned"]["scanned_files"] == [
+    assert set(results["summary"]["scanned"]["scanned_files"]) == {
         f"fingerprint.pb",
         f"keras_metadata.pb",
         f"saved_model.pb",
-    ]
-    assert [
-        skipped_file["source"]
-        for skipped_file in results["summary"]["skipped"]["skipped_files"]
-    ] == [
+    }
+    assert set(
+        [
+            skipped_file["source"]
+            for skipped_file in results["summary"]["skipped"]["skipped_files"]
+        ]
+    ) == {
         f"variables/variables.data-00000-of-00001",
         f"variables/variables.index",
-    ]
+    }
     assert results["errors"] == []
 
     file_name = "saved_model.pb"
