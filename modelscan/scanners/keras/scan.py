@@ -36,7 +36,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
                     ModelScanError(
                         self.name(),
                         ErrorCategories.DEPENDENCY,
-                        f"To use {self.full_name()}, please install modelscan with dependencies.",
+                        f"To use {self.full_name()}, please install modelscan with tensorflow extras. 'pip install \"modelscan[[ tensorflow]]\"' if you are using pip.",
                     )
                 ],
                 [],

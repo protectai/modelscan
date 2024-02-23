@@ -218,48 +218,50 @@ class ModelScan:
         report["summary"]["timestamp"] = datetime.now().isoformat()
 
         report["summary"]["scanned"] = {"total_scanned": len(self._scanned)}
-        report["summary"]["scanned"]["scanned_files"] = [
-            str(Path(file_name).relative_to(Path(absolute_path)))
-            for file_name in self._scanned
-        ]
 
-        report["issues"] = [
-            issue.details.output_json() for issue in self._issues.all_issues
-        ]
+        if self._scanned:
+            report["summary"]["scanned"]["scanned_files"] = [
+                str(Path(file_name).relative_to(Path(absolute_path)))
+                for file_name in self._scanned
+            ]
 
-        for issue in report["issues"]:
-            issue["source"] = str(
-                Path(issue["source"]).relative_to(Path(absolute_path))
-            )
+        if self._issues.all_issues:
+            report["issues"] = [
+                issue.details.output_json() for issue in self._issues.all_issues
+            ]
 
-        all_errors = []
-
-        for error in self._errors:
-            error_information = {}
-            error_information["category"] = str(error.category.name)
-            if error.message is not None:
-                error_information["description"] = error.message
-            if hasattr(error, "source"):
-                error_information["source"] = str(
-                    Path(str(error.source)).relative_to(Path(absolute_path))
+            for issue in report["issues"]:
+                issue["source"] = str(
+                    Path(issue["source"]).relative_to(Path(absolute_path))
                 )
+        all_errors = []
+        if self._errors:
+            for error in self._errors:
+                error_information = {}
+                error_information["category"] = str(error.category.name)
+                if error.message:
+                    error_information["description"] = error.message
+                if error.source is not None:
+                    error_information["source"] = str(
+                        Path(str(error.source)).relative_to(Path(absolute_path))
+                    )
 
-            all_errors.append(error_information)
+                all_errors.append(error_information)
 
         report["errors"] = all_errors
 
         report["summary"]["skipped"] = {"total_skipped": len(self._skipped)}
 
         all_skipped_files = []
-
-        for skipped_file in self._skipped:
-            skipped_file_information = {}
-            skipped_file_information["category"] = str(skipped_file.category.name)
-            skipped_file_information["description"] = str(skipped_file.message)
-            skipped_file_information["source"] = str(
-                Path(skipped_file.source).relative_to(Path(absolute_path))
-            )
-            all_skipped_files.append(skipped_file_information)
+        if self._skipped:
+            for skipped_file in self._skipped:
+                skipped_file_information = {}
+                skipped_file_information["category"] = str(skipped_file.category.name)
+                skipped_file_information["description"] = str(skipped_file.message)
+                skipped_file_information["source"] = str(
+                    Path(skipped_file.source).relative_to(Path(absolute_path))
+                )
+                all_skipped_files.append(skipped_file_information)
 
         report["summary"]["skipped"]["skipped_files"] = all_skipped_files
 

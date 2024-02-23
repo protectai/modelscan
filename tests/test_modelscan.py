@@ -37,7 +37,7 @@ from modelscan.tools.picklescanner import (
     scan_numpy,
 )
 
-from modelscan.error import ErrorCategories
+from modelscan.skip import SkipCategories
 from modelscan.settings import DEFAULT_SETTINGS
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS
@@ -464,15 +464,14 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     ms = ModelScan()
     results = ms.scan(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
 
-    assert results["errors"] == [
+    assert results["summary"]["skipped"]["skipped_files"] == [
         {
-            "category": ErrorCategories.MAGIC_NUMBER.name,
+            "category": SkipCategories.MAGIC_NUMBER.name,
             "description": f"Invalid magic number",
             "source": f"bad_pytorch.pt",
         }
     ]
     assert ms.issues.all_issues == []
-    assert [error.scan_name for error in ms.errors] == ["pytorch"]
 
     results = ms.scan(Path(f"{pytorch_file_path}/safe_zip_pytorch.pt"))
     assert results["summary"]["scanned"]["scanned_files"] == [

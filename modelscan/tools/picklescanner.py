@@ -210,7 +210,7 @@ def scan_numpy(
                 )
             ],
         )
-        # raise NotImplementedError("Scanning of .npz files is not implemented yet")
+
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
         version = np.lib.format.read_magic(data)  # type: ignore[no-untyped-call]
@@ -243,14 +243,14 @@ def scan_pytorch(
     if magic != MAGIC_NUMBER:
         return ScanResults(
             [],
+            [],
             [
-                ModelScanError(
+                ModelScanSkipped(
                     scan_name,
-                    ErrorCategories.MAGIC_NUMBER,
+                    SkipCategories.MAGIC_NUMBER,
                     f"Invalid magic number",
                     str(source),
-                ),
+                )
             ],
-            [],
         )
     return scan_pickle_bytes(data, source, settings, scan_name, multiple_pickles=False)

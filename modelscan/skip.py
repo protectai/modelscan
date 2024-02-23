@@ -15,6 +15,7 @@ class SkipCategories(Enum):
     MODEL_CONFIG = 3
     H5_DATA = 4
     NOT_IMPLEMENTED = 5
+    MAGIC_NUMBER = 6
 
 
 class Skip:
@@ -40,7 +41,7 @@ class ModelScanSkipped:
     ) -> None:
         self.scan_name = scan_name
         self.category = category
-        self.message = message or "None"
+        self.message = message
         self.source = str(source)
 
     def __str__(self) -> str:
