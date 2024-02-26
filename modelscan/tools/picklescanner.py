@@ -7,7 +7,8 @@ from typing import IO, Any, Dict, List, Set, Tuple, Union
 
 import numpy as np
 
-from modelscan.error import Error, ModelScanError
+from modelscan.error import ModelScanError, ErrorCategories
+from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.scanners.scan import ScanResults
 
@@ -130,7 +131,15 @@ def scan_pickle_bytes(
     except GenOpsError as e:
         return ScanResults(
             issues,
-            [ModelScanError(scan_name, f"Error parsing pickle file {source}: {e}")],
+            [
+                ModelScanError(
+                    scan_name,
+                    ErrorCategories.PICKLE_GENOPS,
+                    f"Parsing error: {e}",
+                    str(source),
+                )
+            ],
+            [],
         )
 
     logger.debug("Global imports in %s: %s", source, raw_globals)
@@ -172,12 +181,13 @@ def scan_pickle_bytes(
                     ),
                 )
             )
-    return ScanResults(issues, [])
+    return ScanResults(issues, [], [])
 
 
 def scan_numpy(
     data: IO[bytes], source: Union[str, Path], settings: Dict[str, Any]
 ) -> ScanResults:
+    scan_name = "numpy"
     # Code to distinguish from NumPy binary files and pickles.
     _ZIP_PREFIX = b"PK\x03\x04"
     _ZIP_SUFFIX = b"PK\x05\x06"  # empty zip files start with this
@@ -188,7 +198,19 @@ def scan_numpy(
     data.seek(-min(N, len(magic)), 1)  # back-up
     if magic.startswith(_ZIP_PREFIX) or magic.startswith(_ZIP_SUFFIX):
         # .npz file
-        raise NotImplementedError("Scanning of .npz files is not implemented yet")
+        return ScanResults(
+            [],
+            [],
+            [
+                ModelScanSkipped(
+                    scan_name,
+                    SkipCategories.NOT_IMPLEMENTED,
+                    "Scanning of .npz files is not implemented yet",
+                    str(source),
+                )
+            ],
+        )
+
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
         version = np.lib.format.read_magic(data)  # type: ignore[no-untyped-call]
@@ -196,16 +218,17 @@ def scan_numpy(
         _, _, dtype = np.lib.format._read_array_header(data, version)  # type: ignore[attr-defined]
 
         if dtype.hasobject:
-            return scan_pickle_bytes(data, source, settings, "numpy")
+            return scan_pickle_bytes(data, source, settings, scan_name)
         else:
-            return ScanResults([], [])
+            return ScanResults([], [], [])
     else:
-        return scan_pickle_bytes(data, source, settings, "numpy")
+        return scan_pickle_bytes(data, source, settings, scan_name)
 
 
 def scan_pytorch(
     data: IO[bytes], source: Union[str, Path], settings: Dict[str, Any]
 ) -> ScanResults:
+    scan_name = "pytorch"
     should_read_directly = _should_read_directly(data)
     if should_read_directly and data.tell() == 0:
         # try loading from tar
@@ -219,6 +242,15 @@ def scan_pytorch(
     magic = get_magic_number(data)
     if magic != MAGIC_NUMBER:
         return ScanResults(
-            [], [ModelScanError("pytorch", f"Invalid magic number for file {source}")]
+            [],
+            [],
+            [
+                ModelScanSkipped(
+                    scan_name,
+                    SkipCategories.MAGIC_NUMBER,
+                    f"Invalid magic number",
+                    str(source),
+                )
+            ],
         )
-    return scan_pickle_bytes(data, source, settings, "pytorch", multiple_pickles=False)
+    return scan_pickle_bytes(data, source, settings, scan_name, multiple_pickles=False)

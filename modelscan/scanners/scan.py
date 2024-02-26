@@ -2,17 +2,25 @@ import abc
 from pathlib import Path
 from typing import List, Union, Optional, IO, Any, Dict
 
-from modelscan.error import Error, ModelScanError
+from modelscan.error import ModelScanError
+from modelscan.skip import ModelScanSkipped
 from modelscan.issues import Issue
 
 
 class ScanResults:
     issues: List[Issue]
-    errors: List[Error]
+    errors: List[ModelScanError]
+    skipped: List[ModelScanSkipped]
 
-    def __init__(self, issues: List[Issue], errors: List[Error]) -> None:
+    def __init__(
+        self,
+        issues: List[Issue],
+        errors: List[ModelScanError],
+        skipped: List[ModelScanSkipped],
+    ) -> None:
         self.issues = issues
         self.errors = errors
+        self.skipped = skipped
 
 
 class ScanBase(metaclass=abc.ABCMeta):
@@ -42,7 +50,7 @@ class ScanBase(metaclass=abc.ABCMeta):
 
     def handle_binary_dependencies(
         self, settings: Optional[Dict[str, Any]] = None
-    ) -> Optional[ModelScanError]:
+    ) -> Optional[str]:
         """
         Implement this method if the plugin requires a binary dependency.
         It should perform the following actions:

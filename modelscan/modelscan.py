@@ -5,10 +5,11 @@ import importlib
 from modelscan.settings import DEFAULT_SETTINGS
 
 from pathlib import Path
-from typing import List, Union, Optional, IO, Dict, Tuple, Any
+from typing import List, Union, Optional, IO, Dict, Any
 from datetime import datetime
 
-from modelscan.error import Error, ModelScanError
+from modelscan.error import ModelScanError, ErrorCategories
+from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.issues import Issues, IssueSeverity
 from modelscan.scanners.scan import ScanBase
 from modelscan.tools.utils import _is_zipfile
@@ -24,9 +25,9 @@ class ModelScan:
     ) -> None:
         # Output
         self._issues = Issues()
-        self._errors: List[Error] = []
-        self._init_errors: List[Error] = []
-        self._skipped: List[str] = []
+        self._errors: List[ModelScanError] = []
+        self._init_errors: List[ModelScanError] = []
+        self._skipped: List[ModelScanSkipped] = []
         self._scanned: List[str] = []
         self._input_path: str = ""
 
@@ -54,7 +55,9 @@ class ModelScan:
                     logger.error(f"Error importing scanner {scanner_path}")
                     self._init_errors.append(
                         ModelScanError(
-                            scanner_path, f"Error importing scanner {scanner_path}: {e}"
+                            scanner_path,
+                            ErrorCategories.MODEL_SCAN,
+                            f"Error importing scanner: {e}",
                         )
                     )
 
@@ -86,13 +89,25 @@ class ModelScan:
             ):
                 self._scan_zip(path)
             elif not scanned:
-                self._skipped.append(str(path))
+                # check if added to skipped already
+                all_skipped_files = [skipped.source for skipped in self._skipped]
+                if str(path) not in all_skipped_files:
+                    self._skipped.append(
+                        ModelScanSkipped(
+                            "ModelScan",
+                            SkipCategories.SCAN_NOT_SUPPORTED,
+                            f"Model Scan did not scan file",
+                            str(path),
+                        )
+                    )
+
         else:
             logger.error(f"Error: path {path} is not valid")
             self._errors.append(
-                ModelScanError("ModelScan", f"Path {path} is not valid")
+                ModelScanError(
+                    "ModelScan", ErrorCategories.PATH, "Path is not valid", str(Path)
+                )
             )
-            self._skipped.append(str(path))
 
     def _scan_directory(self, directory_path: Path) -> None:
         for path in directory_path.rglob("*"):
@@ -111,12 +126,21 @@ class ModelScan:
                 source=source,
                 data=data,
             )
+
             if scan_results is not None:
-                logger.info(f"Scanning {source} using {scanner.full_name()} model scan")
-                self._scanned.append(str(source))
-                self._issues.add_issues(scan_results.issues)
-                self._errors.extend(scan_results.errors)
                 scanned = True
+                logger.info(f"Scanning {source} using {scanner.full_name()} model scan")
+                if scan_results.errors:
+                    self._errors.extend(scan_results.errors)
+                elif scan_results.issues:
+                    self._scanned.append(str(source))
+                    self._issues.add_issues(scan_results.issues)
+
+                elif scan_results.skipped:
+                    self._skipped.extend(scan_results.skipped)
+                else:
+                    self._scanned.append(str(source))
+
         return scanned
 
     def _scan_zip(
@@ -131,18 +155,42 @@ class ModelScan:
                             source=f"{source}:{file_name}",
                             data=file_io,
                         )
+
                         if not scanned:
                             if _is_zipfile(file_name, data=file_io):
                                 self._errors.append(
                                     ModelScanError(
                                         "ModelScan",
-                                        f"{source}:{file_name} is a zip file. ModelScan does not support nested zip files.",
+                                        ErrorCategories.NESTED_ZIP,
+                                        "ModelScan does not support nested zip files.",
+                                        f"{source}:{file_name}",
                                     )
                                 )
-                            self._skipped.append(f"{source}:{file_name}")
+
+                            # check if added to skipped already
+                            all_skipped_files = [
+                                skipped.source for skipped in self._skipped
+                            ]
+                            if f"{source}:{file_name}" not in all_skipped_files:
+                                self._skipped.append(
+                                    ModelScanSkipped(
+                                        "ModelScan",
+                                        SkipCategories.SCAN_NOT_SUPPORTED,
+                                        f"Model Scan did not scan file",
+                                        f"{source}:{file_name}",
+                                    )
+                                )
+
         except zipfile.BadZipFile as e:
             logger.debug(f"Skipping zip file {source}, due to error", e, exc_info=True)
-            self._skipped.append(str(source))
+            self._skipped.append(
+                ModelScanSkipped(
+                    "ModelScan",
+                    SkipCategories.BAD_ZIP,
+                    f"Skipping zip file due to error: {e}",
+                    f"{source}:{file_name}",
+                )
+            )
 
     def _generate_results(self) -> Dict[str, Any]:
         report: Dict[str, Any] = {}
@@ -168,27 +216,54 @@ class ModelScan:
         report["summary"]["absolute_path"] = str(absolute_path)
         report["summary"]["modelscan_version"] = __version__
         report["summary"]["timestamp"] = datetime.now().isoformat()
-        report["summary"]["skipped"] = {"total_skipped": len(self._skipped)}
-        report["summary"]["skipped"]["skipped_files"] = [
-            str(Path(file_name).relative_to(Path(absolute_path)))
-            for file_name in self._skipped
-        ]
+
         report["summary"]["scanned"] = {"total_scanned": len(self._scanned)}
-        report["summary"]["scanned"]["scanned_files"] = [
-            str(Path(file_name).relative_to(Path(absolute_path)))
-            for file_name in self._scanned
-        ]
 
-        report["issues"] = [
-            issue.details.output_json() for issue in self._issues.all_issues
-        ]
+        if self._scanned:
+            report["summary"]["scanned"]["scanned_files"] = [
+                str(Path(file_name).relative_to(Path(absolute_path)))
+                for file_name in self._scanned
+            ]
 
-        for issue in report["issues"]:
-            issue["source"] = str(
-                Path(issue["source"]).relative_to(Path(absolute_path))
-            )
+        if self._issues.all_issues:
+            report["issues"] = [
+                issue.details.output_json() for issue in self._issues.all_issues
+            ]
 
-        report["errors"] = [str(error) for index, error in enumerate(self._errors)]
+            for issue in report["issues"]:
+                issue["source"] = str(
+                    Path(issue["source"]).relative_to(Path(absolute_path))
+                )
+        all_errors = []
+        if self._errors:
+            for error in self._errors:
+                error_information = {}
+                error_information["category"] = str(error.category.name)
+                if error.message:
+                    error_information["description"] = error.message
+                if error.source is not None:
+                    error_information["source"] = str(
+                        Path(str(error.source)).relative_to(Path(absolute_path))
+                    )
+
+                all_errors.append(error_information)
+
+        report["errors"] = all_errors
+
+        report["summary"]["skipped"] = {"total_skipped": len(self._skipped)}
+
+        all_skipped_files = []
+        if self._skipped:
+            for skipped_file in self._skipped:
+                skipped_file_information = {}
+                skipped_file_information["category"] = str(skipped_file.category.name)
+                skipped_file_information["description"] = str(skipped_file.message)
+                skipped_file_information["source"] = str(
+                    Path(skipped_file.source).relative_to(Path(absolute_path))
+                )
+                all_skipped_files.append(skipped_file_information)
+
+        report["summary"]["skipped"]["skipped_files"] = all_skipped_files
 
         return report
 
@@ -211,7 +286,7 @@ class ModelScan:
         return self._issues
 
     @property
-    def errors(self) -> List[Error]:
+    def errors(self) -> List[ModelScanError]:
         return self._errors
 
     @property
@@ -219,5 +294,5 @@ class ModelScan:
         return self._scanned
 
     @property
-    def skipped(self) -> List[str]:
+    def skipped(self) -> List[ModelScanSkipped]:
         return self._skipped
