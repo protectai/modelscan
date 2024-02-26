@@ -40,7 +40,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                     ModelScanError(
                         self.name(),
                         ErrorCategories.DEPENDENCY,
-                        f"To use {self.full_name()}, please install modelscan with h5py extras. 'pip install \"modelscan[[ h5py]]\"' if you are using pip.",
+                        f"To use {self.full_name()}, please install modelscan with h5py extras. `pip install 'modelscan[ h5py ]'` if you are using pip.",
                     )
                 ],
                 [],
