@@ -105,7 +105,7 @@ class ModelScan:
             logger.error(f"Error: path {path} is not valid")
             self._errors.append(
                 ModelScanError(
-                    "ModelScan", ErrorCategories.PATH, "Path is not valid", str(Path)
+                    "ModelScan", ErrorCategories.PATH, "Path is not valid", str(path)
                 )
             )
 
