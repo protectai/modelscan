@@ -234,6 +234,9 @@ class ModelScan:
                 issue["source"] = str(
                     Path(issue["source"]).relative_to(Path(absolute_path))
                 )
+        else:
+            report["issues"] = []
+
         all_errors = []
         if self._errors:
             for error in self._errors:
