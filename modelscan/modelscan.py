@@ -221,15 +221,10 @@ class ModelScan:
 
         if self._scanned:
             scanned_files = []
-            try:
-                for file_name in self._scanned:
-                    resolved_file = Path(file_name).resolve()
-                    scanned_files.append(
-                        str(resolved_file.relative_to(Path(absolute_path)))
-                    )
-            except Exception:
-                logger.warning(
-                    f"Could not record scanned file {file_name}", exc_info=True
+            for file_name in self._scanned:
+                resolved_file = Path(file_name).resolve()
+                scanned_files.append(
+                    str(resolved_file.relative_to(Path(absolute_path)))
                 )
 
             report["summary"]["scanned"]["scanned_files"] = scanned_files
@@ -240,9 +235,8 @@ class ModelScan:
             ]
 
             for issue in report["issues"]:
-                issue["source"] = str(
-                    Path(issue["source"]).relative_to(Path(absolute_path))
-                )
+                resolved_file = Path(issue["source"]).resolve()
+                issue["source"] = str(resolved_file.relative_to(Path(absolute_path)))
         else:
             report["issues"] = []
 
