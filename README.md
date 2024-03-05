@@ -1,4 +1,4 @@
-![ModelScan Banner](https://github.com/protectai/modelscan/raw/main/imgs/PAI-social-product-ModelScan-1200x675.png)
+![ModelScan Banner](https://github.com/protectai/modelscan/assets/18154355/eeec657b-0d8f-42a7-b693-f35f10101d2c)
 [![bandit](https://github.com/protectai/modelscan/actions/workflows/bandit.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/bandit.yml)
 [![build](https://github.com/protectai/modelscan/actions/workflows/build.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/build.yml)
 [![black](https://github.com/protectai/modelscan/actions/workflows/black.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/black.yml)
