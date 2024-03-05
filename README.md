@@ -1,4 +1,4 @@
-![ModelScan Banner](https://github.com/protectai/modelscan/raw/main/imgs/PAI-ModelScan-banner-080323-space.png)
+![ModelScan Banner](https://github.com/protectai/modelscan/raw/main/imgs/PAI-social-product-ModelScan-1200x675.png)
 [![bandit](https://github.com/protectai/modelscan/actions/workflows/bandit.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/bandit.yml)
 [![build](https://github.com/protectai/modelscan/actions/workflows/build.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/build.yml)
 [![black](https://github.com/protectai/modelscan/actions/workflows/black.yml/badge.svg)](https://github.com/protectai/modelscan/actions/workflows/black.yml)
