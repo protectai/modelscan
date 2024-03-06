@@ -220,10 +220,14 @@ class ModelScan:
         report["summary"]["scanned"] = {"total_scanned": len(self._scanned)}
 
         if self._scanned:
-            report["summary"]["scanned"]["scanned_files"] = [
-                str(Path(file_name).relative_to(Path(absolute_path)))
-                for file_name in self._scanned
-            ]
+            scanned_files = []
+            for file_name in self._scanned:
+                resolved_file = Path(file_name).resolve()
+                scanned_files.append(
+                    str(resolved_file.relative_to(Path(absolute_path)))
+                )
+
+            report["summary"]["scanned"]["scanned_files"] = scanned_files
 
         if self._issues.all_issues:
             report["issues"] = [
@@ -231,9 +235,8 @@ class ModelScan:
             ]
 
             for issue in report["issues"]:
-                issue["source"] = str(
-                    Path(issue["source"]).relative_to(Path(absolute_path))
-                )
+                resolved_file = Path(issue["source"]).resolve()
+                issue["source"] = str(resolved_file.relative_to(Path(absolute_path)))
         else:
             report["issues"] = []
 
@@ -245,8 +248,9 @@ class ModelScan:
                 if error.message:
                     error_information["description"] = error.message
                 if error.source is not None:
+                    resolved_file = Path(error.source).resolve()
                     error_information["source"] = str(
-                        Path(str(error.source)).relative_to(Path(absolute_path))
+                        resolved_file.relative_to(Path(absolute_path))
                     )
 
                 all_errors.append(error_information)
@@ -261,8 +265,9 @@ class ModelScan:
                 skipped_file_information = {}
                 skipped_file_information["category"] = str(skipped_file.category.name)
                 skipped_file_information["description"] = str(skipped_file.message)
+                resolved_file = Path(skipped_file.source).resolve()
                 skipped_file_information["source"] = str(
-                    Path(skipped_file.source).relative_to(Path(absolute_path))
+                    resolved_file.relative_to(Path(absolute_path))
                 )
                 all_skipped_files.append(skipped_file_information)
 
