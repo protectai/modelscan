@@ -1,7 +1,6 @@
 import logging
 import sys
 import os
-import importlib
 from pathlib import Path
 from typing import Optional, Dict, Any
 from tomlkit import parse
@@ -9,7 +8,6 @@ from tomlkit import parse
 import click
 
 from modelscan.modelscan import ModelScan
-from modelscan.reports import Report
 from modelscan._version import __version__
 from modelscan.settings import (
     SettingsUtils,
@@ -133,25 +131,16 @@ def scan(
     else:
         raise click.UsageError("Command line must include a path")
 
-    report_settings: Dict[str, Any] = {}
-    if reporting_format == "custom":
-        reporting_module = settings["reporting"]["module"]  # type: ignore[index]
-    else:
-        reporting_module = DEFAULT_REPORTING_MODULES[reporting_format]
+    # Report scan results
+    if reporting_format is not "custom":
+        modelscan._settings["reporting"]["module"] = DEFAULT_REPORTING_MODULES[
+            reporting_format
+        ]
 
-    report_settings = settings["reporting"]["settings"]  # type: ignore[index]
-    report_settings["show_skipped"] = show_skipped
-    report_settings["output_file"] = output_file
+    modelscan._settings["reporting"]["settings"]["show_skipped"] = show_skipped
+    modelscan._settings["reporting"]["settings"]["output_file"] = output_file
 
-    try:
-        (modulename, classname) = reporting_module.rsplit(".", 1)
-        imported_module = importlib.import_module(name=modulename, package=classname)
-
-        report_class: Report = getattr(imported_module, classname)
-        report_class.generate(scan=modelscan, settings=report_settings)
-
-    except Exception as e:
-        logger.error(f"Error generating report using {reporting_module}: {e}")
+    modelscan.generate_report()
 
     # exit code 3 if no supported files were passed
     if not modelscan.scanned:

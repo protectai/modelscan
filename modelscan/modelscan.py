@@ -284,6 +284,32 @@ class ModelScan:
 
         return False
 
+    def generate_report(self) -> Optional[str]:
+        reporting_module = self._settings["reporting"]["module"]
+        report_settings = self._settings["reporting"]["settings"]
+
+        scan_report = None
+        try:
+            (modulename, classname) = reporting_module.rsplit(".", 1)
+            imported_module = importlib.import_module(
+                name=modulename, package=classname
+            )
+
+            report_class = getattr(imported_module, classname)
+            scan_report = report_class.generate(scan=self, settings=report_settings)
+
+        except Exception as e:
+            logger.error(f"Error generating report using {reporting_module}: {e}")
+            self._errors.append(
+                ModelScanError(
+                    "ModelScan",
+                    ErrorCategories.MODEL_SCAN,
+                    f"Error generating report using {reporting_module}: {e}",
+                )
+            )
+
+        return scan_report
+
     @property
     def issues(self) -> Issues:
         return self._issues
