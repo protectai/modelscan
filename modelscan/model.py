@@ -15,10 +15,13 @@ class ModelBadZip(ValueError):
         super().__init__(f"Bad Zip File: {e}")
 
 
-@dataclass
 class Model:
-    source: Union[str, Path]
+    source: Path
     data: Optional[IO[bytes]] = None
+
+    def __init__(self, source: Union[str, Path], data: Optional[IO[bytes]] = None):
+        self.source = Path(source)
+        self.data = data
 
     @staticmethod
     def from_path(path: Path) -> "Model":
@@ -38,7 +41,7 @@ class Model:
     ) -> Generator["Model", None, None]:
         if (
             not _is_zipfile(self.source)
-            or Path(self.source).suffix not in supported_extensions
+            and Path(self.source).suffix not in supported_extensions
         ):
             return
 

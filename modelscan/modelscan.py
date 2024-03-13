@@ -72,15 +72,10 @@ class ModelScan:
         self._scanned = []
         self._input_path = str(path)
         pathlibPath = Path().cwd() if path == "." else Path(path).absolute()
-        self._scan_path(Path(pathlibPath))
-        return self._generate_results()
 
-    def _scan_path(
-        self,
-        path: Path,
-    ) -> None:
         try:
-            model = Model.from_path(path)
+            model = Model.from_path(Path(pathlibPath))
+            self._scan_model(model)
         except ModelPathNotValid as e:
             logger.exception(e)
             self._errors.append(
@@ -88,20 +83,24 @@ class ModelScan:
                     "ModelScan", ErrorCategories.PATH, "Path is not valid", str(path)
                 )
             )
-            return
 
+        return self._generate_results()
+
+    def _scan_model(
+        self,
+        model: Model,
+    ) -> None:
         scanned = self._scan_source(model)
-        if scanned:
-            return
 
         has_extracted = False
-        extracted_models = model.get_files()
-        for extracted_model in extracted_models:
-            has_extracted = True
-            self._scan_source(extracted_model)
+        if not scanned:
+            extracted_models = model.get_files()
+            for extracted_model in extracted_models:
+                has_extracted = True
+                self._scan_model(extracted_model)
 
-        if has_extracted:
-            return
+            if has_extracted:
+                return
 
         try:
             extracted_models = model.get_zip_files(
@@ -121,10 +120,10 @@ class ModelScan:
             )
             return
 
+        has_extracted = False
         for extracted_model in extracted_models:
             has_extracted = True
             scanned = self._scan_source(extracted_model)
-
             if not scanned:
                 if _is_zipfile(extracted_model.source, data=extracted_model.data):
                     self._errors.append(
@@ -132,32 +131,32 @@ class ModelScan:
                             "ModelScan",
                             ErrorCategories.NESTED_ZIP,
                             "ModelScan does not support nested zip files.",
-                            extracted_model.source,
+                            str(extracted_model.source),
                         )
                     )
 
                 # check if added to skipped already
                 all_skipped_files = [skipped.source for skipped in self._skipped]
-                if extracted_model.source not in all_skipped_files:
+                if str(extracted_model.source) not in all_skipped_files:
                     self._skipped.append(
                         ModelScanSkipped(
                             "ModelScan",
                             SkipCategories.SCAN_NOT_SUPPORTED,
                             f"Model Scan did not scan file",
-                            extracted_model.source,
+                            str(extracted_model.source),
                         )
                     )
 
-        if not has_extracted:
+        if not scanned and not has_extracted:
             # check if added to skipped already
             all_skipped_files = [skipped.source for skipped in self._skipped]
-            if str(path) not in all_skipped_files:
+            if str(model.source) not in all_skipped_files:
                 self._skipped.append(
                     ModelScanSkipped(
                         "ModelScan",
                         SkipCategories.SCAN_NOT_SUPPORTED,
                         f"Model Scan did not scan file",
-                        str(path),
+                        str(model.source),
                     )
                 )
 
