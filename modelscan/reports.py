@@ -88,12 +88,12 @@ class JSONReport(Report):
         settings: Dict[str, Any] = {},
     ) -> None:
         report: Dict[str, Any] = scan._generate_results()
-        if not settings["show_skipped"]:
+        if not settings.get("show_skipped"):
             del report["summary"]["skipped"]
 
         print(json.dumps(report))
 
-        output = settings["output_file"]
+        output = settings.get("output_file")
         if output:
             with open(output, "w") as outfile:
                 json.dump(report, outfile)
