@@ -4,7 +4,7 @@ import importlib
 from modelscan.settings import DEFAULT_SETTINGS
 
 from pathlib import Path
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, Optional
 from datetime import datetime
 
 from modelscan.error import ModelScanError, ErrorCategories
