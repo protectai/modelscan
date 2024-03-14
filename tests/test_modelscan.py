@@ -34,11 +34,11 @@ from modelscan.issues import (
 )
 from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
-    scan_numpy,
 )
 
 from modelscan.skip import SkipCategories
 from modelscan.settings import DEFAULT_SETTINGS
+from modelscan.model import Model
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS
 
@@ -431,12 +431,8 @@ def test_scan_pickle_bytes() -> None:
         )
     ]
 
-    assert (
-        scan_pickle_bytes(
-            io.BytesIO(pickle.dumps(Malicious1())), "file.pkl", settings
-        ).issues
-        == expected
-    )
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious1())))
+    assert scan_pickle_bytes(model, settings).issues == expected
 
 
 def test_scan_zip(zip_file_path: Any) -> None:

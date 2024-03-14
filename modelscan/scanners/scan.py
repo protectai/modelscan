@@ -1,10 +1,10 @@
 import abc
-from pathlib import Path
-from typing import List, Union, Optional, IO, Any, Dict
+from typing import List, Optional, Any, Dict
 
 from modelscan.error import ModelScanError
 from modelscan.skip import ModelScanSkipped
 from modelscan.issues import Issue
+from modelscan.model import Model
 
 
 class ScanResults:
@@ -43,8 +43,7 @@ class ScanBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def scan(
         self,
-        source: Union[str, Path],
-        data: Optional[IO[bytes]] = None,
+        model: Model,
     ) -> Optional[ScanResults]:
         raise NotImplementedError
 

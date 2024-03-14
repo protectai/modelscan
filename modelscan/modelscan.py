@@ -108,7 +108,9 @@ class ModelScan:
             )
         except ModelBadZip as e:
             logger.debug(
-                f"Skipping zip file {model.source}, due to error", e, exc_info=True
+                f"Skipping zip file {str(model.get_source())}, due to error",
+                e,
+                exc_info=True,
             )
             self._skipped.append(
                 ModelScanSkipped(
@@ -125,38 +127,43 @@ class ModelScan:
             has_extracted = True
             scanned = self._scan_source(extracted_model)
             if not scanned:
-                if _is_zipfile(extracted_model.source, data=extracted_model.data):
+                if _is_zipfile(
+                    extracted_model.get_source(),
+                    data=extracted_model.get_data()
+                    if extracted_model.has_data()
+                    else None,
+                ):
                     self._errors.append(
                         ModelScanError(
                             "ModelScan",
                             ErrorCategories.NESTED_ZIP,
                             "ModelScan does not support nested zip files.",
-                            str(extracted_model.source),
+                            str(extracted_model.get_source()),
                         )
                     )
 
                 # check if added to skipped already
                 all_skipped_files = [skipped.source for skipped in self._skipped]
-                if str(extracted_model.source) not in all_skipped_files:
+                if str(extracted_model.get_source()) not in all_skipped_files:
                     self._skipped.append(
                         ModelScanSkipped(
                             "ModelScan",
                             SkipCategories.SCAN_NOT_SUPPORTED,
                             f"Model Scan did not scan file",
-                            str(extracted_model.source),
+                            str(extracted_model.get_source()),
                         )
                     )
 
         if not scanned and not has_extracted:
             # check if added to skipped already
             all_skipped_files = [skipped.source for skipped in self._skipped]
-            if str(model.source) not in all_skipped_files:
+            if str(model.get_source()) not in all_skipped_files:
                 self._skipped.append(
                     ModelScanSkipped(
                         "ModelScan",
                         SkipCategories.SCAN_NOT_SUPPORTED,
                         f"Model Scan did not scan file",
-                        str(model.source),
+                        str(model.get_source()),
                     )
                 )
 
@@ -167,26 +174,23 @@ class ModelScan:
         scanned = False
         for scan_class in self._scanners_to_run:
             scanner = scan_class(self._settings)  # type: ignore[operator]
-            scan_results = scanner.scan(
-                source=model.source,
-                data=model.data,
-            )
+            scan_results = scanner.scan(model)
 
             if scan_results is not None:
                 scanned = True
                 logger.info(
-                    f"Scanning {model.source} using {scanner.full_name()} model scan"
+                    f"Scanning {model.get_source()} using {scanner.full_name()} model scan"
                 )
                 if scan_results.errors:
                     self._errors.extend(scan_results.errors)
                 elif scan_results.issues:
-                    self._scanned.append(str(model.source))
+                    self._scanned.append(str(model.get_source()))
                     self._issues.add_issues(scan_results.issues)
 
                 elif scan_results.skipped:
                     self._skipped.extend(scan_results.skipped)
                 else:
-                    self._scanned.append(str(model.source))
+                    self._scanned.append(str(model.get_source()))
 
         return scanned
 
