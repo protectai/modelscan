@@ -40,10 +40,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
             )
 
         try:
-            source = model.get_source()
-            if model.has_data():
-                source = model.get_data()  # type: ignore
-            with zipfile.ZipFile(source, "r") as zip:
+            with zipfile.ZipFile(model.get_stream(), "r") as zip:
                 file_names = zip.namelist()
                 for file_name in file_names:
                     if file_name == "config.json":
@@ -121,7 +118,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
 
     def _get_keras_operator_names(self, model: Model) -> List[str]:
         try:
-            model_config_data = json.load(model.get_data())
+            model_config_data = json.load(model.get_stream())
 
             lambda_layers = [
                 layer.get("config", {}).get("function", {})

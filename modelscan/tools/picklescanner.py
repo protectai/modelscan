@@ -124,7 +124,7 @@ def scan_pickle_bytes(
     """Disassemble a Pickle stream and report issues"""
     issues: List[Issue] = []
     try:
-        raw_globals = _list_globals(model.get_data(), multiple_pickles)
+        raw_globals = _list_globals(model.get_stream(), multiple_pickles)
     except GenOpsError as e:
         return ScanResults(
             issues,
@@ -187,10 +187,10 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
     _ZIP_PREFIX = b"PK\x03\x04"
     _ZIP_SUFFIX = b"PK\x05\x06"  # empty zip files start with this
     N = len(np.lib.format.MAGIC_PREFIX)
-    magic = model.get_data().read(N)
+    magic = model.get_stream().read(N)
     # If the file size is less than N, we need to make sure not
     # to seek past the beginning of the file
-    model.get_data().seek(-min(N, len(magic)), 1)  # back-up
+    model.get_stream().seek(-min(N, len(magic)), 1)  # back-up
     if magic.startswith(_ZIP_PREFIX) or magic.startswith(_ZIP_SUFFIX):
         # .npz file
         return ScanResults(
@@ -208,9 +208,9 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
 
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
-        version = np.lib.format.read_magic(model.get_data())  # type: ignore[no-untyped-call]
+        version = np.lib.format.read_magic(model.get_stream())  # type: ignore[no-untyped-call]
         np.lib.format._check_version(version)  # type: ignore[attr-defined]
-        _, _, dtype = np.lib.format._read_array_header(model.get_data(), version)  # type: ignore[attr-defined]
+        _, _, dtype = np.lib.format._read_array_header(model.get_stream(), version)  # type: ignore[attr-defined]
 
         if dtype.hasobject:
             return scan_pickle_bytes(model, settings, scan_name)
@@ -222,17 +222,17 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
 
 def scan_pytorch(model: Model, settings: Dict[str, Any]) -> ScanResults:
     scan_name = "pytorch"
-    should_read_directly = _should_read_directly(model.get_data())
-    if should_read_directly and model.get_data().tell() == 0:
+    should_read_directly = _should_read_directly(model.get_stream())
+    if should_read_directly and model.get_stream().tell() == 0:
         # try loading from tar
         try:
             # TODO: implement loading from tar
             raise TarError()
         except TarError:
             # file does not contain a tar
-            model.get_data().seek(0)
+            model.get_stream().seek(0)
 
-    magic = get_magic_number(model.get_data())
+    magic = get_magic_number(model.get_stream())
     if magic != MAGIC_NUMBER:
         return ScanResults(
             [],

@@ -49,14 +49,7 @@ class SavedModelScan(ScanBase):
                 [],
             )
 
-        if model.has_data():
-            results = self._scan(model)
-
-            return self.label_results(results) if results else None
-
-        with open(model.get_source(), "rb") as file_io:
-            model = Model(model.get_source(), file_io)
-            results = self._scan(model)
+        results = self._scan(model)
 
         return self.label_results(results) if results else None
 
@@ -148,7 +141,7 @@ class SavedModelLambdaDetectScan(SavedModelScan):
     @staticmethod
     def _get_keras_pb_operator_names(model: Model) -> List[str]:
         saved_metadata = SavedMetadata()
-        saved_metadata.ParseFromString(model.get_data().read())
+        saved_metadata.ParseFromString(model.get_stream().read())
 
         try:
             lambda_layers = [
@@ -194,7 +187,7 @@ class SavedModelTensorflowOpScan(SavedModelScan):
 
     def _get_tensorflow_operator_names(self, model: Model) -> List[str]:
         saved_model = SavedModel()
-        saved_model.ParseFromString(model.get_data().read())
+        saved_model.ParseFromString(model.get_stream().read())
 
         model_op_names: Set[str] = set()
         # Iterate over every metagraph in case there is more than one

@@ -26,22 +26,13 @@ class PyTorchUnsafeOpScan(ScanBase):
         ):
             return None
 
-        if _is_zipfile(
-            model.get_source(), model.get_data() if model.has_data() else None
-        ):
+        if _is_zipfile(model.get_source(), model.get_stream()):
             return None
 
-        if model.has_data():
-            results = scan_pytorch(
-                model=model,
-                settings=self._settings,
-            )
-
-            return self.label_results(results)
-
-        with open(model.get_source(), "rb") as file_io:
-            model = Model(model.get_source(), file_io)
-            results = scan_pytorch(model=model, settings=self._settings)
+        results = scan_pytorch(
+            model=model,
+            settings=self._settings,
+        )
 
         return self.label_results(results)
 
@@ -67,17 +58,10 @@ class NumpyUnsafeOpScan(ScanBase):
         ):
             return None
 
-        if model.has_data():
-            results = scan_numpy(
-                model=model,
-                settings=self._settings,
-            )
-
-            return self.label_results(results)
-
-        with open(model.get_source(), "rb") as file_io:
-            model = Model(model.get_source(), file_io)
-            results = scan_numpy(model=model, settings=self._settings)
+        results = scan_numpy(
+            model=model,
+            settings=self._settings,
+        )
 
         return self.label_results(results)
 
@@ -103,17 +87,10 @@ class PickleUnsafeOpScan(ScanBase):
         ):
             return None
 
-        if model.has_data():
-            results = scan_pickle_bytes(
-                model=model,
-                settings=self._settings,
-            )
-
-            return self.label_results(results)
-
-        with open(model.get_source(), "rb") as file_io:
-            model = Model(model.get_source(), file_io)
-            results = scan_pickle_bytes(model=model, settings=self._settings)
+        results = scan_pickle_bytes(
+            model=model,
+            settings=self._settings,
+        )
 
         return self.label_results(results)
 

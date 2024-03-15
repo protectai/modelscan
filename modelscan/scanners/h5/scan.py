@@ -45,23 +45,6 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                 [],
             )
 
-        if model.has_data():
-            logger.warning(
-                f"{self.full_name()} got data bytes. It only support direct file scanning."
-            )
-            return ScanResults(
-                [],
-                [],
-                [
-                    ModelScanSkipped(
-                        self.name(),
-                        SkipCategories.H5_DATA,
-                        f"{self.full_name()} got data bytes. It only support direct file scanning.",
-                        str(model.get_source()),
-                    )
-                ],
-            )
-
         results = self._scan_keras_h5_file(model)
         if results:
             return self.label_results(results)
@@ -111,7 +94,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
             )
 
     def _check_model_config(self, model: Model) -> bool:
-        with h5py.File(model.get_source(), "r") as model_hdf5:
+        with h5py.File(model.get_stream(), "r") as model_hdf5:
             if "model_config" in model_hdf5.attrs.keys():
                 return True
             else:
@@ -121,7 +104,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
     def _get_keras_h5_operator_names(self, model: Model) -> Optional[List[Any]]:
         # Todo: source isn't guaranteed to be a file
 
-        with h5py.File(model.get_source(), "r") as model_hdf5:
+        with h5py.File(model.get_stream(), "r") as model_hdf5:
             try:
                 if not "model_config" in model_hdf5.attrs.keys():
                     return None

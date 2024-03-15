@@ -12,6 +12,10 @@ class ModelDataEmpty(ValueError):
     pass
 
 
+class ModelIsDir(ValueError):
+    pass
+
+
 class ModelBadZip(ValueError):
     def __init__(self, e: zipfile.BadZipFile, source: str):
         self.source = source
@@ -20,36 +24,56 @@ class ModelBadZip(ValueError):
 
 class Model:
     _source: Path
-    _data: Optional[IO[bytes]] = None
+    _stream: Optional[IO[bytes]] = None
+    _source_file_used: bool = False
 
-    def __init__(self, source: Union[str, Path], data: Optional[IO[bytes]] = None):
+    def __init__(self, source: Union[str, Path], stream: Optional[IO[bytes]] = None):
         self._source = Path(source)
-        self._data = data
+        self._stream = stream
 
     @staticmethod
     def from_path(path: Path) -> "Model":
         if not Path.exists(path):
             raise ModelPathNotValid(f"Path {path} does not exist")
 
+        if Path.is_dir(path):
+            raise ModelIsDir(f"Path {path} is a directory")
+
         return Model(path)
 
-    def get_files(self) -> Generator["Model", None, None]:
-        if Path.is_dir(self._source):
-            for f in Path(self._source).rglob("*"):
-                if Path.is_file(f):
-                    yield Model(f)
+    def open(self) -> "Model":
+        if self._stream:
+            return self
+
+        self._stream = open(self._source, "rb")
+        self._source_file_used = True
+
+        return self
+
+    def close(self) -> None:
+        # Only close the stream if we opened a file (not for IO[bytes] objects passed in)
+        if self._stream and self._source_file_used:
+            self._stream.close()
+
+    def __enter__(self) -> "Model":
+        return self.open()
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore
+        self.close()
 
     def get_zip_files(
         self, supported_extensions: List[str]
     ) -> Generator["Model", None, None]:
         if (
-            not _is_zipfile(self._source)
+            not _is_zipfile(self._source, data=self._stream)
             and Path(self._source).suffix not in supported_extensions
         ):
             return
 
         try:
-            with zipfile.ZipFile(self._source, "r") as zip:
+            with zipfile.ZipFile(
+                self._stream if self._stream else self._source, "r"
+            ) as zip:
                 file_names = zip.namelist()
                 for file_name in file_names:
                     with zip.open(file_name, "r") as file_io:
@@ -60,11 +84,8 @@ class Model:
     def get_source(self) -> Path:
         return self._source
 
-    def has_data(self) -> bool:
-        return self._data is not None
-
-    def get_data(self) -> IO[bytes]:
-        if not self._data:
+    def get_stream(self) -> IO[bytes]:
+        if not self._stream:
             raise ModelDataEmpty("Model data is empty.")
 
-        return self._data
+        return self._stream
