@@ -1,0 +1,1 @@
+from modelscan.middlewares.format_via_extension import FormatViaExtensionMiddleware

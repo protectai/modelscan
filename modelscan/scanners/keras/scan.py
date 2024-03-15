@@ -17,12 +17,7 @@ logger = logging.getLogger("modelscan")
 
 class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
     def scan(self, model: Model) -> Optional[ScanResults]:
-        if (
-            not model.get_source().suffix
-            in self._settings["scanners"][KerasLambdaDetectScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "keras" not in model.get_context("formats"):
             return None
 
         dep_error = self.handle_binary_dependencies()

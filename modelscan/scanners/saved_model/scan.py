@@ -29,10 +29,7 @@ class SavedModelScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not model.get_source().suffix
-            in self._settings["scanners"][self.full_name()]["supported_extensions"]
-        ):
+        if "tf_saved_model" not in model.get_context("formats"):
             return None
 
         dep_error = self.handle_binary_dependencies()

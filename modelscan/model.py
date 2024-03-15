@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union, Optional, IO, Generator
+from typing import List, Union, Optional, IO, Generator, Dict, Any
 from modelscan.tools.utils import _is_zipfile
 import zipfile
 
@@ -24,12 +24,15 @@ class ModelBadZip(ValueError):
 
 class Model:
     _source: Path
-    _stream: Optional[IO[bytes]] = None
-    _source_file_used: bool = False
+    _stream: Optional[IO[bytes]]
+    _source_file_used: bool
+    _context: Dict[str, Any]
 
     def __init__(self, source: Union[str, Path], stream: Optional[IO[bytes]] = None):
         self._source = Path(source)
         self._stream = stream
+        self._source_file_used = False
+        self._context = {"formats": []}
 
     @staticmethod
     def from_path(path: Path) -> "Model":
@@ -40,6 +43,12 @@ class Model:
             raise ModelIsDir(f"Path {path} is a directory")
 
         return Model(path)
+
+    def set_context(self, key: str, value: Any) -> None:
+        self._context[key] = value
+
+    def get_context(self, key: str) -> Any:
+        return self._context.get(key)
 
     def open(self) -> "Model":
         if self._stream:
