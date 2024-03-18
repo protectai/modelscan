@@ -18,12 +18,7 @@ class PyTorchUnsafeOpScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not model.get_source().suffix
-            in self._settings["scanners"][PyTorchUnsafeOpScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "pytorch" not in model.get_context("formats"):
             return None
 
         if _is_zipfile(model.get_source(), model.get_stream()):
@@ -50,12 +45,7 @@ class NumpyUnsafeOpScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not model.get_source().suffix
-            in self._settings["scanners"][NumpyUnsafeOpScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "numpy" not in model.get_context("formats"):
             return None
 
         results = scan_numpy(
@@ -79,12 +69,7 @@ class PickleUnsafeOpScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not model.get_source().suffix
-            in self._settings["scanners"][PickleUnsafeOpScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "pickle" not in model.get_context("formats"):
             return None
 
         results = scan_pickle_bytes(

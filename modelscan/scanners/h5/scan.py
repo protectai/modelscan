@@ -24,13 +24,9 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not model.get_source().suffix
-            in self._settings["scanners"][H5LambdaDetectScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "keras_h5" not in model.get_context("formats"):
             return None
+
         dep_error = self.handle_binary_dependencies()
         if dep_error:
             return ScanResults(

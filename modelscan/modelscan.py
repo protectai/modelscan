@@ -14,6 +14,7 @@ from modelscan.scanners.scan import ScanBase
 from modelscan._version import __version__
 from modelscan.tools.utils import _is_zipfile
 from modelscan.model import Model, ModelPathNotValid, ModelBadZip, ModelIsDir
+from modelscan.middlewares.middleware import MiddlewarePipeline, MiddlewareImportError
 
 logger = logging.getLogger("modelscan")
 
@@ -35,6 +36,22 @@ class ModelScan:
         self._scanners_to_run: List[ScanBase] = []
         self._settings: Dict[str, Any] = settings
         self._load_scanners()
+        self._load_middlewares()
+
+    def _load_middlewares(self) -> None:
+        try:
+            self._middleware_pipeline = MiddlewarePipeline.from_settings(
+                self._settings["middlewares"] or {}
+            )
+        except MiddlewareImportError as e:
+            logger.exception(e)
+            self._init_errors.append(
+                ModelScanError(
+                    "MiddlewarePipeline",
+                    ErrorCategories.MODEL_SCAN,
+                    f"Error loading middlewares: {e}",
+                )
+            )
 
     def _load_scanners(self) -> None:
         for scanner_path, scanner_settings in self._settings["scanners"].items():
@@ -173,6 +190,8 @@ class ModelScan:
         self,
         model: Model,
     ) -> bool:
+        self._middleware_pipeline.run(model)
+
         scanned = False
         for scan_class in self._scanners_to_run:
             scanner = scan_class(self._settings)  # type: ignore[operator]
