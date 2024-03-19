@@ -184,7 +184,22 @@ class ModelScan:
         scanned = False
         for scan_class in self._scanners_to_run:
             scanner = scan_class(self._settings)  # type: ignore[operator]
-            scan_results = scanner.scan(model)
+
+            try:
+                scan_results = scanner.scan(model)
+            except Exception as e:
+                logger.error(
+                    f"Error encountered from scanner {scanner.full_name()} with path {str(model.get_source())}: {e}"
+                )
+                self._errors.append(
+                    ModelScanError(
+                        scanner.full_name(),
+                        ErrorCategories.MODEL_SCAN,
+                        f"Error encountered from scanner {scanner.full_name()}: {e}",
+                        str(model.get_source()),
+                    )
+                )
+                continue
 
             if scan_results is not None:
                 scanned = True
