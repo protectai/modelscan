@@ -4,8 +4,9 @@ import importlib
 from modelscan.settings import DEFAULT_SETTINGS
 
 from pathlib import Path
-from typing import List, Union, Dict, Any, Optional
+from typing import List, Union, Dict, Any, Optional, Generator
 from datetime import datetime
+import zipfile
 
 from modelscan.error import ModelScanError, ErrorCategories
 from modelscan.skip import ModelScanSkipped, SkipCategories
@@ -13,7 +14,7 @@ from modelscan.issues import Issues, IssueSeverity
 from modelscan.scanners.scan import ScanBase
 from modelscan._version import __version__
 from modelscan.tools.utils import _is_zipfile
-from modelscan.model import Model, ModelPathNotValid, ModelBadZip, ModelIsDir
+from modelscan.model import Model
 from modelscan.middlewares.middleware import MiddlewarePipeline, MiddlewareImportError
 
 logger = logging.getLogger("modelscan")
@@ -78,6 +79,67 @@ class ModelScan:
                         )
                     )
 
+    def _iterate_models(self, model_path: Path) -> Generator[Model, None, None]:
+        if not model_path.exists():
+            logger.error(f"Path {model_path} does not exist")
+            self._errors.append(
+                ModelScanError(
+                    "ModelScan",
+                    ErrorCategories.PATH,
+                    "Path is not valid",
+                    str(model_path),
+                )
+            )
+
+        files = [model_path]
+        if model_path.is_dir():
+            logger.debug(f"Path {str(model_path)} is a directory")
+            files = [f for f in model_path.rglob("*") if Path.is_file(f)]
+
+        for file in files:
+            with Model(file) as model:
+                yield model
+
+                if (
+                    not _is_zipfile(file, model.get_stream())
+                    and Path(file).suffix
+                    not in self._settings["supported_zip_extensions"]
+                ):
+                    continue
+
+                try:
+                    with zipfile.ZipFile(model.get_stream(), "r") as zip:
+                        file_names = zip.namelist()
+                        for file_name in file_names:
+                            with zip.open(file_name, "r") as file_io:
+                                file_name = f"{model.get_source()}:{file_name}"
+                                if _is_zipfile(file_name, data=file_io):
+                                    self._errors.append(
+                                        ModelScanError(
+                                            "ModelScan",
+                                            ErrorCategories.NESTED_ZIP,
+                                            "ModelScan does not support nested zip files.",
+                                            file_name,
+                                        )
+                                    )
+                                    continue
+
+                                yield Model(file_name, file_io)
+                except zipfile.BadZipFile as e:
+                    logger.debug(
+                        f"Skipping zip file {str(model.get_source())}, due to error",
+                        e,
+                        exc_info=True,
+                    )
+                    self._skipped.append(
+                        ModelScanSkipped(
+                            "ModelScan",
+                            SkipCategories.BAD_ZIP,
+                            f"Skipping zip file due to error: {e}",
+                            str(model.get_source()),
+                        )
+                    )
+
     def scan(
         self,
         path: Union[str, Path],
@@ -91,107 +153,34 @@ class ModelScan:
         pathlib_path = Path().cwd() if path == "." else Path(path).absolute()
         model_path = Path(pathlib_path)
 
-        try:
-            with Model.from_path(model_path) as model:
-                self._scan_model(model)
-        except ModelPathNotValid as e:
-            logger.exception(e)
-            self._errors.append(
-                ModelScanError(
-                    "ModelScan", ErrorCategories.PATH, "Path is not valid", str(path)
-                )
-            )
-        except ModelIsDir:
-            logger.debug("Scanning directory")
-            self._scan_model_dir(model_path)
+        all_paths: List[Path] = []
+        scanned_paths: List[Path] = []
+        for model in self._iterate_models(model_path):
+            self._middleware_pipeline.run(model)
+            scanned = self._scan_source(model)
+            if scanned:
+                scanned_paths.append(model.get_source())
 
-        return self._generate_results()
+            all_paths.append(model.get_source())
 
-    def _scan_model_dir(self, model_path: Path) -> None:
-        for f in model_path.rglob("*"):
-            if not Path.is_file(f):
-                continue
-
-            with Model(f) as model:
-                self._scan_model(model)
-
-    def _scan_model(
-        self,
-        model: Model,
-    ) -> None:
-        scanned = self._scan_source(model)
-
-        try:
-            extracted_models = model.get_zip_files(
-                self._settings["supported_zip_extensions"]
-            )
-        except ModelBadZip as e:
-            logger.debug(
-                f"Skipping zip file {str(model.get_source())}, due to error",
-                e,
-                exc_info=True,
-            )
-            self._skipped.append(
-                ModelScanSkipped(
-                    "ModelScan",
-                    SkipCategories.BAD_ZIP,
-                    f"Skipping zip file due to error: {e}",
-                    e.source,
-                )
-            )
-            return
-
-        has_extracted = False
-        for extracted_model in extracted_models:
-            has_extracted = True
-
-            with extracted_model as model:
-                scanned = self._scan_source(model)
-                if not scanned:
-                    if _is_zipfile(
-                        model.get_source(),
-                        data=model.get_stream(),
-                    ):
-                        self._errors.append(
-                            ModelScanError(
-                                "ModelScan",
-                                ErrorCategories.NESTED_ZIP,
-                                "ModelScan does not support nested zip files.",
-                                str(model.get_source()),
-                            )
-                        )
-
-                    # check if added to skipped already
-                    all_skipped_files = [skipped.source for skipped in self._skipped]
-                    if str(model.get_source()) not in all_skipped_files:
-                        self._skipped.append(
-                            ModelScanSkipped(
-                                "ModelScan",
-                                SkipCategories.SCAN_NOT_SUPPORTED,
-                                f"Model Scan did not scan file",
-                                str(model.get_source()),
-                            )
-                        )
-
-        if not scanned and not has_extracted:
-            # check if added to skipped already
-            all_skipped_files = [skipped.source for skipped in self._skipped]
-            if str(model.get_source()) not in all_skipped_files:
+        skipped_paths = list(set(all_paths) - set(scanned_paths))
+        if skipped_paths:
+            for skipped_path in skipped_paths:
                 self._skipped.append(
                     ModelScanSkipped(
                         "ModelScan",
                         SkipCategories.SCAN_NOT_SUPPORTED,
                         f"Model Scan did not scan file",
-                        str(model.get_source()),
+                        str(skipped_path),
                     )
                 )
+
+        return self._generate_results()
 
     def _scan_source(
         self,
         model: Model,
     ) -> bool:
-        self._middleware_pipeline.run(model)
-
         scanned = False
         for scan_class in self._scanners_to_run:
             scanner = scan_class(self._settings)  # type: ignore[operator]
