@@ -67,8 +67,11 @@ class NumpyUnsafeOpScan(ScanBase):
         if data:
             results = scan_numpy(data=data, source=source, settings=self._settings)
 
-        with open(source, "rb") as file_io:
-            results = scan_numpy(data=file_io, source=source, settings=self._settings)
+        else:
+            with open(source, "rb") as file_io:
+                results = scan_numpy(
+                    data=file_io, source=source, settings=self._settings
+                )
 
         return self.label_results(results)
 
