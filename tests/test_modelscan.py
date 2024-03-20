@@ -483,7 +483,6 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
             for skipped_file in results["summary"]["skipped"]["skipped_files"]
         ]
     ) == {
-        "safe_zip_pytorch.pt",
         "safe_zip_pytorch.pt:safe_zip_pytorch/byteorder",
         "safe_zip_pytorch.pt:safe_zip_pytorch/version",
         "safe_zip_pytorch.pt:safe_zip_pytorch/.data/serialization_id",
@@ -522,7 +521,6 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
             for skipped_file in results["summary"]["skipped"]["skipped_files"]
         ]
     ) == {
-        "unsafe_zip_pytorch.pt",
         "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/byteorder",
         "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/version",
         "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/.data/serialization_id",
@@ -1295,19 +1293,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
             f"safe{file_extension}"
         ]
 
-        if file_extension == ".keras":
-            assert set(
-                [
-                    skipped_file["source"]
-                    for skipped_file in results["summary"]["skipped"]["skipped_files"]
-                ]
-            ) == {
-                f"safe{file_extension}:metadata.json",
-                f"safe{file_extension}:config.json",
-                f"safe{file_extension}:model.weights.h5",
-            }
-        else:
-            assert results["summary"]["skipped"]["skipped_files"] == []
+        assert results["summary"]["skipped"]["skipped_files"] == []
 
         assert results["errors"] == []
 

@@ -154,26 +154,30 @@ class ModelScan:
         model_path = Path(pathlib_path)
 
         all_paths: List[Path] = []
-        scanned_paths: List[Path] = []
         for model in self._iterate_models(model_path):
             self._middleware_pipeline.run(model)
-            scanned = self._scan_source(model)
-            if scanned:
-                scanned_paths.append(model.get_source())
-
+            self._scan_source(model)
             all_paths.append(model.get_source())
 
-        skipped_paths = list(set(all_paths) - set(scanned_paths))
-        if skipped_paths:
-            for skipped_path in skipped_paths:
-                self._skipped.append(
-                    ModelScanSkipped(
-                        "ModelScan",
-                        SkipCategories.SCAN_NOT_SUPPORTED,
-                        f"Model Scan did not scan file",
-                        str(skipped_path),
-                    )
-                )
+        if self._skipped:
+            all_skipped_paths = [skipped.source for skipped in self._skipped]
+            for skipped in self._skipped:
+                main_file_path = skipped.source.split(":")[0]
+                if main_file_path == skipped.source:
+                    continue
+
+                # If main container is skipped, we only add its content to skipped but not the file itself
+                if main_file_path in all_skipped_paths:
+                    self._skipped = [
+                        item for item in self._skipped if item.source != main_file_path
+                    ]
+
+                    continue
+
+                # If main container is scanned, we consider all files to be scanned
+                self._skipped = [
+                    item for item in self._skipped if item.source != skipped.source
+                ]
 
         return self._generate_results()
 
@@ -216,6 +220,18 @@ class ModelScan:
                     self._skipped.extend(scan_results.skipped)
                 else:
                     self._scanned.append(str(model.get_source()))
+
+        if not scanned:
+            all_skipped_files = [skipped.source for skipped in self._skipped]
+            if str(model.get_source()) not in all_skipped_files:
+                self._skipped.append(
+                    ModelScanSkipped(
+                        "ModelScan",
+                        SkipCategories.SCAN_NOT_SUPPORTED,
+                        f"Model Scan did not scan file",
+                        str(model.get_source()),
+                    )
+                )
 
         return scanned
 
