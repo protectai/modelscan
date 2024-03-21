@@ -1,6 +1,5 @@
 import logging
-from pathlib import Path
-from typing import IO, Union, Optional
+from typing import Optional
 
 from modelscan.scanners.scan import ScanBase, ScanResults
 from modelscan.tools.utils import _is_zipfile
@@ -9,6 +8,7 @@ from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
     scan_pytorch,
 )
+from modelscan.model import Model
 
 logger = logging.getLogger("modelscan")
 
@@ -16,28 +16,18 @@ logger = logging.getLogger("modelscan")
 class PyTorchUnsafeOpScan(ScanBase):
     def scan(
         self,
-        source: Union[str, Path],
-        data: Optional[IO[bytes]] = None,
+        model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not Path(source).suffix
-            in self._settings["scanners"][PyTorchUnsafeOpScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "pytorch" not in model.get_context("formats"):
             return None
 
-        if _is_zipfile(source, data):
+        if _is_zipfile(model.get_source(), model.get_stream()):
             return None
 
-        if data:
-            results = scan_pytorch(data=data, source=source, settings=self._settings)
-
-        else:
-            with open(source, "rb") as file_io:
-                results = scan_pytorch(
-                    data=file_io, source=source, settings=self._settings
-                )
+        results = scan_pytorch(
+            model=model,
+            settings=self._settings,
+        )
 
         return self.label_results(results)
 
@@ -53,25 +43,15 @@ class PyTorchUnsafeOpScan(ScanBase):
 class NumpyUnsafeOpScan(ScanBase):
     def scan(
         self,
-        source: Union[str, Path],
-        data: Optional[IO[bytes]] = None,
+        model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not Path(source).suffix
-            in self._settings["scanners"][NumpyUnsafeOpScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "numpy" not in model.get_context("formats"):
             return None
 
-        if data:
-            results = scan_numpy(data=data, source=source, settings=self._settings)
-
-        else:
-            with open(source, "rb") as file_io:
-                results = scan_numpy(
-                    data=file_io, source=source, settings=self._settings
-                )
+        results = scan_numpy(
+            model=model,
+            settings=self._settings,
+        )
 
         return self.label_results(results)
 
@@ -87,27 +67,15 @@ class NumpyUnsafeOpScan(ScanBase):
 class PickleUnsafeOpScan(ScanBase):
     def scan(
         self,
-        source: Union[str, Path],
-        data: Optional[IO[bytes]] = None,
+        model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not Path(source).suffix
-            in self._settings["scanners"][PickleUnsafeOpScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "pickle" not in model.get_context("formats"):
             return None
 
-        if data:
-            results = scan_pickle_bytes(
-                data=data, source=source, settings=self._settings
-            )
-
-        else:
-            with open(source, "rb") as file_io:
-                results = scan_pickle_bytes(
-                    data=file_io, source=source, settings=self._settings
-                )
+        results = scan_pickle_bytes(
+            model=model,
+            settings=self._settings,
+        )
 
         return self.label_results(results)
 
