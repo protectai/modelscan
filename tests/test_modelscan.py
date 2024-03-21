@@ -452,10 +452,7 @@ def test_scan_zip(zip_file_path: Any) -> None:
     ms = ModelScan()
     results = ms.scan(f"{zip_file_path}/test.zip")
     assert results["summary"]["scanned"]["scanned_files"] == [f"test.zip:data.pkl"]
-    assert [
-        skipped_file["source"]
-        for skipped_file in results["summary"]["skipped"]["skipped_files"]
-    ] == ["test.zip"]
+    assert results["summary"]["skipped"]["skipped_files"] == []
     assert ms.issues.all_issues == expected
 
 
@@ -1242,10 +1239,7 @@ def test_scan_directory_path(file_path: str) -> None:
         f"benign0_v3.dill",
         f"benign0_v4.dill",
     }
-    assert [
-        skipped_file["source"]
-        for skipped_file in results["summary"]["skipped"]["skipped_files"]
-    ] == ["malicious1.zip"]
+    assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
 
 
@@ -1293,7 +1287,19 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
             f"safe{file_extension}"
         ]
 
-        assert results["summary"]["skipped"]["skipped_files"] == []
+        if file_extension == ".keras":
+            assert set(
+                [
+                    skipped_file["source"]
+                    for skipped_file in results["summary"]["skipped"]["skipped_files"]
+                ]
+            ) == {
+                f"safe{file_extension}:metadata.json",
+                f"safe{file_extension}:config.json",
+                f"safe{file_extension}:model.weights.h5",
+            }
+        else:
+            assert results["summary"]["skipped"]["skipped_files"] == []
 
         assert results["errors"] == []
 
