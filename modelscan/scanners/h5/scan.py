@@ -1,7 +1,6 @@
 import json
 import logging
-from pathlib import Path
-from typing import IO, List, Union, Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 
 
 try:
@@ -15,6 +14,7 @@ from modelscan.error import ModelScanError, ErrorCategories
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
+from modelscan.model import Model
 
 logger = logging.getLogger("modelscan")
 
@@ -22,16 +22,11 @@ logger = logging.getLogger("modelscan")
 class H5LambdaDetectScan(SavedModelLambdaDetectScan):
     def scan(
         self,
-        source: Union[str, Path],
-        data: Optional[IO[bytes]] = None,
+        model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not Path(source).suffix
-            in self._settings["scanners"][H5LambdaDetectScan.full_name()][
-                "supported_extensions"
-            ]
-        ):
+        if "keras_h5" not in model.get_context("formats"):
             return None
+
         dep_error = self.handle_binary_dependencies()
         if dep_error:
             return ScanResults(
@@ -46,33 +41,16 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                 [],
             )
 
-        if data:
-            logger.warning(
-                f"{self.full_name()} got data bytes. It only support direct file scanning."
-            )
-            return ScanResults(
-                [],
-                [],
-                [
-                    ModelScanSkipped(
-                        self.name(),
-                        SkipCategories.H5_DATA,
-                        f"{self.full_name()} got data bytes. It only support direct file scanning.",
-                        str(source),
-                    )
-                ],
-            )
-
-        results = self._scan_keras_h5_file(source)
+        results = self._scan_keras_h5_file(model)
         if results:
             return self.label_results(results)
-        else:
-            return None
 
-    def _scan_keras_h5_file(self, source: Union[str, Path]) -> Optional[ScanResults]:
+        return None
+
+    def _scan_keras_h5_file(self, model: Model) -> Optional[ScanResults]:
         machine_learning_library_name = "Keras"
-        if self._check_model_config(source):
-            operators_in_model = self._get_keras_h5_operator_names(source)
+        if self._check_model_config(model):
+            operators_in_model = self._get_keras_h5_operator_names(model)
             if operators_in_model is None:
                 return None
 
@@ -84,7 +62,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                             self.name(),
                             ErrorCategories.JSON_DECODE,
                             f"Not a valid JSON data",
-                            str(source),
+                            str(model.get_source()),
                         )
                     ],
                     [],
@@ -92,7 +70,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
             return H5LambdaDetectScan._check_for_unsafe_tf_keras_operator(
                 module_name=machine_learning_library_name,
                 raw_operator=operators_in_model,
-                source=source,
+                model=model,
                 unsafe_operators=self._settings["scanners"][
                     SavedModelLambdaDetectScan.full_name()
                 ]["unsafe_keras_operators"],
@@ -106,25 +84,23 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                         self.name(),
                         SkipCategories.MODEL_CONFIG,
                         f"Model Config not found",
-                        str(source),
+                        str(model.get_source()),
                     )
                 ],
             )
 
-    def _check_model_config(self, source: Union[str, Path]) -> bool:
-        with h5py.File(source, "r") as model_hdf5:
+    def _check_model_config(self, model: Model) -> bool:
+        with h5py.File(model.get_stream(), "r") as model_hdf5:
             if "model_config" in model_hdf5.attrs.keys():
                 return True
             else:
-                logger.error(f"Model Config not found in: {source}")
+                logger.error(f"Model Config not found in: {model.get_source()}")
                 return False
 
-    def _get_keras_h5_operator_names(
-        self, source: Union[str, Path]
-    ) -> Optional[List[Any]]:
+    def _get_keras_h5_operator_names(self, model: Model) -> Optional[List[Any]]:
         # Todo: source isn't guaranteed to be a file
 
-        with h5py.File(source, "r") as model_hdf5:
+        with h5py.File(model.get_stream(), "r") as model_hdf5:
             try:
                 if not "model_config" in model_hdf5.attrs.keys():
                     return None
@@ -138,7 +114,9 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                             layer.get("config", {}).get("function", {})
                         )
             except json.JSONDecodeError as e:
-                logger.error(f"Not a valid JSON data from source: {source}, error: {e}")
+                logger.error(
+                    f"Not a valid JSON data from source: {model.get_source()}, error: {e}"
+                )
                 return ["JSONDecodeError"]
 
         if lambda_layers:

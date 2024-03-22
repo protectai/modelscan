@@ -19,6 +19,7 @@ except ImportError:
 from modelscan.error import ModelScanError, ErrorCategories
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.scanners.scan import ScanBase, ScanResults
+from modelscan.model import Model
 
 logger = logging.getLogger("modelscan")
 
@@ -26,13 +27,9 @@ logger = logging.getLogger("modelscan")
 class SavedModelScan(ScanBase):
     def scan(
         self,
-        source: Union[str, Path],
-        data: Optional[IO[bytes]] = None,
+        model: Model,
     ) -> Optional[ScanResults]:
-        if (
-            not Path(source).suffix
-            in self._settings["scanners"][self.full_name()]["supported_extensions"]
-        ):
+        if "tf_saved_model" not in model.get_context("formats"):
             return None
 
         dep_error = self.handle_binary_dependencies()
@@ -49,19 +46,11 @@ class SavedModelScan(ScanBase):
                 [],
             )
 
-        if data:
-            results = self._scan(source, data)
+        results = self._scan(model)
 
-        else:
-            with open(source, "rb") as file_io:
-                results = self._scan(source, data=file_io)
+        return self.label_results(results) if results else None
 
-        if results:
-            return self.label_results(results)
-        else:
-            return None
-
-    def _scan(self, source: Union[str, Path], data: IO[bytes]) -> Optional[ScanResults]:
+    def _scan(self, model: Model) -> Optional[ScanResults]:
         raise NotImplementedError
 
     # This function checks for malicious operators in both Keras and Tensorflow
@@ -69,7 +58,7 @@ class SavedModelScan(ScanBase):
     def _check_for_unsafe_tf_keras_operator(
         module_name: str,
         raw_operator: List[str],
-        source: Union[str, Path],
+        model: Model,
         unsafe_operators: Dict[str, Any],
     ) -> ScanResults:
         issues: List[Issue] = []
@@ -93,7 +82,7 @@ class SavedModelScan(ScanBase):
                     details=OperatorIssueDetails(
                         module=module_name,
                         operator=op,
-                        source=source,
+                        source=str(model.get_source()),
                         severity=severity,
                     ),
                 )
@@ -117,44 +106,39 @@ class SavedModelScan(ScanBase):
 
 
 class SavedModelLambdaDetectScan(SavedModelScan):
-    def _scan(self, source: Union[str, Path], data: IO[bytes]) -> Optional[ScanResults]:
-        file_name = str(source).split("/")[-1]
-        if file_name == "keras_metadata.pb":
-            machine_learning_library_name = "Keras"
-            operators_in_model = self._get_keras_pb_operator_names(
-                data=data, source=source
-            )
-            if operators_in_model:
-                if "JSONDecodeError" in operators_in_model:
-                    return ScanResults(
-                        [],
-                        [
-                            ModelScanError(
-                                self.name(),
-                                ErrorCategories.JSON_DECODE,
-                                f"Not a valid JSON data",
-                                str(source),
-                            )
-                        ],
-                        [],
-                    )
-
-            return SavedModelScan._check_for_unsafe_tf_keras_operator(
-                machine_learning_library_name,
-                operators_in_model,
-                source,
-                self._settings["scanners"][self.full_name()]["unsafe_keras_operators"],
-            )
-
-        else:
+    def _scan(self, model: Model) -> Optional[ScanResults]:
+        file_name = str(model.get_source()).split("/")[-1]
+        if file_name != "keras_metadata.pb":
             return None
 
+        machine_learning_library_name = "Keras"
+        operators_in_model = self._get_keras_pb_operator_names(model)
+        if operators_in_model:
+            if "JSONDecodeError" in operators_in_model:
+                return ScanResults(
+                    [],
+                    [
+                        ModelScanError(
+                            self.name(),
+                            ErrorCategories.JSON_DECODE,
+                            f"Not a valid JSON data",
+                            str(model.get_source()),
+                        )
+                    ],
+                    [],
+                )
+
+        return SavedModelScan._check_for_unsafe_tf_keras_operator(
+            machine_learning_library_name,
+            operators_in_model,
+            model,
+            self._settings["scanners"][self.full_name()]["unsafe_keras_operators"],
+        )
+
     @staticmethod
-    def _get_keras_pb_operator_names(
-        data: IO[bytes], source: Union[str, Path]
-    ) -> List[str]:
+    def _get_keras_pb_operator_names(model: Model) -> List[str]:
         saved_metadata = SavedMetadata()
-        saved_metadata.ParseFromString(data.read())
+        saved_metadata.ParseFromString(model.get_stream().read())
 
         try:
             lambda_layers = [
@@ -170,7 +154,9 @@ class SavedModelLambdaDetectScan(SavedModelScan):
                 return ["Lambda"] * len(lambda_layers)
 
         except json.JSONDecodeError as e:
-            logger.error(f"Not a valid JSON data from source: {source}, error: {e}")
+            logger.error(
+                f"Not a valid JSON data from source: {str(model.get_source())}, error: {e}"
+            )
             return ["JSONDecodeError"]
 
         return []
@@ -181,25 +167,24 @@ class SavedModelLambdaDetectScan(SavedModelScan):
 
 
 class SavedModelTensorflowOpScan(SavedModelScan):
-    def _scan(self, source: Union[str, Path], data: IO[bytes]) -> Optional[ScanResults]:
-        file_name = str(source).split("/")[-1]
+    def _scan(self, model: Model) -> Optional[ScanResults]:
+        file_name = str(model.get_source()).split("/")[-1]
         if file_name == "keras_metadata.pb":
             return None
 
-        else:
-            machine_learning_library_name = "Tensorflow"
-            operators_in_model = self._get_tensorflow_operator_names(data=data)
+        machine_learning_library_name = "Tensorflow"
+        operators_in_model = self._get_tensorflow_operator_names(model)
 
         return SavedModelScan._check_for_unsafe_tf_keras_operator(
             machine_learning_library_name,
             operators_in_model,
-            source,
+            model,
             self._settings["scanners"][self.full_name()]["unsafe_tf_operators"],
         )
 
-    def _get_tensorflow_operator_names(self, data: IO[bytes]) -> List[str]:
+    def _get_tensorflow_operator_names(self, model: Model) -> List[str]:
         saved_model = SavedModel()
-        saved_model.ParseFromString(data.read())
+        saved_model.ParseFromString(model.get_stream().read())
 
         model_op_names: Set[str] = set()
         # Iterate over every metagraph in case there is more than one

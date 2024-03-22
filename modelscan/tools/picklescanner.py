@@ -1,7 +1,5 @@
 import logging
 import pickletools  # nosec
-from dataclasses import dataclass
-from pathlib import Path
 from tarfile import TarError
 from typing import IO, Any, Dict, List, Set, Tuple, Union
 
@@ -11,6 +9,7 @@ from modelscan.error import ModelScanError, ErrorCategories
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.scanners.scan import ScanResults
+from modelscan.model import Model
 
 logger = logging.getLogger("modelscan")
 
@@ -117,17 +116,15 @@ def _list_globals(
 
 
 def scan_pickle_bytes(
-    data: IO[bytes],
-    source: Union[Path, str],
+    model: Model,
     settings: Dict[str, Any],
     scan_name: str = "pickle",
     multiple_pickles: bool = True,
 ) -> ScanResults:
     """Disassemble a Pickle stream and report issues"""
-
     issues: List[Issue] = []
     try:
-        raw_globals = _list_globals(data, multiple_pickles)
+        raw_globals = _list_globals(model.get_stream(), multiple_pickles)
     except GenOpsError as e:
         return ScanResults(
             issues,
@@ -136,13 +133,13 @@ def scan_pickle_bytes(
                     scan_name,
                     ErrorCategories.PICKLE_GENOPS,
                     f"Parsing error: {e}",
-                    str(source),
+                    str(model.get_source()),
                 )
             ],
             [],
         )
 
-    logger.debug("Global imports in %s: %s", source, raw_globals)
+    logger.debug("Global imports in %s: %s", model.get_source(), raw_globals)
     severities = {
         "CRITICAL": IssueSeverity.CRITICAL,
         "HIGH": IssueSeverity.HIGH,
@@ -176,7 +173,7 @@ def scan_pickle_bytes(
                     details=OperatorIssueDetails(
                         module=global_module,
                         operator=global_name,
-                        source=source,
+                        source=model.get_source(),
                         severity=severity,
                     ),
                 )
@@ -184,18 +181,16 @@ def scan_pickle_bytes(
     return ScanResults(issues, [], [])
 
 
-def scan_numpy(
-    data: IO[bytes], source: Union[str, Path], settings: Dict[str, Any]
-) -> ScanResults:
+def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
     scan_name = "numpy"
     # Code to distinguish from NumPy binary files and pickles.
     _ZIP_PREFIX = b"PK\x03\x04"
     _ZIP_SUFFIX = b"PK\x05\x06"  # empty zip files start with this
     N = len(np.lib.format.MAGIC_PREFIX)
-    magic = data.read(N)
+    magic = model.get_stream().read(N)
     # If the file size is less than N, we need to make sure not
     # to seek past the beginning of the file
-    data.seek(-min(N, len(magic)), 1)  # back-up
+    model.get_stream().seek(-min(N, len(magic)), 1)  # back-up
     if magic.startswith(_ZIP_PREFIX) or magic.startswith(_ZIP_SUFFIX):
         # .npz file
         return ScanResults(
@@ -206,40 +201,38 @@ def scan_numpy(
                     scan_name,
                     SkipCategories.NOT_IMPLEMENTED,
                     "Scanning of .npz files is not implemented yet",
-                    str(source),
+                    str(model.get_source()),
                 )
             ],
         )
 
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
-        version = np.lib.format.read_magic(data)  # type: ignore[no-untyped-call]
+        version = np.lib.format.read_magic(model.get_stream())  # type: ignore[no-untyped-call]
         np.lib.format._check_version(version)  # type: ignore[attr-defined]
-        _, _, dtype = np.lib.format._read_array_header(data, version)  # type: ignore[attr-defined]
+        _, _, dtype = np.lib.format._read_array_header(model.get_stream(), version)  # type: ignore[attr-defined]
 
         if dtype.hasobject:
-            return scan_pickle_bytes(data, source, settings, scan_name)
+            return scan_pickle_bytes(model, settings, scan_name)
         else:
             return ScanResults([], [], [])
     else:
-        return scan_pickle_bytes(data, source, settings, scan_name)
+        return scan_pickle_bytes(model, settings, scan_name)
 
 
-def scan_pytorch(
-    data: IO[bytes], source: Union[str, Path], settings: Dict[str, Any]
-) -> ScanResults:
+def scan_pytorch(model: Model, settings: Dict[str, Any]) -> ScanResults:
     scan_name = "pytorch"
-    should_read_directly = _should_read_directly(data)
-    if should_read_directly and data.tell() == 0:
+    should_read_directly = _should_read_directly(model.get_stream())
+    if should_read_directly and model.get_stream().tell() == 0:
         # try loading from tar
         try:
             # TODO: implement loading from tar
             raise TarError()
         except TarError:
             # file does not contain a tar
-            data.seek(0)
+            model.get_stream().seek(0)
 
-    magic = get_magic_number(data)
+    magic = get_magic_number(model.get_stream())
     if magic != MAGIC_NUMBER:
         return ScanResults(
             [],
@@ -249,8 +242,9 @@ def scan_pytorch(
                     scan_name,
                     SkipCategories.MAGIC_NUMBER,
                     f"Invalid magic number",
-                    str(source),
+                    str(model.get_source()),
                 )
             ],
         )
-    return scan_pickle_bytes(data, source, settings, scan_name, multiple_pickles=False)
+
+    return scan_pickle_bytes(model, settings, scan_name, multiple_pickles=False)

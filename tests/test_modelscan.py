@@ -34,11 +34,11 @@ from modelscan.issues import (
 )
 from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
-    scan_numpy,
 )
 
 from modelscan.skip import SkipCategories
 from modelscan.settings import DEFAULT_SETTINGS
+from modelscan.model import Model
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS
 
@@ -431,12 +431,8 @@ def test_scan_pickle_bytes() -> None:
         )
     ]
 
-    assert (
-        scan_pickle_bytes(
-            io.BytesIO(pickle.dumps(Malicious1())), "file.pkl", settings
-        ).issues
-        == expected
-    )
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious1())))
+    assert scan_pickle_bytes(model, settings).issues == expected
 
 
 def test_scan_zip(zip_file_path: Any) -> None:
@@ -456,7 +452,10 @@ def test_scan_zip(zip_file_path: Any) -> None:
     ms = ModelScan()
     results = ms.scan(f"{zip_file_path}/test.zip")
     assert results["summary"]["scanned"]["scanned_files"] == [f"test.zip:data.pkl"]
-    assert results["summary"]["skipped"]["skipped_files"] == []
+    assert [
+        skipped_file["source"]
+        for skipped_file in results["summary"]["skipped"]["skipped_files"]
+    ] == ["test.zip"]
     assert ms.issues.all_issues == expected
 
 
@@ -478,14 +477,16 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
         f"safe_zip_pytorch.pt:safe_zip_pytorch/data.pkl"
     ]
 
-    assert [
-        skipped_file["source"]
-        for skipped_file in results["summary"]["skipped"]["skipped_files"]
-    ] == [
+    assert set(
+        [
+            skipped_file["source"]
+            for skipped_file in results["summary"]["skipped"]["skipped_files"]
+        ]
+    ) == {
         "safe_zip_pytorch.pt:safe_zip_pytorch/byteorder",
         "safe_zip_pytorch.pt:safe_zip_pytorch/version",
         "safe_zip_pytorch.pt:safe_zip_pytorch/.data/serialization_id",
-    ]
+    }
     assert ms.issues.all_issues == []
     assert results["errors"] == []
 
@@ -514,14 +515,16 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     assert results["summary"]["scanned"]["scanned_files"] == [
         f"unsafe_zip_pytorch.pt:unsafe_zip_pytorch/data.pkl",
     ]
-    assert [
-        skipped_file["source"]
-        for skipped_file in results["summary"]["skipped"]["skipped_files"]
-    ] == [
+    assert set(
+        [
+            skipped_file["source"]
+            for skipped_file in results["summary"]["skipped"]["skipped_files"]
+        ]
+    ) == {
         "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/byteorder",
         "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/version",
         "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/.data/serialization_id",
-    ]
+    }
     assert ms.issues.all_issues == expected
     assert results["errors"] == []
 
@@ -1239,7 +1242,10 @@ def test_scan_directory_path(file_path: str) -> None:
         f"benign0_v3.dill",
         f"benign0_v4.dill",
     }
-    assert results["summary"]["skipped"]["skipped_files"] == []
+    assert [
+        skipped_file["source"]
+        for skipped_file in results["summary"]["skipped"]["skipped_files"]
+    ] == ["malicious1.zip"]
     assert results["errors"] == []
 
 
@@ -1287,19 +1293,7 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
             f"safe{file_extension}"
         ]
 
-        if file_extension == ".keras":
-            assert set(
-                [
-                    skipped_file["source"]
-                    for skipped_file in results["summary"]["skipped"]["skipped_files"]
-                ]
-            ) == {
-                f"safe{file_extension}:metadata.json",
-                f"safe{file_extension}:config.json",
-                f"safe{file_extension}:model.weights.h5",
-            }
-        else:
-            assert results["summary"]["skipped"]["skipped_files"] == []
+        assert results["summary"]["skipped"]["skipped_files"] == []
 
         assert results["errors"] == []
 
