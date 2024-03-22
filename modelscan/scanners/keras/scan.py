@@ -79,22 +79,27 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
 
         # if self._check_json_data(source, config_file):
 
-        operators_in_model = self._get_keras_operator_names(model)
-        if operators_in_model:
-            if "JSONDecodeError" in operators_in_model:
-                return ScanResults(
-                    [],
-                    [
-                        ModelScanError(
-                            self.name(),
-                            ErrorCategories.JSON_DECODE,
-                            f"Not a valid JSON data",
-                            str(model.get_source()),
-                        )
-                    ],
-                    [],
-                )
+        try:
+            operators_in_model = self._get_keras_operator_names(model)
+        except json.JSONDecodeError as e:
+            logger.error(
+                f"Not a valid JSON data from source: {model.get_source()}, error: {e}"
+            )
 
+            return ScanResults(
+                [],
+                [
+                    ModelScanError(
+                        self.name(),
+                        ErrorCategories.JSON_DECODE,
+                        f"Not a valid JSON data",
+                        str(model.get_source()),
+                    )
+                ],
+                [],
+            )
+
+        if operators_in_model:
             return KerasLambdaDetectScan._check_for_unsafe_tf_keras_operator(
                 module_name=machine_learning_library_name,
                 raw_operator=operators_in_model,
@@ -112,22 +117,15 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
             )
 
     def _get_keras_operator_names(self, model: Model) -> List[str]:
-        try:
-            model_config_data = json.load(model.get_stream())
+        model_config_data = json.load(model.get_stream())
 
-            lambda_layers = [
-                layer.get("config", {}).get("function", {})
-                for layer in model_config_data.get("config", {}).get("layers", {})
-                if layer.get("class_name", {}) == "Lambda"
-            ]
-            if lambda_layers:
-                return ["Lambda"] * len(lambda_layers)
-
-        except json.JSONDecodeError as e:
-            logger.error(
-                f"Not a valid JSON data from source: {model.get_source()}, error: {e}"
-            )
-            return ["JSONDecodeError"]
+        lambda_layers = [
+            layer.get("config", {}).get("function", {})
+            for layer in model_config_data.get("config", {}).get("layers", {})
+            if layer.get("class_name", {}) == "Lambda"
+        ]
+        if lambda_layers:
+            return ["Lambda"] * len(lambda_layers)
 
         return []
 
