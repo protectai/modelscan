@@ -90,7 +90,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
             )
 
     def _check_model_config(self, model: Model) -> bool:
-        with h5py.File(model.get_stream(), "r") as model_hdf5:
+        with h5py.File(model.get_stream()) as model_hdf5:
             if "model_config" in model_hdf5.attrs.keys():
                 return True
             else:
@@ -100,7 +100,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
     def _get_keras_h5_operator_names(self, model: Model) -> Optional[List[Any]]:
         # Todo: source isn't guaranteed to be a file
 
-        with h5py.File(model.get_stream(), "r") as model_hdf5:
+        with h5py.File(model.get_stream()) as model_hdf5:
             try:
                 if not "model_config" in model_hdf5.attrs.keys():
                     return None

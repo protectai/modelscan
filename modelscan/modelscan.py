@@ -161,9 +161,10 @@ class ModelScan:
 
         if self._skipped:
             all_skipped_paths = [skipped.source for skipped in self._skipped]
-            for skipped in self._skipped:
-                main_file_path = skipped.source.split(":")[0]
-                if main_file_path == skipped.source:
+            for path in all_paths:
+                main_file_path = str(path).split(":")[0]
+
+                if main_file_path == str(path):
                     continue
 
                 # If main container is skipped, we only add its content to skipped but not the file itself
@@ -173,11 +174,6 @@ class ModelScan:
                     ]
 
                     continue
-
-                # If main container is scanned, we consider all files to be scanned
-                self._skipped = [
-                    item for item in self._skipped if item.source != skipped.source
-                ]
 
         return self._generate_results()
 
