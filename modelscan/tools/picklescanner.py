@@ -5,7 +5,7 @@ from typing import IO, Any, Dict, List, Set, Tuple, Union
 
 import numpy as np
 
-from modelscan.error import ModelScanError, ErrorCategories
+from modelscan.error import ModelScanError, PickleGenopsError
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.scanners.scan import ScanResults
@@ -129,11 +129,10 @@ def scan_pickle_bytes(
         return ScanResults(
             issues,
             [
-                ModelScanError(
+                PickleGenopsError(
                     scan_name,
-                    ErrorCategories.PICKLE_GENOPS,
                     f"Parsing error: {e}",
-                    str(model.get_source()),
+                    model,
                 )
             ],
             [],

@@ -1,7 +1,7 @@
 import abc
 from typing import List, Optional, Any, Dict
 
-from modelscan.error import ModelScanError
+from modelscan.error import ErrorBase
 from modelscan.skip import ModelScanSkipped
 from modelscan.issues import Issue
 from modelscan.model import Model
@@ -9,13 +9,13 @@ from modelscan.model import Model
 
 class ScanResults:
     issues: List[Issue]
-    errors: List[ModelScanError]
+    errors: List[ErrorBase]
     skipped: List[ModelScanSkipped]
 
     def __init__(
         self,
         issues: List[Issue],
-        errors: List[ModelScanError],
+        errors: List[ErrorBase],
         skipped: List[ModelScanSkipped],
     ) -> None:
         self.issues = issues

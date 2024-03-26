@@ -10,7 +10,10 @@ try:
 except ImportError:
     h5py_installed = False
 
-from modelscan.error import ModelScanError, ErrorCategories
+from modelscan.error import (
+    DependencyError,
+    JsonDecodeError,
+)
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
@@ -32,10 +35,10 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
             return ScanResults(
                 [],
                 [
-                    ModelScanError(
+                    DependencyError(
                         self.name(),
-                        ErrorCategories.DEPENDENCY,
                         f"To use {self.full_name()}, please install modelscan with h5py extras. `pip install 'modelscan[ h5py ]'` if you are using pip.",
+                        model,
                     )
                 ],
                 [],
@@ -58,11 +61,10 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                 return ScanResults(
                     [],
                     [
-                        ModelScanError(
+                        JsonDecodeError(
                             self.name(),
-                            ErrorCategories.JSON_DECODE,
                             f"Not a valid JSON data",
-                            str(model.get_source()),
+                            model,
                         )
                     ],
                     [],
@@ -128,7 +130,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
         self, settings: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         if not h5py_installed:
-            return ErrorCategories.DEPENDENCY.name
+            return DependencyError.name()
         return None
 
     @staticmethod

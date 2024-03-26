@@ -1,44 +1,111 @@
-from typing import Optional
 from enum import Enum
+from modelscan.model import Model
+import abc
+from pathlib import Path
+from typing import Dict
 
 
-class ErrorCategories(Enum):
-    MODEL_SCAN = 1
-    DEPENDENCY = 2
-    PATH = 3
-    NESTED_ZIP = 4
-    PICKLE_GENOPS = 5
-    JSON_DECODE = 6
-
-
-class Error:
-    scan_name: str
-    category: ErrorCategories
+class ErrorBase(metaclass=abc.ABCMeta):
     message: str
-    source: Optional[str]
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, message: str) -> None:
+        self.message = message
 
+    @abc.abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError()
 
+    @staticmethod
+    @abc.abstractmethod
+    def name() -> str:
+        raise NotImplementedError
 
-class ModelScanError(Error):
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "category": self.name(),
+            "description": self.message,
+        }
+
+
+class ModelScanError(ErrorBase):
+    def __str__(self) -> str:
+        return f"The following error was raised: \n{self.message}"
+
+    @staticmethod
+    def name() -> str:
+        return "MODEL_SCAN"
+
+
+class ModelScanScannerError(ModelScanError):
+    scan_name: str
+    model: Model
+
     def __init__(
         self,
         scan_name: str,
-        category: ErrorCategories,
         message: str,
-        source: Optional[str] = None,
+        model: Model,
     ) -> None:
+        super().__init__(message)
         self.scan_name = scan_name
-        self.category = category
-        self.message = message
-        self.source = source
+        self.model = model
 
     def __str__(self) -> str:
-        if self.source:
-            return f"The following error was raised during a {self.scan_name} scan of file {self.source}: \n{self.message}"
-        else:
-            return f"The following error was raised during a {self.scan_name} scan: \n{self.message}"
+        return f"The following error was raised during a {self.scan_name} scan: \n{self.message}"
+
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "category": self.name(),
+            "description": self.message,
+            "source": str(self.model.get_source()),
+        }
+
+
+class DependencyError(ModelScanScannerError):
+    @staticmethod
+    def name() -> str:
+        return "DEPENDENCY"
+
+
+class PathError(ErrorBase):
+    path: Path
+
+    def __init__(
+        self,
+        message: str,
+        path: Path,
+    ) -> None:
+        super().__init__(message)
+        self.path = path
+
+    def __str__(self) -> str:
+        return f"The following error was raised during scan of file {str(self.path)}: \n{self.message}"
+
+    @staticmethod
+    def name() -> str:
+        return "PATH"
+
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "category": self.name(),
+            "description": self.message,
+            "source": str(self.path),
+        }
+
+
+class NestedZipError(PathError):
+    @staticmethod
+    def name() -> str:
+        return "NESTED_ZIP"
+
+
+class PickleGenopsError(ModelScanScannerError):
+    @staticmethod
+    def name() -> str:
+        return "PICKLE_GENOPS"
+
+
+class JsonDecodeError(ModelScanScannerError):
+    @staticmethod
+    def name() -> str:
+        return "JSON_DECODE"

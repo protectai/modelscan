@@ -16,7 +16,10 @@ except ImportError:
     tensorflow_installed = False
 
 
-from modelscan.error import ModelScanError, ErrorCategories
+from modelscan.error import (
+    DependencyError,
+    JsonDecodeError,
+)
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.scanners.scan import ScanBase, ScanResults
 from modelscan.model import Model
@@ -37,10 +40,10 @@ class SavedModelScan(ScanBase):
             return ScanResults(
                 [],
                 [
-                    ModelScanError(
+                    DependencyError(
                         self.name(),
-                        ErrorCategories.DEPENDENCY,
                         f"To use {self.full_name()}, please install modelscan with tensorflow extras. `pip install 'modelscan[ tensorflow ]'` if you are using pip.",
+                        model,
                     )
                 ],
                 [],
@@ -93,7 +96,7 @@ class SavedModelScan(ScanBase):
         self, settings: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         if not tensorflow_installed:
-            return ErrorCategories.DEPENDENCY.name
+            return DependencyError.name()
         return None
 
     @staticmethod
@@ -118,11 +121,10 @@ class SavedModelLambdaDetectScan(SavedModelScan):
                 return ScanResults(
                     [],
                     [
-                        ModelScanError(
+                        JsonDecodeError(
                             self.name(),
-                            ErrorCategories.JSON_DECODE,
                             f"Not a valid JSON data",
-                            str(model.get_source()),
+                            model,
                         )
                     ],
                     [],

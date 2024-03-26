@@ -6,8 +6,7 @@ from typing import Optional, Dict, Any
 from rich import print
 
 from modelscan.modelscan import ModelScan
-from modelscan.error import Error
-from modelscan.issues import Issues, IssueSeverity
+from modelscan.issues import IssueSeverity
 
 logger = logging.getLogger("modelscan")
 
