@@ -190,7 +190,7 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
     magic = model.get_stream().read(N)
     # If the file size is less than N, we need to make sure not
     # to seek past the beginning of the file
-    model.get_stream().seek(-min(N, len(magic)), 1)  # back-up
+    model._stream.seek(-min(N, len(magic)), 1)  # back-up
     if magic.startswith(_ZIP_PREFIX) or magic.startswith(_ZIP_SUFFIX):
         # .npz file
         return ScanResults(
@@ -208,9 +208,9 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
 
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
-        version = np.lib.format.read_magic(model.get_stream())  # type: ignore[no-untyped-call]
+        version = np.lib.format.read_magic(model._stream)  # type: ignore[no-untyped-call]
         np.lib.format._check_version(version)  # type: ignore[attr-defined]
-        _, _, dtype = np.lib.format._read_array_header(model.get_stream(), version)  # type: ignore[attr-defined]
+        _, _, dtype = np.lib.format._read_array_header(model._stream, version)  # type: ignore[attr-defined]
 
         if dtype.hasobject:
             return scan_pickle_bytes(model, settings, scan_name)
