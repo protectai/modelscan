@@ -1,7 +1,7 @@
 import logging
 import pickletools  # nosec
 from tarfile import TarError
-from typing import IO, Any, Dict, List, Set, Tuple, Union
+from typing import IO, Any, Dict, List, Set, Tuple, Union, Optional
 
 import numpy as np
 
@@ -17,15 +17,15 @@ from .utils import MAGIC_NUMBER, _should_read_directly, get_magic_number
 
 
 class GenOpsError(Exception):
-    def __init__(self, msg: str):
+    def __init__(self, msg: str, globals: Optional[Set[Tuple[str, str]]]):
         self.msg = msg
+        self.globals = globals
         super().__init__()
 
     def __str__(self) -> str:
         return self.msg
 
 
-#
 # TODO: handle methods loading other Pickle files (either mark as suspicious, or follow calls to scan other files [preventing infinite loops])
 #
 # pickle.loads()
@@ -62,7 +62,11 @@ def _list_globals(
                 pickletools.genops(data)
             )
         except Exception as e:
-            raise GenOpsError(str(e))
+            # Given we can have multiple pickles in a file, we may have already successfully extracted globals from a valid pickle.
+            # Thus return the already found globals in the error & let the caller decide what to do.
+            globals_opt = globals if len(globals) > 0 else None
+            raise GenOpsError(str(e), globals_opt)
+
         last_byte = data.read(1)
         data.seek(-1, 1)
 
@@ -126,6 +130,12 @@ def scan_pickle_bytes(
     try:
         raw_globals = _list_globals(model.get_stream(), multiple_pickles)
     except GenOpsError as e:
+        if e.globals is not None:
+            return _build_scan_result_from_raw_globals(
+                e.globals,
+                model,
+                settings,
+            )
         return ScanResults(
             issues,
             [
@@ -138,8 +148,16 @@ def scan_pickle_bytes(
             ],
             [],
         )
+    logger.debug("Global imports in %s: %s", model, raw_globals, settings)
+    return _build_scan_result_from_raw_globals(raw_globals, model, settings)
 
-    logger.debug("Global imports in %s: %s", model.get_source(), raw_globals)
+
+def _build_scan_result_from_raw_globals(
+    raw_globals: Set[Tuple[str, str]],
+    model: Model,
+    settings: Dict[str, Any],
+) -> ScanResults:
+    issues: List[Issue] = []
     severities = {
         "CRITICAL": IssueSeverity.CRITICAL,
         "HIGH": IssueSeverity.HIGH,
