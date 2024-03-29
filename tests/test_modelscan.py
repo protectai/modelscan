@@ -134,6 +134,36 @@ def malicious13_gen() -> bytes:
     return p
 
 
+def malicious14_gen() -> bytes:
+    p = b"".join(
+        [
+            pickle.UNICODE + b"os\n",
+            pickle.PUT + b"2\n",
+            pickle.POP,
+            pickle.UNICODE + b"system\n",
+            pickle.PUT + b"3\n",
+            pickle.POP,
+            pickle.UNICODE + b"torch\n",
+            pickle.PUT + b"0\n",
+            pickle.POP,
+            pickle.UNICODE + b"LongStorage\n",
+            pickle.PUT + b"1\n",
+            pickle.POP,
+            pickle.GET + b"2\n",
+            pickle.GET + b"3\n",
+            pickle.STACK_GLOBAL,
+            pickle.MARK,
+            pickle.UNICODE + b"cat flag.txt\n",
+            pickle.TUPLE,
+            pickle.REDUCE,
+            pickle.STOP,
+            b"\n\n\t\t",
+        ]
+    )
+
+    return p
+
+
 def initialize_pickle_file(path: str, obj: Any, version: int) -> None:
     if not os.path.exists(path):
         with open(path, "wb") as file:
@@ -287,6 +317,8 @@ def file_path(tmp_path_factory: Any) -> Any:
     initialize_data_file(f"{tmp}/data/malicious12.pkl", malicious12_gen())
 
     initialize_data_file(f"{tmp}/data/malicious13.pkl", malicious13_gen())
+
+    initialize_data_file(f"{tmp}/data/malicious14.pkl", malicious14_gen())
 
     return tmp
 
@@ -950,6 +982,22 @@ def test_scan_pickle_operators(file_path: Any) -> None:
     malicious13.scan(Path(f"{file_path}/data/malicious13.pkl"))
     assert malicious13.issues.all_issues == expected_malicious13
 
+    expected_malicious14 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "os",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious14.pkl",
+            ),
+        )
+    ]
+    malicious14 = ModelScan()
+    malicious14.scan(Path(f"{file_path}/data/malicious14.pkl"))
+    assert malicious14.issues.all_issues == expected_malicious14
+
 
 def test_scan_directory_path(file_path: str) -> None:
     expected = {
@@ -1204,6 +1252,16 @@ def test_scan_directory_path(file_path: str) -> None:
                 f"{file_path}/data/malicious13.pkl",
             ),
         ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "os",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious14.pkl",
+            ),
+        ),
     }
     ms = ModelScan()
     p = Path(f"{file_path}/data/")
@@ -1221,6 +1279,7 @@ def test_scan_directory_path(file_path: str) -> None:
         f"malicious11.pkl",
         f"malicious12.pkl",
         f"malicious13.pkl",
+        f"malicious14.pkl",
         f"malicious1_v0.dill",
         f"malicious1_v3.dill",
         f"malicious1_v4.dill",
