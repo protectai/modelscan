@@ -46,7 +46,7 @@ class ConsoleReport(Report):
         total_issue_count = len(scan.issues.all_issues)
         if total_issue_count > 0:
             print(f"\nTotal Issues: {total_issue_count}")
-            print(f"\nTotal Issues By Severity:\n")
+            print("\nTotal Issues By Severity:\n")
             for severity in IssueSeverity:
                 if severity.name in issues_by_severity:
                     print(

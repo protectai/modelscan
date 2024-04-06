@@ -1,11 +1,9 @@
 from transformers import AutoModelForSequenceClassification
-from transformers import TFAutoModelForSequenceClassification
 from transformers import AutoTokenizer
 import numpy as np
 from scipy.special import softmax
 import csv
 import urllib.request
-import os
 import torch
 
 
@@ -30,7 +28,7 @@ def download_model(safe_model_path):
 
 def predict_sentiment(text: str, model):
     task = "sentiment"
-    MODEL = f"cardiffnlp/twitter-roberta-base-sentiment"
+    MODEL = "cardiffnlp/twitter-roberta-base-sentiment"
     tokenizer = AutoTokenizer.from_pretrained(MODEL)
 
     text = preprocess(text)

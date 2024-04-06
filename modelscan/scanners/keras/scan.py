@@ -1,8 +1,7 @@
 import json
 import zipfile
 import logging
-from pathlib import Path
-from typing import IO, List, Union, Optional
+from typing import List, Optional
 
 
 from modelscan.error import ModelScanError, ErrorCategories
@@ -67,7 +66,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
                 ModelScanError(
                     self.name(),
                     ErrorCategories.MODEL_SCAN,  # Giving a generic error category as this return is added to pass mypy
-                    f"Unable to scan .keras file",  # Not sure if this is a representative message for ModelScanError
+                    "Unable to scan .keras file",  # Not sure if this is a representative message for ModelScanError
                     str(model.get_source()),
                 )
             ],

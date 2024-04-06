@@ -61,7 +61,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                         ModelScanError(
                             self.name(),
                             ErrorCategories.JSON_DECODE,
-                            f"Not a valid JSON data",
+                            "Not a valid JSON data",
                             str(model.get_source()),
                         )
                     ],
@@ -83,7 +83,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                     ModelScanSkipped(
                         self.name(),
                         SkipCategories.MODEL_CONFIG,
-                        f"Model Config not found",
+                        "Model Config not found",
                         str(model.get_source()),
                     )
                 ],

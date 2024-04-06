@@ -224,7 +224,7 @@ class ModelScan:
                     ModelScanSkipped(
                         "ModelScan",
                         SkipCategories.SCAN_NOT_SUPPORTED,
-                        f"Model Scan did not scan file",
+                        "Model Scan did not scan file",
                         str(model.get_source()),
                     )
                 )
