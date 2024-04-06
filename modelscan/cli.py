@@ -2,7 +2,7 @@ import logging
 import sys
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional
 from tomlkit import parse
 
 import click
@@ -87,7 +87,7 @@ def cli() -> None:
     help="Optional file name for output report",
 )
 @cli.command(
-    help="[Default] Scan a model file or diretory for ability to execute suspicious actions. "
+    help="[Default] Scan a model file or directory for ability to execute suspicious actions. "
 )  # type: ignore
 @click.pass_context
 def scan(

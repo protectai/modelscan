@@ -1,10 +1,6 @@
-import abc
 import logging
 from enum import Enum
-from pathlib import Path
-from typing import Any, List, Union, Dict, Optional
 
-from collections import defaultdict
 
 logger = logging.getLogger("modelscan")
 
