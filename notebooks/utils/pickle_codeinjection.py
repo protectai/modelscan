@@ -2,8 +2,7 @@ import pickle
 import struct
 import os
 from typing import overload
-
-from git import Union
+from typing import Union
 
 
 class PickleInject:
