@@ -91,7 +91,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
                     ModelScanError(
                         self.name(),
                         ErrorCategories.JSON_DECODE,
-                        f"Not a valid JSON data",
+                        "Not a valid JSON data",
                         str(model.get_source()),
                     )
                 ],

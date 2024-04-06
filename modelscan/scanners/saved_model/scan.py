@@ -2,9 +2,8 @@
 
 import json
 import logging
-from pathlib import Path
 
-from typing import IO, List, Set, Union, Optional, Dict, Any
+from typing import List, Set, Optional, Dict, Any
 
 try:
     import tensorflow

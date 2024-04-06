@@ -102,7 +102,7 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
 
         with h5py.File(model.get_stream()) as model_hdf5:
             try:
-                if not "model_config" in model_hdf5.attrs.keys():
+                if "model_config" not in model_hdf5.attrs.keys():
                     return None
 
                 model_config = json.loads(model_hdf5.attrs.get("model_config", {}))

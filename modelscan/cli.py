@@ -132,7 +132,7 @@ def scan(
         raise click.UsageError("Command line must include a path")
 
     # Report scan results
-    if reporting_format is not "custom":
+    if reporting_format != "custom":
         modelscan._settings["reporting"]["module"] = DEFAULT_REPORTING_MODULES[
             reporting_format
         ]
