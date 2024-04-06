@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Any, Final
 from transformers import AutoModelForSequenceClassification
 from transformers import AutoTokenizer
 import numpy as np
@@ -42,13 +42,13 @@ def download_model(safe_model_path: str) -> None:
     torch.save(model, safe_model_path)
 
 
-def predict_sentiment(text: str, model: str) -> None:
+def predict_sentiment(text: str, model: Any) -> None:
     """
     Predict the sentiment of a given text using a pre-trained sentiment analysis model.
 
     Args:
         text: The input text to analyze.
-        model: The name or path of the pre-trained sentiment analysis model.
+        model: The sentiment analysis model.
     """
     pretrained_model_name = "cardiffnlp/twitter-roberta-base-sentiment"
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)

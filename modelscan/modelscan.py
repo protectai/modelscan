@@ -135,7 +135,7 @@ class ModelScan:
                         ModelScanSkipped(
                             "ModelScan",
                             SkipCategories.BAD_ZIP,
-                            "Skipping zip file due to error: %s" % e,
+                            f"Skipping zip file due to error: {e}",
                             str(model.get_source()),
                         )
                     )
@@ -198,8 +198,7 @@ class ModelScan:
                     ModelScanError(
                         scanner.full_name(),
                         ErrorCategories.MODEL_SCAN,
-                        "Error encountered from scanner %s: %s"
-                        % (scanner.full_name(), e),
+                        f"Error encountered from scanner {scanner.full_name()}: {e}",
                         str(model.get_source()),
                     )
                 )
@@ -354,7 +353,7 @@ class ModelScan:
                 ModelScanError(
                     "ModelScan",
                     ErrorCategories.MODEL_SCAN,
-                    "Error generating report using %s: %s" % (reporting_module, e),
+                    f"Error generating report using {reporting_module}: {e}",
                 )
             )
 
