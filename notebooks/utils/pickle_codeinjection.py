@@ -1,6 +1,9 @@
 import pickle
 import struct
 import os
+from typing import overload
+
+from git import Union
 
 
 class PickleInject:
@@ -88,7 +91,44 @@ class PickleInject:
             return self.command, (self.args, {})
 
 
-def get_payload(command: str, malicious_code: str):
+@overload
+def get_payload(command: str, malicious_code: str) -> PickleInject.System:
+    ...
+
+
+@overload
+def get_payload(command: str, malicious_code: str) -> PickleInject.Exec:
+    ...
+
+
+@overload
+def get_payload(command: str, malicious_code: str) -> PickleInject.Eval:
+    ...
+
+
+@overload
+def get_payload(command: str, malicious_code: str) -> PickleInject.RunPy:
+    ...
+
+
+def get_payload(
+    command: str, malicious_code: str
+) -> Union[
+    PickleInject.System, PickleInject.Exec, PickleInject.Eval, PickleInject.RunPy
+]:
+    """
+    Get the payload based on the command and malicious code provided.
+
+    Args:
+        command: The command to execute.
+        malicious_code: The malicious code to inject.
+
+    Returns:
+        The payload object based on the command.
+
+    Raises:
+        ValueError: If an invalid command is provided.
+    """
     if command == "system":
         payload = PickleInject.System(malicious_code)
     elif command == "exec":
@@ -97,6 +137,9 @@ def get_payload(command: str, malicious_code: str):
         payload = PickleInject.Eval(malicious_code)
     elif command == "runpy":
         payload = PickleInject.RunPy(malicious_code)
+    else:
+        raise ValueError("Invalid command provided.")
+
     return payload
 
 
