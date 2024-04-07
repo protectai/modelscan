@@ -1,8 +1,8 @@
+from __future__ import annotations
+
+import os
 import pickle
 import struct
-import os
-from typing import overload
-from typing import Union
 
 
 class PickleInject:
@@ -90,31 +90,9 @@ class PickleInject:
             return self.command, (self.args, {})
 
 
-@overload
-def get_payload(command: str, malicious_code: str) -> PickleInject.System:
-    ...
-
-
-@overload
-def get_payload(command: str, malicious_code: str) -> PickleInject.Exec:
-    ...
-
-
-@overload
-def get_payload(command: str, malicious_code: str) -> PickleInject.Eval:
-    ...
-
-
-@overload
-def get_payload(command: str, malicious_code: str) -> PickleInject.RunPy:
-    ...
-
-
 def get_payload(
     command: str, malicious_code: str
-) -> Union[
-    PickleInject.System, PickleInject.Exec, PickleInject.Eval, PickleInject.RunPy
-]:
+) -> PickleInject.System | PickleInject.Exec | PickleInject.Eval | PickleInject.RunPy:
     """
     Get the payload based on the command and malicious code provided.
 
