@@ -2,24 +2,24 @@ default_language_version:
     python: python3.11
 repos:
   - repo: https://github.com/psf/black
-    rev: 22.8.0
+    rev: 24.3.0
     hooks:
       - id: black
   - repo: https://github.com/python-poetry/poetry
-    rev: "1.4.0"
+    rev: "1.7.1"
     hooks:
       - id: poetry-check # Makes sure poetry config is valid
       - id: poetry-lock # Makes sure lock file is up to date
         args: ["--check"]
   - repo: https://github.com/PyCQA/bandit
-    rev: "1.7.5"
+    rev: "1.7.8"
     hooks:
       - id: bandit
         args: ["-c", "pyproject.toml"]
         additional_dependencies: ["bandit[toml]"]
         exclude: notebooks
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.4.1"
+    rev: "v1.8.0"
     hooks:
       - id: mypy
         args: ["--ignore-missing-imports", "--strict", "--check-untyped-defs"]

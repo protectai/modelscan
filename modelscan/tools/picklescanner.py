@@ -1,7 +1,7 @@
 import logging
 import pickletools  # nosec
 from tarfile import TarError
-from typing import IO, Any, Dict, List, Set, Tuple, Union
+from typing import IO, Any, Dict, List, Set, Tuple, Union, Optional
 
 import numpy as np
 
@@ -17,15 +17,15 @@ from .utils import MAGIC_NUMBER, _should_read_directly, get_magic_number
 
 
 class GenOpsError(Exception):
-    def __init__(self, msg: str):
+    def __init__(self, msg: str, globals: Optional[Set[Tuple[str, str]]]):
         self.msg = msg
+        self.globals = globals
         super().__init__()
 
     def __str__(self) -> str:
         return self.msg
 
 
-#
 # TODO: handle methods loading other Pickle files (either mark as suspicious, or follow calls to scan other files [preventing infinite loops])
 #
 # pickle.loads()
@@ -62,7 +62,11 @@ def _list_globals(
                 pickletools.genops(data)
             )
         except Exception as e:
-            raise GenOpsError(str(e))
+            # Given we can have multiple pickles in a file, we may have already successfully extracted globals from a valid pickle.
+            # Thus return the already found globals in the error & let the caller decide what to do.
+            globals_opt = globals if len(globals) > 0 else None
+            raise GenOpsError(str(e), globals_opt)
+
         last_byte = data.read(1)
         data.seek(-1, 1)
 
@@ -126,6 +130,12 @@ def scan_pickle_bytes(
     try:
         raw_globals = _list_globals(model.get_stream(), multiple_pickles)
     except GenOpsError as e:
+        if e.globals is not None:
+            return _build_scan_result_from_raw_globals(
+                e.globals,
+                model,
+                settings,
+            )
         return ScanResults(
             issues,
             [
@@ -137,8 +147,16 @@ def scan_pickle_bytes(
             ],
             [],
         )
+    logger.debug("Global imports in %s: %s", model, raw_globals, settings)
+    return _build_scan_result_from_raw_globals(raw_globals, model, settings)
 
-    logger.debug("Global imports in %s: %s", model.get_source(), raw_globals)
+
+def _build_scan_result_from_raw_globals(
+    raw_globals: Set[Tuple[str, str]],
+    model: Model,
+    settings: Dict[str, Any],
+) -> ScanResults:
+    issues: List[Issue] = []
     severities = {
         "CRITICAL": IssueSeverity.CRITICAL,
         "HIGH": IssueSeverity.HIGH,
@@ -186,10 +204,11 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
     _ZIP_PREFIX = b"PK\x03\x04"
     _ZIP_SUFFIX = b"PK\x05\x06"  # empty zip files start with this
     N = len(np.lib.format.MAGIC_PREFIX)
-    magic = model.get_stream().read(N)
+    stream = model.get_stream()
+    magic = stream.read(N)
     # If the file size is less than N, we need to make sure not
     # to seek past the beginning of the file
-    model.get_stream().seek(-min(N, len(magic)), 1)  # back-up
+    stream.seek(-min(N, len(magic)), 1)  # back-up
     if magic.startswith(_ZIP_PREFIX) or magic.startswith(_ZIP_SUFFIX):
         # .npz file
         return ScanResults(
@@ -207,9 +226,9 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
 
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
-        version = np.lib.format.read_magic(model.get_stream())  # type: ignore[no-untyped-call]
+        version = np.lib.format.read_magic(stream)  # type: ignore[no-untyped-call]
         np.lib.format._check_version(version)  # type: ignore[attr-defined]
-        _, _, dtype = np.lib.format._read_array_header(model.get_stream(), version)  # type: ignore[attr-defined]
+        _, _, dtype = np.lib.format._read_array_header(stream, version)  # type: ignore[attr-defined]
 
         if dtype.hasobject:
             return scan_pickle_bytes(model, settings, scan_name)

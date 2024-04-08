@@ -51,4 +51,5 @@ class Model:
         if not self._stream:
             raise ModelDataEmpty("Model data is empty.")
 
+        self._stream.seek(0)
         return self._stream
