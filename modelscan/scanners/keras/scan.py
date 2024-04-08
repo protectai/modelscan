@@ -1,11 +1,10 @@
 import json
 import zipfile
 import logging
-from pathlib import Path
-from typing import IO, List, Union, Optional
+from typing import List, Optional
 
 
-from modelscan.error import ModelScanError, ErrorCategories
+from modelscan.error import DependencyError, ModelScanScannerError, JsonDecodeError
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
@@ -25,10 +24,10 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
             return ScanResults(
                 [],
                 [
-                    ModelScanError(
+                    DependencyError(
                         self.name(),
-                        ErrorCategories.DEPENDENCY,
                         f"To use {self.full_name()}, please install modelscan with tensorflow extras. `pip install 'modelscan[ tensorflow ]'` if you are using pip.",
+                        model,
                     )
                 ],
                 [],
@@ -64,11 +63,10 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
         return ScanResults(
             [],
             [
-                ModelScanError(
+                ModelScanScannerError(
                     self.name(),
-                    ErrorCategories.MODEL_SCAN,  # Giving a generic error category as this return is added to pass mypy
                     f"Unable to scan .keras file",  # Not sure if this is a representative message for ModelScanError
-                    str(model.get_source()),
+                    model,
                 )
             ],
             [],
@@ -89,11 +87,10 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
             return ScanResults(
                 [],
                 [
-                    ModelScanError(
+                    JsonDecodeError(
                         self.name(),
-                        ErrorCategories.JSON_DECODE,
                         f"Not a valid JSON data",
-                        str(model.get_source()),
+                        model,
                     )
                 ],
                 [],
