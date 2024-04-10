@@ -8,7 +8,13 @@ from typing import List, Union, Dict, Any, Optional, Generator
 from datetime import datetime
 import zipfile
 
-from modelscan.error import ModelScanError, ErrorCategories
+from modelscan.error import (
+    ModelScanError,
+    PathError,
+    ErrorBase,
+    ModelScanScannerError,
+    NestedZipError,
+)
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.issues import Issues, IssueSeverity
 from modelscan.scanners.scan import ScanBase
@@ -27,7 +33,7 @@ class ModelScan:
     ) -> None:
         # Output
         self._issues = Issues()
-        self._errors: List[ModelScanError] = []
+        self._errors: List[ErrorBase] = []
         self._init_errors: List[ModelScanError] = []
         self._skipped: List[ModelScanSkipped] = []
         self._scanned: List[str] = []
@@ -46,13 +52,7 @@ class ModelScan:
             )
         except MiddlewareImportError as e:
             logger.exception(e)
-            self._init_errors.append(
-                ModelScanError(
-                    "MiddlewarePipeline",
-                    ErrorCategories.MODEL_SCAN,
-                    f"Error loading middlewares: {e}",
-                )
-            )
+            self._init_errors.append(ModelScanError(f"Error loading middlewares: {e}"))
 
     def _load_scanners(self) -> None:
         for scanner_path, scanner_settings in self._settings["scanners"].items():
@@ -73,23 +73,14 @@ class ModelScan:
                     logger.error("Error importing scanner %s", scanner_path)
                     self._init_errors.append(
                         ModelScanError(
-                            scanner_path,
-                            ErrorCategories.MODEL_SCAN,
-                            f"Error importing scanner: {e}",
+                            f"Error importing scanner {scanner_path}: {e}",
                         )
                     )
 
     def _iterate_models(self, model_path: Path) -> Generator[Model, None, None]:
         if not model_path.exists():
             logger.error("Path %s does not exist", model_path)
-            self._errors.append(
-                ModelScanError(
-                    "ModelScan",
-                    ErrorCategories.PATH,
-                    "Path is not valid",
-                    str(model_path),
-                )
-            )
+            self._errors.append(PathError("Path is not valid", model_path))
 
         files = [model_path]
         if model_path.is_dir():
@@ -115,11 +106,9 @@ class ModelScan:
                                 file_name = f"{model.get_source()}:{file_name}"
                                 if _is_zipfile(file_name, data=file_io):
                                     self._errors.append(
-                                        ModelScanError(
-                                            "ModelScan",
-                                            ErrorCategories.NESTED_ZIP,
+                                        NestedZipError(
                                             "ModelScan does not support nested zip files.",
-                                            file_name,
+                                            Path(file_name),
                                         )
                                     )
                                     continue
@@ -195,11 +184,10 @@ class ModelScan:
                     e,
                 )
                 self._errors.append(
-                    ModelScanError(
+                    ModelScanScannerError(
                         scanner.full_name(),
-                        ErrorCategories.MODEL_SCAN,
-                        f"Error encountered from scanner {scanner.full_name()}: {e}",
-                        str(model.get_source()),
+                        str(e),
+                        model,
                     )
                 )
                 continue
@@ -287,12 +275,9 @@ class ModelScan:
         all_errors = []
         if self._errors:
             for error in self._errors:
-                error_information = {}
-                error_information["category"] = str(error.category.name)
-                if error.message:
-                    error_information["description"] = error.message
-                if error.source is not None:
-                    resolved_file = Path(error.source).resolve()
+                error_information = error.to_dict()
+                if "source" in error_information:
+                    resolved_file = Path(error_information["source"]).resolve()
                     error_information["source"] = str(
                         resolved_file.relative_to(Path(absolute_path))
                     )
@@ -350,11 +335,7 @@ class ModelScan:
         except Exception as e:
             logger.error("Error generating report using %s: %s", reporting_module, e)
             self._errors.append(
-                ModelScanError(
-                    "ModelScan",
-                    ErrorCategories.MODEL_SCAN,
-                    f"Error generating report using {reporting_module}: {e}",
-                )
+                ModelScanError(f"Error generating report using {reporting_module}: {e}")
             )
 
         return scan_report
@@ -364,7 +345,7 @@ class ModelScan:
         return self._issues
 
     @property
-    def errors(self) -> List[ModelScanError]:
+    def errors(self) -> List[ErrorBase]:
         return self._errors
 
     @property
