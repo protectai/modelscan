@@ -65,7 +65,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
             [
                 ModelScanScannerError(
                     self.name(),
-                    f"Unable to scan .keras file",  # Not sure if this is a representative message for ModelScanError
+                    "Unable to scan .keras file",  # Not sure if this is a representative message for ModelScanError
                     model,
                 )
             ],
@@ -89,7 +89,7 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
                 [
                     JsonDecodeError(
                         self.name(),
-                        f"Not a valid JSON data",
+                        "Not a valid JSON data",
                         model,
                     )
                 ],

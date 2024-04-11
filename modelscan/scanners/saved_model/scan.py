@@ -2,9 +2,8 @@
 
 import json
 import logging
-from pathlib import Path
 
-from typing import IO, List, Set, Union, Optional, Dict, Any
+from typing import List, Set, Optional, Dict, Any
 
 try:
     import tensorflow
@@ -125,7 +124,7 @@ class SavedModelLambdaDetectScan(SavedModelScan):
                     [
                         JsonDecodeError(
                             self.name(),
-                            f"Not a valid JSON data",
+                            "Not a valid JSON data",
                             model,
                         )
                     ],

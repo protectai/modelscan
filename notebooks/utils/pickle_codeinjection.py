@@ -1,6 +1,8 @@
+from __future__ import annotations
+
+import os
 import pickle
 import struct
-import os
 
 
 class PickleInject:
@@ -88,7 +90,22 @@ class PickleInject:
             return self.command, (self.args, {})
 
 
-def get_payload(command: str, malicious_code: str):
+def get_payload(
+    command: str, malicious_code: str
+) -> PickleInject.System | PickleInject.Exec | PickleInject.Eval | PickleInject.RunPy:
+    """
+    Get the payload based on the command and malicious code provided.
+
+    Args:
+        command: The command to execute.
+        malicious_code: The malicious code to inject.
+
+    Returns:
+        The payload object based on the command.
+
+    Raises:
+        ValueError: If an invalid command is provided.
+    """
     if command == "system":
         payload = PickleInject.System(malicious_code)
     elif command == "exec":
@@ -97,6 +114,9 @@ def get_payload(command: str, malicious_code: str):
         payload = PickleInject.Eval(malicious_code)
     elif command == "runpy":
         payload = PickleInject.RunPy(malicious_code)
+    else:
+        raise ValueError("Invalid command provided.")
+
     return payload
 
 

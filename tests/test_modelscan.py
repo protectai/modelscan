@@ -483,7 +483,7 @@ def test_scan_zip(zip_file_path: Any) -> None:
 
     ms = ModelScan()
     results = ms.scan(f"{zip_file_path}/test.zip")
-    assert results["summary"]["scanned"]["scanned_files"] == [f"test.zip:data.pkl"]
+    assert results["summary"]["scanned"]["scanned_files"] == ["test.zip:data.pkl"]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert ms.issues.all_issues == expected
 
@@ -495,15 +495,15 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     assert results["summary"]["skipped"]["skipped_files"] == [
         {
             "category": SkipCategories.MAGIC_NUMBER.name,
-            "description": f"Invalid magic number",
-            "source": f"bad_pytorch.pt",
+            "description": "Invalid magic number",
+            "source": "bad_pytorch.pt",
         }
     ]
     assert ms.issues.all_issues == []
 
     results = ms.scan(Path(f"{pytorch_file_path}/safe_zip_pytorch.pt"))
     assert results["summary"]["scanned"]["scanned_files"] == [
-        f"safe_zip_pytorch.pt:safe_zip_pytorch/data.pkl"
+        "safe_zip_pytorch.pt:safe_zip_pytorch/data.pkl"
     ]
 
     assert set(
@@ -521,7 +521,7 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
 
     results = ms.scan(Path(f"{pytorch_file_path}/safe_old_format_pytorch.pt"))
     assert results["summary"]["scanned"]["scanned_files"] == [
-        f"safe_old_format_pytorch.pt"
+        "safe_old_format_pytorch.pt"
     ]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert ms.issues.all_issues == []
@@ -542,7 +542,7 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     ]
     results = ms.scan(unsafe_zip_path)
     assert results["summary"]["scanned"]["scanned_files"] == [
-        f"unsafe_zip_pytorch.pt:unsafe_zip_pytorch/data.pkl",
+        "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/data.pkl",
     ]
     assert set(
         [
@@ -562,7 +562,7 @@ def test_scan_numpy(numpy_file_path: Any) -> None:
     ms = ModelScan()
     results = ms.scan(f"{numpy_file_path}/safe_numpy.npy")
     assert ms.issues.all_issues == []
-    assert results["summary"]["scanned"]["scanned_files"] == [f"safe_numpy.npy"]
+    assert results["summary"]["scanned"]["scanned_files"] == ["safe_numpy.npy"]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
 
@@ -581,7 +581,7 @@ def test_scan_numpy(numpy_file_path: Any) -> None:
 
     results = ms.scan(f"{numpy_file_path}/unsafe_numpy.npy")
     compare_results(ms.issues.all_issues, expected)
-    assert results["summary"]["scanned"]["scanned_files"] == [f"unsafe_numpy.npy"]
+    assert results["summary"]["scanned"]["scanned_files"] == ["unsafe_numpy.npy"]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
 
@@ -590,14 +590,14 @@ def test_scan_file_path(file_path: Any) -> None:
     benign_pickle = ModelScan()
     results = benign_pickle.scan(Path(f"{file_path}/data/benign0_v3.pkl"))
     assert benign_pickle.issues.all_issues == []
-    assert results["summary"]["scanned"]["scanned_files"] == [f"benign0_v3.pkl"]
+    assert results["summary"]["scanned"]["scanned_files"] == ["benign0_v3.pkl"]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
 
     benign_dill = ModelScan()
     results = benign_dill.scan(Path(f"{file_path}/data/benign0_v3.dill"))
     assert benign_dill.issues.all_issues == []
-    assert results["summary"]["scanned"]["scanned_files"] == [f"benign0_v3.dill"]
+    assert results["summary"]["scanned"]["scanned_files"] == ["benign0_v3.dill"]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
 
@@ -646,7 +646,7 @@ def test_scan_file_path(file_path: Any) -> None:
     }
     results = malicious0.scan(Path(f"{file_path}/data/malicious0.pkl"))
     compare_results(malicious0.issues.all_issues, expected_malicious0)
-    assert results["summary"]["scanned"]["scanned_files"] == [f"malicious0.pkl"]
+    assert results["summary"]["scanned"]["scanned_files"] == ["malicious0.pkl"]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
 
@@ -1268,35 +1268,35 @@ def test_scan_directory_path(file_path: str) -> None:
     results = ms.scan(p)
     compare_results(ms.issues.all_issues, expected)
     assert set(results["summary"]["scanned"]["scanned_files"]) == {
-        f"malicious1.zip:data.pkl",
-        f"malicious0.pkl",
-        f"malicious3.pkl",
-        f"malicious6.pkl",
-        f"malicious7.pkl",
-        f"malicious8.pkl",
-        f"malicious9.pkl",
-        f"malicious10.pkl",
-        f"malicious11.pkl",
-        f"malicious12.pkl",
-        f"malicious13.pkl",
-        f"malicious14.pkl",
-        f"malicious1_v0.dill",
-        f"malicious1_v3.dill",
-        f"malicious1_v4.dill",
-        f"malicious4.pickle",
-        f"malicious5.pickle",
-        f"malicious1_v0.pkl",
-        f"malicious1_v3.pkl",
-        f"malicious1_v4.pkl",
-        f"malicious2_v0.pkl",
-        f"malicious2_v3.pkl",
-        f"malicious2_v4.pkl",
-        f"benign0_v0.pkl",
-        f"benign0_v3.pkl",
-        f"benign0_v4.pkl",
-        f"benign0_v0.dill",
-        f"benign0_v3.dill",
-        f"benign0_v4.dill",
+        "malicious1.zip:data.pkl",
+        "malicious0.pkl",
+        "malicious3.pkl",
+        "malicious6.pkl",
+        "malicious7.pkl",
+        "malicious8.pkl",
+        "malicious9.pkl",
+        "malicious10.pkl",
+        "malicious11.pkl",
+        "malicious12.pkl",
+        "malicious13.pkl",
+        "malicious14.pkl",
+        "malicious1_v0.dill",
+        "malicious1_v3.dill",
+        "malicious1_v4.dill",
+        "malicious4.pickle",
+        "malicious5.pickle",
+        "malicious1_v0.pkl",
+        "malicious1_v3.pkl",
+        "malicious1_v4.pkl",
+        "malicious2_v0.pkl",
+        "malicious2_v3.pkl",
+        "malicious2_v4.pkl",
+        "benign0_v0.pkl",
+        "benign0_v3.pkl",
+        "benign0_v4.pkl",
+        "benign0_v0.dill",
+        "benign0_v3.dill",
+        "benign0_v4.dill",
     }
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
@@ -1325,9 +1325,9 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
 
     if file_extension == ".pb":
         assert set(results["summary"]["scanned"]["scanned_files"]) == {
-            f"fingerprint.pb",
-            f"keras_metadata.pb",
-            f"saved_model.pb",
+            "fingerprint.pb",
+            "keras_metadata.pb",
+            "saved_model.pb",
         }
 
         assert set(
@@ -1336,8 +1336,8 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 for skipped_file in results["summary"]["skipped"]["skipped_files"]
             ]
         ) == {
-            f"variables/variables.data-00000-of-00001",
-            f"variables/variables.index",
+            "variables/variables.data-00000-of-00001",
+            "variables/variables.index",
         }
         assert results["errors"] == []
 
@@ -1420,9 +1420,9 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
         assert ms.issues.all_issues == expected
         assert results["errors"] == []
         assert set(results["summary"]["scanned"]["scanned_files"]) == {
-            f"fingerprint.pb",
-            f"keras_metadata.pb",
-            f"saved_model.pb",
+            "fingerprint.pb",
+            "keras_metadata.pb",
+            "saved_model.pb",
         }
         assert set(
             [
@@ -1430,8 +1430,8 @@ def test_scan_keras(keras_file_path: Any, file_extension: str) -> None:
                 for skipped_file in results["summary"]["skipped"]["skipped_files"]
             ]
         ) == {
-            f"variables/variables.data-00000-of-00001",
-            f"variables/variables.index",
+            "variables/variables.data-00000-of-00001",
+            "variables/variables.index",
         }
     else:
         unsafe_filename = f"{keras_file_path_parent_dir}/unsafe{file_extension}"
@@ -1484,9 +1484,9 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
     results = ms.scan(Path(f"{safe_tensorflow_model_dir}"))
     assert ms.issues.all_issues == []
     assert set(results["summary"]["scanned"]["scanned_files"]) == {
-        f"fingerprint.pb",
-        f"keras_metadata.pb",
-        f"saved_model.pb",
+        "fingerprint.pb",
+        "keras_metadata.pb",
+        "saved_model.pb",
     }
     assert set(
         [
@@ -1494,8 +1494,8 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
             for skipped_file in results["summary"]["skipped"]["skipped_files"]
         ]
     ) == {
-        f"variables/variables.data-00000-of-00001",
-        f"variables/variables.index",
+        "variables/variables.data-00000-of-00001",
+        "variables/variables.index",
     }
     assert results["errors"] == []
 
@@ -1526,9 +1526,9 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
 
     assert ms.issues.all_issues == expected
     assert set(results["summary"]["scanned"]["scanned_files"]) == {
-        f"fingerprint.pb",
-        f"keras_metadata.pb",
-        f"saved_model.pb",
+        "fingerprint.pb",
+        "keras_metadata.pb",
+        "saved_model.pb",
     }
     assert set(
         [
@@ -1536,8 +1536,8 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
             for skipped_file in results["summary"]["skipped"]["skipped_files"]
         ]
     ) == {
-        f"variables/variables.data-00000-of-00001",
-        f"variables/variables.index",
+        "variables/variables.data-00000-of-00001",
+        "variables/variables.index",
     }
     assert results["errors"] == []
 

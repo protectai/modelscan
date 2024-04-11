@@ -2,7 +2,7 @@ import logging
 import sys
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional
 from tomlkit import parse
 
 import click
@@ -87,7 +87,7 @@ def cli() -> None:
     help="Optional file name for output report",
 )
 @cli.command(
-    help="[Default] Scan a model file or diretory for ability to execute suspicious actions. "
+    help="[Default] Scan a model file or directory for ability to execute suspicious actions. "
 )  # type: ignore
 @click.pass_context
 def scan(
@@ -112,7 +112,7 @@ def scan(
     settings = DEFAULT_SETTINGS
 
     if settings_file_path and settings_file_path.is_file():
-        with open(settings_file_path) as sf:
+        with open(settings_file_path, encoding="utf-8") as sf:
             settings = parse(sf.read()).unwrap()
             click.echo(f"Detected settings file. Using {settings_file_path}. \n")
     else:
@@ -132,7 +132,7 @@ def scan(
         raise click.UsageError("Command line must include a path")
 
     # Report scan results
-    if reporting_format is not "custom":
+    if reporting_format != "custom":
         modelscan._settings["reporting"]["module"] = DEFAULT_REPORTING_MODULES[
             reporting_format
         ]
@@ -174,16 +174,17 @@ def create_settings(force: bool, location: Optional[str]) -> None:
         settings_path = location
 
     try:
-        open(settings_path)
+        open(settings_path, encoding="utf-8")
         if force:
-            with open(settings_path, "w") as settings_file:
+            with open(settings_path, mode="w", encoding="utf-8") as settings_file:
                 settings_file.write(SettingsUtils.get_default_settings_as_toml())
         else:
             logger.warning(
-                f"{settings_path} file already exists. Please use `--force` flag if you intend to overwrite it."
+                "%s file already exists. Please use `--force` flag if you intend to overwrite it.",
+                settings_path,
             )
     except FileNotFoundError:
-        with open(settings_path, "w") as settings_file:
+        with open(settings_path, mode="w", encoding="utf-8") as settings_file:
             settings_file.write(SettingsUtils.get_default_settings_as_toml())
 
 
