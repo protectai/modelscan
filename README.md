@@ -31,7 +31,7 @@ pip install modelscan
 With it installed, scan a model:
 
 ```bash
-modelscan -p /path/to/model_file.h5
+modelscan -p /path/to/model_file.pkl
 ```
 
 ## Why You Should Scan Models
@@ -103,6 +103,11 @@ or `pyproject.toml` like this:
 
 ```toml
 modelscan = ">=0.1.1"
+```
+
+Scanners for Tensorflow or HD5 formatted models require installation with extras:
+```bash
+pip install 'modelscan[ tensorflow, h5py ]'
 ```
 
 ### Using ModelScan via CLI
