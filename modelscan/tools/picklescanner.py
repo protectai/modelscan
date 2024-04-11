@@ -259,7 +259,7 @@ def scan_pytorch(model: Model, settings: Dict[str, Any]) -> ScanResults:
                 ModelScanSkipped(
                     scan_name,
                     SkipCategories.MAGIC_NUMBER,
-                    f"Invalid magic number",
+                    "Invalid magic number",
                     str(model.get_source()),
                 )
             ],

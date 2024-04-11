@@ -85,7 +85,7 @@ class Issue:
         if self.code == IssueCode.UNSAFE_OPERATOR:
             issue_description = "Unsafe operator"
         else:
-            logger.error(f"No issue description for issue code ${self.code}")
+            logger.error("No issue description for issue code %s", self.code)
 
         print(f"\n{issue_description} found:")
         print(f"  - Severity: {self.severity.name}")

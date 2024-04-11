@@ -1,6 +1,4 @@
-import http.client
 import io
-import urllib.parse
 from pathlib import Path
 from pickletools import genops  # nosec
 from typing import IO, Optional, Union

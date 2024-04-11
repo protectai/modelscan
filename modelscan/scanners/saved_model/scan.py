@@ -2,9 +2,8 @@
 
 import json
 import logging
-from pathlib import Path
 
-from typing import IO, List, Set, Union, Optional, Dict, Any
+from typing import List, Set, Optional, Dict, Any
 
 try:
     import tensorflow
@@ -65,7 +64,9 @@ class SavedModelScan(ScanBase):
         unsafe_operators: Dict[str, Any],
     ) -> ScanResults:
         issues: List[Issue] = []
-        all_operators = tensorflow.raw_ops.__dict__.keys()
+        all_operators = (
+            tensorflow.raw_ops.__dict__.keys() if tensorflow_installed else []
+        )
         all_safe_operators = [
             operator for operator in list(all_operators) if operator[0] != "_"
         ]
@@ -123,7 +124,7 @@ class SavedModelLambdaDetectScan(SavedModelScan):
                     [
                         JsonDecodeError(
                             self.name(),
-                            f"Not a valid JSON data",
+                            "Not a valid JSON data",
                             model,
                         )
                     ],

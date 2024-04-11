@@ -32,7 +32,7 @@ class Report(metaclass=abc.ABCMeta):
 
         :param errors: Any errors that occurred during the scan.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class ConsoleReport(Report):
@@ -46,7 +46,7 @@ class ConsoleReport(Report):
         total_issue_count = len(scan.issues.all_issues)
         if total_issue_count > 0:
             print(f"\nTotal Issues: {total_issue_count}")
-            print(f"\nTotal Issues By Severity:\n")
+            print("\nTotal Issues By Severity:\n")
             for severity in IssueSeverity:
                 if severity.name in issues_by_severity:
                     print(
@@ -75,7 +75,7 @@ class ConsoleReport(Report):
                 f"\nTotal skipped: {len(scan.skipped)} - run with --show-skipped to see the full list."
             )
             if settings["show_skipped"]:
-                print(f"\nSkipped files list:\n")
+                print("\nSkipped files list:\n")
                 for file_name in scan.skipped:
                     print(str(file_name))
 

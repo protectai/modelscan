@@ -70,7 +70,7 @@ class ModelScan:
                     self._scanners_to_run.append(scanner_class)
 
                 except Exception as e:
-                    logger.error(f"Error importing scanner {scanner_path}")
+                    logger.error("Error importing scanner %s", scanner_path)
                     self._init_errors.append(
                         ModelScanError(
                             f"Error importing scanner {scanner_path}: {e}",
@@ -79,12 +79,12 @@ class ModelScan:
 
     def _iterate_models(self, model_path: Path) -> Generator[Model, None, None]:
         if not model_path.exists():
-            logger.error(f"Path {model_path} does not exist")
+            logger.error("Path %s does not exist", model_path)
             self._errors.append(PathError("Path is not valid", model_path))
 
         files = [model_path]
         if model_path.is_dir():
-            logger.debug(f"Path {str(model_path)} is a directory")
+            logger.debug("Path %s is a directory", str(model_path))
             files = [f for f in model_path.rglob("*") if Path.is_file(f)]
 
         for file in files:
@@ -116,8 +116,8 @@ class ModelScan:
                                 yield Model(file_name, file_io)
                 except zipfile.BadZipFile as e:
                     logger.debug(
-                        f"Skipping zip file {str(model.get_source())}, due to error",
-                        e,
+                        "Skipping zip file %s, due to error",
+                        str(model.get_source()),
                         exc_info=True,
                     )
                     self._skipped.append(
@@ -178,7 +178,10 @@ class ModelScan:
                 scan_results = scanner.scan(model)
             except Exception as e:
                 logger.error(
-                    f"Error encountered from scanner {scanner.full_name()} with path {str(model.get_source())}: {e}"
+                    "Error encountered from scanner %s with path %s: %s",
+                    scanner.full_name(),
+                    str(model.get_source()),
+                    e,
                 )
                 self._errors.append(
                     ModelScanScannerError(
@@ -192,7 +195,9 @@ class ModelScan:
             if scan_results is not None:
                 scanned = True
                 logger.info(
-                    f"Scanning {model.get_source()} using {scanner.full_name()} model scan"
+                    "Scanning %s using %s model scan",
+                    model.get_source(),
+                    scanner.full_name(),
                 )
                 if scan_results.errors:
                     self._errors.extend(scan_results.errors)
@@ -212,7 +217,7 @@ class ModelScan:
                     ModelScanSkipped(
                         "ModelScan",
                         SkipCategories.SCAN_NOT_SUPPORTED,
-                        f"Model Scan did not scan file",
+                        "Model Scan did not scan file",
                         str(model.get_source()),
                     )
                 )
@@ -328,7 +333,7 @@ class ModelScan:
             scan_report = report_class.generate(scan=self, settings=report_settings)
 
         except Exception as e:
-            logger.error(f"Error generating report using {reporting_module}: {e}")
+            logger.error("Error generating report using %s: %s", reporting_module, e)
             self._errors.append(
                 ModelScanError(f"Error generating report using {reporting_module}: {e}")
             )
