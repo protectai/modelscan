@@ -227,7 +227,7 @@ class ModelScan:
     def _generate_results(self) -> Dict[str, Any]:
         report: Dict[str, Any] = {}
 
-        absolute_path = Path(self._input_path)
+        absolute_path = Path(self._input_path).absolute()
         if Path(self._input_path).is_file():
             absolute_path = Path(absolute_path).parent
 
