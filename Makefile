@@ -1,6 +1,10 @@
 .DEFAULT_GOAL := help
 VERSION ?= $(shell dunamai from git --style pep440 --format "{base}.dev{distance}+{commit}")
 
+.PHONY: env
+env: ## Display information about the current environment.
+	poetry env info
+
 .PHONY: install-dev
 install-dev:  ## Install all dependencies including dev and test dependencies, as well as pre-commit.
 	poetry install --with dev --with test --extras "tensorflow h5py"
@@ -24,7 +28,11 @@ clean:  ## Uninstall modelscan
 
 .PHONY: test
 test: ## Run pytests.
-	poetry run pytest --cov=modelscan tests/
+	poetry run pytest tests/
+
+.PHONY: test-cov
+test-cov: ## Run pytests with code coverage.
+	poetry run pytest --cov=modelscan --cov-report xml:cov.xml tests/
 
 .PHONY: build
 build: ## Build the source and wheel achive.
