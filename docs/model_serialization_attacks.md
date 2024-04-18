@@ -5,7 +5,7 @@ Machine Learning(ML) models are the foundational asset in ML powered application
 Models can be compromised in various ways, some are new like adversarial machine learning methods, others are common with traditional applications like denial of service attacks. While these can be a threat to safely operating an ML powered application, this document focuses on exposing the risk of Model Serialization Attacks.
 In a Model Serialization Attack malicious code is added to a model when it is saved, this is also called a code injection attack as well. When any user or system then loads the model for further training or inference the attack code is executed immediately, often with no visible change in behavior to users. This makes the attack a powerful vector and an easy point of entry for attacking broader machine learning components.
 
-To secure ML models, you need to understand what’s inside them and how they are stored on disk in a process called serialization. 
+To secure ML models, you need to understand what’s inside them and how they are stored on disk in a process called serialization.
 
 ML models are composed of:
 
@@ -30,7 +30,7 @@ Before digging into how a Model Serialization Attack works and how to scan for t
 
 ## 1. Pickle Variants
 
-**Pickle** and its variants (cloudpickle, dill, joblib) all store objects to disk in a general purpose way. These frameworks are completely ML agnostic and store Python objects as-is. 
+**Pickle** and its variants (cloudpickle, dill, joblib) all store objects to disk in a general purpose way. These frameworks are completely ML agnostic and store Python objects as-is.
 
 Pickle is the defacto library for serializing ML models for following ML frameworks:
 
@@ -47,15 +47,15 @@ Pickle is also used to store vectors/tensors only for following frameworks:
 Pickle allows for arbitrary code execution and is highly vulnerable to code injection attacks with very large attack surface. Pickle documentation makes it clear with the following warning:
 
 > **Warning:** The `pickle` module **is not secure**. Only unpickle data you trust.
-> 
-> 
+>
+>
 > It is possible to construct malicious pickle data which will **execute
 > arbitrary code during unpickling**. Never unpickle data that could have come
 > from an untrusted source, or that could have been tampered with.
-> 
+>
 > Consider signing data with [hmac](https://docs.python.org/3/library/hmac.html#module-hmac) if you need to ensure that it has not
 > been tampered with.
-> 
+>
 > Safer serialization formats such as [json](https://docs.python.org/3/library/json.html#module-json) may be more appropriate if
 > you are processing untrusted data.
 
@@ -129,6 +129,7 @@ With the exception of pickle, these formats cannot execute arbitrary code. Howev
 With an understanding of various approaches to model serialization, explore how many popular choices are vulnerable to this attack with an end to end explanation.
 
 # End to end Attack Scenario
+
 1. Internal attacker:
 The attack complexity will vary depending on the access trusted to an internal actor.
 2. External attacker:
