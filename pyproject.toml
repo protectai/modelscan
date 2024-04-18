@@ -40,9 +40,9 @@ torch = "^2.1.2"
 
 
 [tool.poetry.group.dev.dependencies]
+black = {extras = ["jupyter"], version = ">=23.7,<25.0"}
 dunamai = "^1.18.0"
 pre-commit = "^3.3.3"
-black = ">=23.7,<25.0"
 
 [tool.poetry.group.prod.dependencies]
 dunamai = "^1.18.0"
