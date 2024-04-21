@@ -132,4 +132,4 @@ cython_debug/
 
 # Notebook Model Downloads
 notebooks/PyTorchModels/
-pytorch-model-scan-results.json
+notebooks/XGBoostModels/

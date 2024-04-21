@@ -42,7 +42,7 @@ def download_model(safe_model_path: str) -> None:
     torch.save(model, safe_model_path)
 
 
-def predict_sentiment(text: str, model: Any) -> None:
+def predict_sentiment(text: str, model: Any) -> str:
     """
     Predict the sentiment of a given text using a pre-trained sentiment analysis model.
 
@@ -69,6 +69,4 @@ def predict_sentiment(text: str, model: Any) -> None:
     ranking = np.argsort(scores)
     ranking = ranking[::-1]
 
-    print(
-        f"The overall sentiment is: {labels[ranking[0]]} with a score of: {np.round(float(scores[ranking[0]])*100, 1)}%"
-    )
+    return f"The overall sentiment is: {labels[ranking[0]]} with a score of: {np.round(float(scores[ranking[0]])*100, 1)}%"

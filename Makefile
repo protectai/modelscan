@@ -19,6 +19,9 @@ clean:
 test:
 	poetry run pytest
 
+test-notebooks:
+	poetry run pytest --nbmake notebooks/pytorch_sentiment_analysis.ipynb
+
 build:
 	poetry build
 
