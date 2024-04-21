@@ -131,5 +131,7 @@ cython_debug/
 .idea/
 
 # Notebook Model Downloads
+notebooks/KerasModels
 notebooks/PyTorchModels/
+notebooks/TensorFlowModels/
 notebooks/XGBoostModels/
