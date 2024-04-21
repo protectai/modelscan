@@ -39,7 +39,7 @@ jobs:
           make test
   test-notebooks:
     - uses: actions/checkout@v4
-    - name: Run make ci-build in dev container
+    - name: Run notebook tests in devcontainer
       uses: devcontainers/ci@v0.3
         with:
           cacheFrom: mcr.microsoft.com/devcontainers/python:1-3.9-bookworm
