@@ -4,6 +4,13 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    groups:
+      minor:
+        update-types: 
+          - "minor"
+      patch:
+        update-types: 
+          - "patch"
   - package-ecosystem: github-actions
     directory: /
     schedule:
