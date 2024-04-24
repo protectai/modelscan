@@ -24,12 +24,12 @@ from modelscan.modelscan import ModelScan
 from modelscan.settings import DEFAULT_SETTINGS
 from modelscan.skip import SkipCategories
 from modelscan.tools.picklescanner import scan_pickle_bytes
+from tensorflow import keras
+
 from tests.pickle_utils.codeinjection import (
     generate_dill_unsafe_file,
     generate_unsafe_pickle_file,
 )
-from tensorflow import keras
-
 from tests.test_utils import MaliciousModule, PyTorchTestModel
 
 settings: dict[str, Any] = DEFAULT_SETTINGS

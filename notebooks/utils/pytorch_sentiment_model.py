@@ -1,11 +1,11 @@
-from typing import Any, Final
-from transformers import AutoModelForSequenceClassification
-from transformers import AutoTokenizer
-import numpy as np
-from scipy.special import softmax
 import csv
 import urllib.request
+from typing import Any, Final
+
+import numpy as np
 import torch
+from scipy.special import softmax
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 SENTIMENT_TASK: Final[str] = "sentiment"
 
