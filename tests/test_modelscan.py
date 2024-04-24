@@ -1,46 +1,38 @@
-import aiohttp
 import http.client
 import importlib
 import io
-import numpy as np
 import os
-from pathlib import Path
 import pickle
-import dill
-import pytest
-import requests
 import socket
 import subprocess
 import sys
-import torch
+import zipfile
+from pathlib import Path
+from typing import Any
+
+import aiohttp
+import dill
+import numpy as np
+import pytest
+import requests
 import tensorflow as tf
-from tensorflow import keras
-from typing import Any, List, Set, Dict
-from test_utils import (
+import torch
+from modelscan.cli import cli
+from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
+from modelscan.model import Model
+from modelscan.modelscan import ModelScan
+from modelscan.settings import DEFAULT_SETTINGS
+from modelscan.skip import SkipCategories
+from modelscan.tools.picklescanner import scan_pickle_bytes
+from tests.pickle_utils.codeinjection import (
     generate_dill_unsafe_file,
     generate_unsafe_pickle_file,
-    MaliciousModule,
-    PyTorchTestModel,
 )
-import zipfile
+from tensorflow import keras
 
-from modelscan.modelscan import ModelScan
-from modelscan.cli import cli
-from modelscan.issues import (
-    Issue,
-    IssueCode,
-    IssueSeverity,
-    OperatorIssueDetails,
-)
-from modelscan.tools.picklescanner import (
-    scan_pickle_bytes,
-)
+from tests.test_utils import MaliciousModule, PyTorchTestModel
 
-from modelscan.skip import SkipCategories
-from modelscan.settings import DEFAULT_SETTINGS
-from modelscan.model import Model
-
-settings: Dict[str, Any] = DEFAULT_SETTINGS
+settings: dict[str, Any] = DEFAULT_SETTINGS
 
 
 class Malicious1:
@@ -356,12 +348,12 @@ def tensorflow_file_path(tmp_path_factory: Any) -> Any:
 
 
 @pytest.fixture(scope="session")
-def keras_file_extensions() -> List[str]:
+def keras_file_extensions() -> list[str]:
     return ["h5", "keras", "pb"]
 
 
 @pytest.fixture(scope="session")
-def keras_file_path(tmp_path_factory: Any, keras_file_extensions: List[str]) -> Any:
+def keras_file_path(tmp_path_factory: Any, keras_file_extensions: list[str]) -> Any:
     # Create a simple model.
 
     inputs = keras.Input(shape=(32,))
@@ -443,7 +435,7 @@ def numpy_file_path(tmp_path_factory: Any) -> Any:
     return tmp
 
 
-def compare_results(resultList: List[Issue], expectedSet: Set[Issue]) -> None:
+def compare_results(resultList: list[Issue], expectedSet: set[Issue]) -> None:
     for result in resultList:
         assert result in expectedSet
     resultSet = set(resultList)

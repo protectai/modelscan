@@ -31,7 +31,7 @@ h5py = ["h5py"]
 [tool.poetry.group.test.dependencies]
 aiohttp = "^3.8.5"
 bandit = { version = "1.7.8", extras = ["toml"] }
-dill = "^0.3.7"
+dill = "^0.3.8"
 mypy = "^1.4.1"
 nbmake = "^1.5.3"
 pytest = "^7.4.0"
