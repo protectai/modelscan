@@ -15,18 +15,22 @@ DEFAULT_SETTINGS = {
     "scanners": {
         "modelscan.scanners.H5LambdaDetectScan": {
             "enabled": True,
+            "supported_extensions": [".h5"],
         },
         "modelscan.scanners.KerasLambdaDetectScan": {
             "enabled": True,
+            "supported_extensions": [".keras"],
         },
         "modelscan.scanners.SavedModelLambdaDetectScan": {
             "enabled": True,
+            "supported_extensions": [".pb"],
             "unsafe_keras_operators": {
                 "Lambda": "MEDIUM",
             },
         },
         "modelscan.scanners.SavedModelTensorflowOpScan": {
             "enabled": True,
+            "supported_extensions": [".pb"],
             "unsafe_tf_operators": {
                 "ReadFile": "HIGH",
                 "WriteFile": "HIGH",
@@ -34,12 +38,22 @@ DEFAULT_SETTINGS = {
         },
         "modelscan.scanners.NumpyUnsafeOpScan": {
             "enabled": True,
+            "supported_extensions": [".npy"],
         },
         "modelscan.scanners.PickleUnsafeOpScan": {
             "enabled": True,
+            "supported_extensions": [
+                ".pkl",
+                ".pickle",
+                ".joblib",
+                ".dill",
+                ".dat",
+                ".data",
+            ],
         },
         "modelscan.scanners.PyTorchUnsafeOpScan": {
             "enabled": True,
+            "supported_extensions": [".bin", ".pt", ".pth", ".ckpt"],
         },
     },
     "middlewares": {
