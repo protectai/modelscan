@@ -64,7 +64,9 @@ class SavedModelScan(ScanBase):
         unsafe_operators: Dict[str, Any],
     ) -> ScanResults:
         issues: List[Issue] = []
-        all_operators = tensorflow.raw_ops.__dict__.keys()
+        all_operators = (
+            tensorflow.raw_ops.__dict__.keys() if tensorflow_installed else []
+        )
         all_safe_operators = [
             operator for operator in list(all_operators) if operator[0] != "_"
         ]
