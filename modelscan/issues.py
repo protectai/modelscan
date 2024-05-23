@@ -84,7 +84,7 @@ class Issue:
 
     def print(self) -> None:
         issue_description = self.code.name
-        if self.code == IssueCode.UNSAFE_OPERATOR.value:
+        if self.code.value == IssueCode.UNSAFE_OPERATOR.value:
             issue_description = "Unsafe operator"
         else:
             logger.error("No issue description for issue code %s", self.code)
