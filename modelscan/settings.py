@@ -1,8 +1,19 @@
 import tomlkit
 
+from enum import Enum
 from typing import Any
 
 from modelscan._version import __version__
+
+
+class DefaultModelFormats(Enum):
+    TENSORFLOW = "tensorflow"
+    KERAS_H5 = "keras_h5"
+    KERAS = "keras"
+    NUMPY = "numpy"
+    PYTORCH = "pytorch"
+    PICKLE = "pickle"
+
 
 DEFAULT_REPORTING_MODULES = {
     "console": "modelscan.reports.ConsoleReport",
@@ -59,13 +70,12 @@ DEFAULT_SETTINGS = {
     "middlewares": {
         "modelscan.middlewares.FormatViaExtensionMiddleware": {
             "formats": {
-                "tf": [".pb"],
-                "tf_saved_model": [".pb"],
-                "keras_h5": [".h5"],
-                "keras": [".keras"],
-                "numpy": [".npy"],
-                "pytorch": [".bin", ".pt", ".pth", ".ckpt"],
-                "pickle": [
+                DefaultModelFormats.TENSORFLOW: [".pb"],
+                DefaultModelFormats.KERAS_H5: [".h5"],
+                DefaultModelFormats.KERAS: [".keras"],
+                DefaultModelFormats.NUMPY: [".npy"],
+                DefaultModelFormats.PYTORCH: [".bin", ".pt", ".pth", ".ckpt"],
+                DefaultModelFormats.PICKLE: [
                     ".pkl",
                     ".pickle",
                     ".joblib",
