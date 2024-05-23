@@ -6,6 +6,8 @@ from typing import Any, List, Union, Dict, Optional
 
 from collections import defaultdict
 
+from modelscan.settings import Property
+
 logger = logging.getLogger("modelscan")
 
 
@@ -16,8 +18,8 @@ class IssueSeverity(Enum):
     CRITICAL = 4
 
 
-class IssueCode(Enum):
-    UNSAFE_OPERATOR = 1
+class IssueCode:
+    UNSAFE_OPERATOR = Property("UNSAFE_OPERATOR", 1)
 
 
 class IssueDetails(metaclass=abc.ABCMeta):
@@ -40,14 +42,14 @@ class Issue:
 
     def __init__(
         self,
-        code: IssueCode,
+        code: Property,
         severity: IssueSeverity,
         details: IssueDetails,
     ) -> None:
         """
         Create a issue with given information
 
-        :param code: Code of the issue from the issue code enum.
+        :param code: Code of the issue from the issue code class.
         :param severity: The severity level of the issue from Severity enum.
         :param details: An implementation of the IssueDetails object.
         """
@@ -82,7 +84,7 @@ class Issue:
 
     def print(self) -> None:
         issue_description = self.code.name
-        if self.code == IssueCode.UNSAFE_OPERATOR:
+        if self.code == IssueCode.UNSAFE_OPERATOR.value:
             issue_description = "Unsafe operator"
         else:
             logger.error("No issue description for issue code %s", self.code)
