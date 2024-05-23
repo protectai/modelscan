@@ -9,7 +9,7 @@ from modelscan.tools.picklescanner import (
     scan_pytorch,
 )
 from modelscan.model import Model
-from modelscan.settings import DefaultModelFormats
+from modelscan.settings import SupportedModelFormats
 
 logger = logging.getLogger("modelscan")
 
@@ -19,7 +19,9 @@ class PyTorchUnsafeOpScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if DefaultModelFormats.PYTORCH not in model.get_context("formats"):
+        if SupportedModelFormats.PYTORCH.value not in [
+            format_property.value for format_property in model.get_context("formats")
+        ]:
             return None
 
         if _is_zipfile(model.get_source(), model.get_stream()):
@@ -46,7 +48,9 @@ class NumpyUnsafeOpScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if DefaultModelFormats.NUMPY not in model.get_context("formats"):
+        if SupportedModelFormats.NUMPY.value not in [
+            format_property.value for format_property in model.get_context("formats")
+        ]:
             return None
 
         results = scan_numpy(
@@ -70,7 +74,9 @@ class PickleUnsafeOpScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if DefaultModelFormats.PICKLE not in model.get_context("formats"):
+        if SupportedModelFormats.PICKLE.value not in [
+            format_property.value for format_property in model.get_context("formats")
+        ]:
             return None
 
         results = scan_pickle_bytes(

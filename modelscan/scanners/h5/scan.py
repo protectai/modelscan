@@ -18,7 +18,7 @@ from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
 from modelscan.model import Model
-from modelscan.settings import DefaultModelFormats
+from modelscan.settings import SupportedModelFormats
 
 logger = logging.getLogger("modelscan")
 
@@ -28,7 +28,9 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if DefaultModelFormats.KERAS_H5 not in model.get_context("formats"):
+        if SupportedModelFormats.KERAS_H5.value not in [
+            format_property.value for format_property in model.get_context("formats")
+        ]:
             return None
 
         dep_error = self.handle_binary_dependencies()

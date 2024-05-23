@@ -1,18 +1,23 @@
 import tomlkit
 
-from enum import Enum
 from typing import Any
 
 from modelscan._version import __version__
 
 
-class DefaultModelFormats(Enum):
-    TENSORFLOW = "tensorflow"
-    KERAS_H5 = "keras_h5"
-    KERAS = "keras"
-    NUMPY = "numpy"
-    PYTORCH = "pytorch"
-    PICKLE = "pickle"
+class Property:
+    def __init__(self, name: str, value: Any) -> None:
+        self.name = name
+        self.value = value
+
+
+class SupportedModelFormats:
+    TENSORFLOW = Property("TENSORFLOW", "tensorflow")
+    KERAS_H5 = Property("KERAS_H5", "keras_h5")
+    KERAS = Property("KERAS", "keras")
+    NUMPY = Property("NUMPY", "numpy")
+    PYTORCH = Property("PYTORCH", "pytorch")
+    PICKLE = Property("PICKLE", "pickle")
 
 
 DEFAULT_REPORTING_MODULES = {
@@ -70,12 +75,12 @@ DEFAULT_SETTINGS = {
     "middlewares": {
         "modelscan.middlewares.FormatViaExtensionMiddleware": {
             "formats": {
-                DefaultModelFormats.TENSORFLOW: [".pb"],
-                DefaultModelFormats.KERAS_H5: [".h5"],
-                DefaultModelFormats.KERAS: [".keras"],
-                DefaultModelFormats.NUMPY: [".npy"],
-                DefaultModelFormats.PYTORCH: [".bin", ".pt", ".pth", ".ckpt"],
-                DefaultModelFormats.PICKLE: [
+                SupportedModelFormats.TENSORFLOW: [".pb"],
+                SupportedModelFormats.KERAS_H5: [".h5"],
+                SupportedModelFormats.KERAS: [".keras"],
+                SupportedModelFormats.NUMPY: [".npy"],
+                SupportedModelFormats.PYTORCH: [".bin", ".pt", ".pth", ".ckpt"],
+                SupportedModelFormats.PICKLE: [
                     ".pkl",
                     ".pickle",
                     ".joblib",
