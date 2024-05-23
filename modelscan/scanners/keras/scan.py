@@ -17,7 +17,9 @@ logger = logging.getLogger("modelscan")
 
 class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
     def scan(self, model: Model) -> Optional[ScanResults]:
-        if SupportedModelFormats.KERAS not in model.get_context("formats"):
+        if SupportedModelFormats.KERAS.value not in [
+            format_property.value for format_property in model.get_context("formats")
+        ]:
             return None
 
         dep_error = self.handle_binary_dependencies()

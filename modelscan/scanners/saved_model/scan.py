@@ -32,7 +32,9 @@ class SavedModelScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if SupportedModelFormats.TENSORFLOW not in model.get_context("formats"):
+        if SupportedModelFormats.TENSORFLOW.value not in [
+            format_property.value for format_property in model.get_context("formats")
+        ]:
             return None
 
         dep_error = self.handle_binary_dependencies()
