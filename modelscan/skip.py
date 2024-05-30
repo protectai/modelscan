@@ -1,17 +1,18 @@
 import logging
 from enum import Enum
 
+from modelscan.settings import Property
 
 logger = logging.getLogger("modelscan")
 
 
-class SkipCategories(Enum):
-    SCAN_NOT_SUPPORTED = 1
-    BAD_ZIP = 2
-    MODEL_CONFIG = 3
-    H5_DATA = 4
-    NOT_IMPLEMENTED = 5
-    MAGIC_NUMBER = 6
+class SkipCategories:
+    SCAN_NOT_SUPPORTED = Property("SCAN_NOT_SUPPORTED", 1)
+    BAD_ZIP = Property("BAD_ZIP", 2)
+    MODEL_CONFIG = Property("MODEL_CONFIG", 3)
+    H5_DATA = Property("H5_DATA", 4)
+    NOT_IMPLEMENTED = Property("NOT_IMPLEMENTED", 5)
+    MAGIC_NUMBER = Property("MAGIC_NUMBER", 6)
 
 
 class Skip:
@@ -31,7 +32,7 @@ class ModelScanSkipped:
     def __init__(
         self,
         scan_name: str,
-        category: SkipCategories,
+        category: Property,
         message: str,
         source: str,
     ) -> None:
