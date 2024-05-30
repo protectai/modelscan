@@ -1,4 +1,3 @@
-from enum import Enum
 from modelscan.model import Model
 import abc
 from pathlib import Path
