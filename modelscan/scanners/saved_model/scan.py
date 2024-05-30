@@ -22,6 +22,7 @@ from modelscan.error import (
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.scanners.scan import ScanBase, ScanResults
 from modelscan.model import Model
+from modelscan.settings import SupportedModelFormats
 
 logger = logging.getLogger("modelscan")
 
@@ -31,7 +32,9 @@ class SavedModelScan(ScanBase):
         self,
         model: Model,
     ) -> Optional[ScanResults]:
-        if "tf_saved_model" not in model.get_context("formats"):
+        if SupportedModelFormats.TENSORFLOW.value not in [
+            format_property.value for format_property in model.get_context("formats")
+        ]:
             return None
 
         dep_error = self.handle_binary_dependencies()
