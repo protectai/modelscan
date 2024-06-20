@@ -22,7 +22,7 @@ h5py = { version = "^3.9.0", optional = true }
 # TODO: Add py3.12 once TF release supports
 tensorflow = { version = "^2.13.0", optional = true, python = "<3.12" }
 tensorflow-macos = { version = "^2.13.0", platform = "darwin", optional = true, python = "<3.12" }
-tensorflow-io-gcs-filesystem = { version = ">=0.23.1,<0.35", optional = true, python = "<3.12" }
+tensorflow-io-gcs-filesystem = { version = ">=0.23.1,<0.38", optional = true, python = "<3.12" }
 
 [tool.poetry.extras]
 tensorflow = ["tensorflow", "tensorflow-macos"]
