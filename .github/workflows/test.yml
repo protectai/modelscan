@@ -37,3 +37,13 @@ jobs:
       - name: Run Tests
         run: |
           make test
+  test-notebooks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run notebook tests in devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: mcr.microsoft.com/devcontainers/python:1-3.9-bookworm
+          push: never
+          runCmd: make test-notebooks

@@ -29,20 +29,21 @@ tensorflow = ["tensorflow", "tensorflow-macos"]
 h5py = ["h5py"]
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.4.0"
-bandit = { version = "1.7.8", extras = ["toml"] }
-mypy = "^1.4.1"
-requests = "^2.31.0"
 aiohttp = "^3.8.5"
+bandit = { version = "1.7.8", extras = ["toml"] }
 dill = "^0.3.7"
-types-requests = ">1.26"
+mypy = "^1.4.1"
+nbmake = "^1.5.3"
+pytest = "^7.4.0"
+requests = "^2.31.0"
 torch = "^2.1.2"
+types-requests = ">1.26"
 
 
 [tool.poetry.group.dev.dependencies]
+black = {extras = ["jupyter"], version = ">=23.7,<25.0"}
 dunamai = "^1.18.0"
 pre-commit = "^3.3.3"
-black = ">=23.7,<25.0"
 
 [tool.poetry.group.prod.dependencies]
 dunamai = "^1.18.0"

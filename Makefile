@@ -19,6 +19,8 @@ clean:
 test:
 	poetry run pytest
 
+test-notebooks:
+	poetry run pytest --nbmake notebooks/pytorch_sentiment_analysis.ipynb notebooks/xgboost_diabetes_classification.ipynb
 build:
 	poetry build
 
