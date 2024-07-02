@@ -124,11 +124,12 @@ def scan_pickle_bytes(
     settings: Dict[str, Any],
     scan_name: str = "pickle",
     multiple_pickles: bool = True,
+    offset: int = 0,
 ) -> ScanResults:
     """Disassemble a Pickle stream and report issues"""
     issues: List[Issue] = []
     try:
-        raw_globals = _list_globals(model.get_stream(), multiple_pickles)
+        raw_globals = _list_globals(model.get_stream(offset), multiple_pickles)
     except GenOpsError as e:
         if e.globals is not None:
             return _build_scan_result_from_raw_globals(
@@ -231,7 +232,7 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
         _, _, dtype = np.lib.format._read_array_header(stream, version)  # type: ignore[attr-defined]
 
         if dtype.hasobject:
-            return scan_pickle_bytes(model, settings, scan_name)
+            return scan_pickle_bytes(model, settings, scan_name, True, stream.tell())
         else:
             return ScanResults([], [], [])
     else:

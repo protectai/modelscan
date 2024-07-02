@@ -4,6 +4,22 @@ from typing import Any
 
 from modelscan._version import __version__
 
+
+class Property:
+    def __init__(self, name: str, value: Any) -> None:
+        self.name = name
+        self.value = value
+
+
+class SupportedModelFormats:
+    TENSORFLOW = Property("TENSORFLOW", "tensorflow")
+    KERAS_H5 = Property("KERAS_H5", "keras_h5")
+    KERAS = Property("KERAS", "keras")
+    NUMPY = Property("NUMPY", "numpy")
+    PYTORCH = Property("PYTORCH", "pytorch")
+    PICKLE = Property("PICKLE", "pickle")
+
+
 DEFAULT_REPORTING_MODULES = {
     "console": "modelscan.reports.ConsoleReport",
     "json": "modelscan.reports.JSONReport",
@@ -59,13 +75,12 @@ DEFAULT_SETTINGS = {
     "middlewares": {
         "modelscan.middlewares.FormatViaExtensionMiddleware": {
             "formats": {
-                "tf": [".pb"],
-                "tf_saved_model": [".pb"],
-                "keras_h5": [".h5"],
-                "keras": [".keras"],
-                "numpy": [".npy"],
-                "pytorch": [".bin", ".pt", ".pth", ".ckpt"],
-                "pickle": [
+                SupportedModelFormats.TENSORFLOW: [".pb"],
+                SupportedModelFormats.KERAS_H5: [".h5"],
+                SupportedModelFormats.KERAS: [".keras"],
+                SupportedModelFormats.NUMPY: [".npy"],
+                SupportedModelFormats.PYTORCH: [".bin", ".pt", ".pth", ".ckpt"],
+                SupportedModelFormats.PICKLE: [
                     ".pkl",
                     ".pickle",
                     ".joblib",

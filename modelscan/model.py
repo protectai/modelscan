@@ -47,9 +47,9 @@ class Model:
     def get_source(self) -> Path:
         return self._source
 
-    def get_stream(self) -> IO[bytes]:
+    def get_stream(self, offset: int = 0) -> IO[bytes]:
         if not self._stream:
             raise ModelDataEmpty("Model data is empty.")
 
-        self._stream.seek(0)
+        self._stream.seek(offset)
         return self._stream
