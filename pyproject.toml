@@ -29,7 +29,7 @@ tensorflow = ["tensorflow", "tensorflow-macos"]
 h5py = ["h5py"]
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.4.0"
+pytest = ">=7.4,<9.0"
 bandit = { version = "1.7.8", extras = ["toml"] }
 mypy = "^1.4.1"
 requests = "^2.31.0"
