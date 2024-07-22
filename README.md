@@ -9,13 +9,13 @@
 [![License: Apache 2.0](https://img.shields.io/crates/l/apa)](https://opensource.org/license/apache-2-0/)
 # ModelScan: Protection Against Model Serialization Attacks
 Machine Learning (ML) models are shared publicly over the internet, within teams and across teams. The rise of Foundation Models have resulted in public ML models being increasingly consumed for further training/fine tuning. ML Models are increasingly used to make critical decisions and power mission-critical applications.
-Despite this, models are not scanned with the rigor of a PDF file in your inbox.
+Despite this, models are not yet scanned with the rigor of a PDF file in your inbox.
 
 This needs to change, and proper tooling is the first step.
 
 ![ModelScan Preview](/imgs/modelscan-unsafe-model.gif)
 
-ModelScan is an open source project that scans models to determine if they contain 
+ModelScan is an open source project from [Protect AI](https://protectai.com/) that scans models to determine if they contain 
 unsafe code. It is the first model scanning tool to support multiple model formats. 
 ModelScan currently supports: H5, Pickle, and SavedModel formats. This protects you 
 when using PyTorch, TensorFlow, Keras, Sklearn, XGBoost, with more on the way.
