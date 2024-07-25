@@ -325,9 +325,6 @@ def file_path(tmp_path_factory: Any) -> Any:
 
 @pytest.fixture(scope="session")
 def tensorflow_file_path(tmp_path_factory: Any) -> Any:
-    # Use Keras 2.0
-    os.environ["TF_USE_LEGACY_KERAS"] = "1"
-
     # Create a simple model.
     inputs = keras.Input(shape=(32,))
     outputs = keras.layers.Dense(1)(inputs)
@@ -343,18 +340,17 @@ def tensorflow_file_path(tmp_path_factory: Any) -> Any:
     tmp = tmp_path_factory.mktemp("tensorflow")
     safe_tensorflow_model_dir = tmp / "saved_model_safe"
     safe_tensorflow_model_dir.mkdir(parents=True)
-    tensorflow_model.export(safe_tensorflow_model_dir)
+    tensorflow_model.save(safe_tensorflow_model_dir)
 
     # Create an unsafe model
     unsafe_tensorflow_model = MaliciousModule(tensorflow_model)
     unsafe_tensorflow_model.build(input_shape=(32, 32))
-    unsafe_tensorflow_model.predict(np.random.random((32, 32)).astype(np.float32))
 
     # Save the unsafe model
     unsafe_tensorflow_model_dir = tmp / "saved_model_unsafe"
     unsafe_tensorflow_model_dir.mkdir(parents=True)
     unsafe_model_path = os.path.join(unsafe_tensorflow_model_dir)
-    unsafe_tensorflow_model.export(unsafe_model_path)
+    unsafe_tensorflow_model.save(unsafe_model_path)
 
     return safe_tensorflow_model_dir, unsafe_tensorflow_model_dir
 
@@ -1492,6 +1488,7 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
     assert ms.issues.all_issues == []
     assert set(results["summary"]["scanned"]["scanned_files"]) == {
         "fingerprint.pb",
+        "keras_metadata.pb",
         "saved_model.pb",
     }
     assert set(
@@ -1533,6 +1530,7 @@ def test_scan_tensorflow(tensorflow_file_path: Any) -> None:
     assert ms.issues.all_issues == expected
     assert set(results["summary"]["scanned"]["scanned_files"]) == {
         "fingerprint.pb",
+        "keras_metadata.pb",
         "saved_model.pb",
     }
     assert set(
