@@ -16,7 +16,7 @@ import torch
 import tensorflow as tf
 import tf_keras as keras
 from typing import Any, List, Set, Dict
-from tests.test_utils import (
+from test_utils import (
     generate_dill_unsafe_file,
     generate_unsafe_pickle_file,
     MaliciousModule,
