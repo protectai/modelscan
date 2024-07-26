@@ -2316,4 +2316,4 @@ tensorflow = ["tensorflow"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "7773fbf381d9728ae95dccfe68bee21c6b0c2547d4418abaef8d7fad8cf146e5"
+content-hash = "0f63a0c5b209d3634c1e2fbd9e0ccf6086d90fa6a4b95769f191a4f8ea51d9ba"
