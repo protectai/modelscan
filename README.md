@@ -91,7 +91,7 @@ At present, ModelScan supports any Pickle derived format and many others:
 | Classic ML Libraries (Sklearn, XGBoost etc.) | pickle.dump(), dill.dump(), joblib.dump(), cloudpickle.dump()                                              | Pickle, Cloudpickle, Dill, Joblib   | Yes               |
 
 ### Installation 
-ModelScan is installed on your systems as a Python package(Python 3.8 to 3.11 supported). As shown from above you can install
+ModelScan is installed on your systems as a Python package(Python 3.9 to 3.12 supported). As shown from above you can install
 it by running this in your terminal:
 
 ```bash

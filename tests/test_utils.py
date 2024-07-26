@@ -6,7 +6,7 @@ from typing import Any, Tuple
 import torch
 import torch.nn as nn
 import tensorflow as tf
-from tensorflow import keras
+import tf_keras as keras
 
 
 class MaliciousModule(keras.Model):  # type: ignore

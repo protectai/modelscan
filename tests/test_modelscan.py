@@ -14,7 +14,7 @@ import subprocess
 import sys
 import torch
 import tensorflow as tf
-from tensorflow import keras
+import tf_keras as keras
 from typing import Any, List, Set, Dict
 from test_utils import (
     generate_dill_unsafe_file,
@@ -362,6 +362,9 @@ def keras_file_extensions() -> List[str]:
 
 @pytest.fixture(scope="session")
 def keras_file_path(tmp_path_factory: Any, keras_file_extensions: List[str]) -> Any:
+    # Use Keras 2.0
+    os.environ["TF_USE_LEGACY_KERAS"] = "1"
+
     # Create a simple model.
 
     inputs = keras.Input(shape=(32,))
@@ -403,7 +406,7 @@ conn = http.client.HTTPSConnection("protectai.com")"""
     first_lambda_layer = keras.layers.Lambda(attack)(input_to_new_layer)
     second_lambda_layer = keras.layers.Lambda(attack)(first_lambda_layer)
 
-    malicious_model = tf.keras.Model(
+    malicious_model = keras.Model(
         inputs=keras_model.inputs, outputs=[second_lambda_layer]
     )
     malicious_model.compile(optimizer="adam", loss="mean_squared_error")
