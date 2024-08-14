@@ -128,6 +128,17 @@ class ModelScan:
                             str(model.get_source()),
                         )
                     )
+                except Exception as e:
+                    logger.debug(
+                        "Error iterating models for path %s: %s",
+                        str(model.get_source()),
+                        e,
+                    )
+                    self._errors.append(
+                        ModelScanError(
+                            f"Error iterating models for path {str(model.get_source())}: {e}"
+                        )
+                    )
 
     def scan(
         self,

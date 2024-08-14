@@ -23,6 +23,6 @@ repos:
     hooks:
       - id: mypy
         args: ["--ignore-missing-imports", "--strict", "--check-untyped-defs"]
-        additional_dependencies: ["click>=8.1.3","numpy==1.24.0", "pytest==7.4.0", "types-requests>=1.26"]
+        additional_dependencies: ["click>=8.1.3","numpy==1.24.0", "pytest==7.4.0", "types-requests>=1.26", "types-tensorflow==2.16.0.20240627"]
         exclude: notebooks
 
