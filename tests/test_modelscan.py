@@ -1022,6 +1022,16 @@ def test_scan_pickle_operators(file_path: Any) -> None:
                 IssueSeverity.CRITICAL,
                 f"{file_path}/data/malicious15.pkl",
             ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "bdb",
+                "Bdb.run",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious15.pkl",
+            ),
         )
     ]
     malicious15 = ModelScan()
