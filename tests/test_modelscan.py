@@ -1036,7 +1036,7 @@ def test_scan_pickle_operators(file_path: Any) -> None:
     ]
     malicious15 = ModelScan()
     malicious15.scan(Path(f"{file_path}/data/malicious15.pkl"))
-    assert sorted(malicious15.issues.all_issues) == sorted(expected_malicious15)
+    assert sorted(malicious15.issues.all_issues, key=str) == sorted(expected_malicious15, key=str)
 
 
 def test_scan_directory_path(file_path: str) -> None:
