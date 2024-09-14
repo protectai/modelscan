@@ -1302,6 +1302,26 @@ def test_scan_directory_path(file_path: str) -> None:
                 f"{file_path}/data/malicious14.pkl",
             ),
         ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "bdb",
+                "Bdb",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious15.pkl",
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "bdb",
+                "Bdb.run",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious15.pkl",
+            ),
+        ),
     }
     ms = ModelScan()
     p = Path(f"{file_path}/data/")
@@ -1320,6 +1340,7 @@ def test_scan_directory_path(file_path: str) -> None:
         "malicious12.pkl",
         "malicious13.pkl",
         "malicious14.pkl",
+        "malicious15.pkl",
         "malicious1_v0.dill",
         "malicious1_v3.dill",
         "malicious1_v4.dill",
