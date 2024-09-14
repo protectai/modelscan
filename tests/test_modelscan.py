@@ -1018,7 +1018,7 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
                 "bdb",
-                "Bdb",
+                "Bdb.run",
                 IssueSeverity.CRITICAL,
                 f"{file_path}/data/malicious15.pkl",
             ),
@@ -1028,7 +1028,7 @@ def test_scan_pickle_operators(file_path: Any) -> None:
             IssueSeverity.CRITICAL,
             OperatorIssueDetails(
                 "bdb",
-                "Bdb.run",
+                "Bdb",
                 IssueSeverity.CRITICAL,
                 f"{file_path}/data/malicious15.pkl",
             ),
