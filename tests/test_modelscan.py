@@ -90,7 +90,7 @@ class Malicious8:
 
 
 class Malicious15:
-    def __reduce__(self):
+    def __reduce__(self) -> Any:
         bd = bdb.Bdb()
         return bdb.Bdb.run, (
             bd,
@@ -1036,7 +1036,7 @@ def test_scan_pickle_operators(file_path: Any) -> None:
     ]
     malicious15 = ModelScan()
     malicious15.scan(Path(f"{file_path}/data/malicious15.pkl"))
-    assert malicious15.issues.all_issues == expected_malicious15
+    assert sorted(malicious15.issues.all_issues) == sorted(expected_malicious15)
 
 
 def test_scan_directory_path(file_path: str) -> None:
