@@ -40,7 +40,7 @@ tf-keras = "^2.16.0"
 
 [tool.poetry.group.dev.dependencies]
 dunamai = "^1.18.0"
-pre-commit = "^3.3.3"
+pre-commit = ">=3.3.3,<5.0.0"
 black = ">=23.7,<25.0"
 
 [tool.poetry.group.prod.dependencies]
