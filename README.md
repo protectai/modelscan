@@ -56,7 +56,7 @@ These attacks are incredibly simple to execute and you can view working examples
 ModelScan is a great open source tool for scanning models, however it is not our recommended approach for enforcing a security
 posture in an organization. For that, we recommend using our enterprise tool, [Guardian](https://protectai.com/guardian).
 
-![Guardian Overview](/imgs/guardian-overview.png)
+![Guardian Overview](/imgs/guardian_overview.png)
 
 Guardian Provides:
 1. Our latest scanners, broader model support, and model introspection to determine a model's format automatically.
