@@ -57,12 +57,12 @@ ModelScan offers robust open-source scanning. If you need comprehensive AI secur
 
 ![Guardian Overview](/imgs/guardian_overview.png)
 
-Features :
+### Guardian's Features:
+
 1. **Cutting-Edge Scanning**: Access our latest scanners, broader model support, and automatic model format detection.
 2. **Proactive Security**: Define and enforce security requirements for Hugging Face models before they enter your environment—no code changes required.
 3. **Enterprise-Wide Coverage**: Implement a cohesive security posture across your organization, seamlessly integrating with your CI/CD pipelines.
 4. **Comprehensive Audit Trail**: Gain full visibility into all scans and results, empowering you to identify and mitigate threats effectively.
-
 
 ## Getting Started
 
