@@ -51,18 +51,18 @@ A **Model Serialization Attack** can be used to execute:
 
 These attacks are incredibly simple to execute and you can view working examples in our 📓[notebooks](https://github.com/protectai/modelscan/tree/main/notebooks) folder.
 
-## Scanning Models At Scale
+## Enforcing And Automating Model Security
 
-ModelScan is a great open source tool for scanning models, however it is not our recommended approach for enforcing a security
-posture in an organization. For that, we recommend using our enterprise tool, [Guardian](https://protectai.com/guardian).
+ModelScan offers robust open-source scanning. If you need comprehensive AI security, consider [Guardian](https://protectai.com/guardian). It is our enterprise-grade solution.
 
 ![Guardian Overview](/imgs/guardian_overview.png)
 
-Guardian Provides:
-1. Our latest scanners, broader model support, and model introspection to determine a model's format automatically.
-2. The ability to define security requirements for models from Hugging Face, gating them from entering your environments, without code changes.
-3. Enteprise wide security posture for models and integrations into your CI/CD pipelines.
-4. A full audit trail of all scans and their results to better understand threats.
+Features :
+1. **Cutting-Edge Scanning**: Access our latest scanners, broader model support, and automatic model format detection.
+2. **Proactive Security**: Define and enforce security requirements for Hugging Face models before they enter your environment—no code changes required.
+3. **Enterprise-Wide Coverage**: Implement a cohesive security posture across your organization, seamlessly integrating with your CI/CD pipelines.
+4. **Comprehensive Audit Trail**: Gain full visibility into all scans and results, empowering you to identify and mitigate threats effectively.
+
 
 ## Getting Started
 
