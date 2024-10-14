@@ -53,7 +53,7 @@ These attacks are incredibly simple to execute and you can view working examples
 
 ## Enforcing And Automating Model Security
 
-ModelScan offers robust open-source scanning. If you need comprehensive AI security, consider [Guardian](https://protectai.com/guardian). It is our enterprise-grade solution.
+ModelScan offers robust open-source scanning. If you need comprehensive AI security, consider [Guardian](https://protectai.com/guardian). It is our enterprise-grade model scanning product.
 
 ![Guardian Overview](/imgs/guardian_overview.png)
 
