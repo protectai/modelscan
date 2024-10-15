@@ -15,9 +15,9 @@ This needs to change, and proper tooling is the first step.
 
 ![ModelScan Preview](/imgs/modelscan-unsafe-model.gif)
 
-ModelScan is an open source project from [Protect AI](https://protectai.com/) that scans models to determine if they contain 
-unsafe code. It is the first model scanning tool to support multiple model formats. 
-ModelScan currently supports: H5, Pickle, and SavedModel formats. This protects you 
+ModelScan is an open source project from [Protect AI](https://protectai.com/) that scans models to determine if they contain
+unsafe code. It is the first model scanning tool to support multiple model formats.
+ModelScan currently supports: H5, Pickle, and SavedModel formats. This protects you
 when using PyTorch, TensorFlow, Keras, Sklearn, XGBoost, with more on the way.
 
 ## TL;DR
@@ -38,9 +38,9 @@ modelscan -p /path/to/model_file.pkl
 
 Models are often created from automated pipelines, others may come from a data scientist’s laptop. In either case the model needs to move from one machine to another before it is used. That process of saving a model to disk is called serialization.
 
-A **Model Serialization Attack** is where malicious code is added to the contents of a model during serialization(saving) before distribution — a modern version of the Trojan Horse. 
+A **Model Serialization Attack** is where malicious code is added to the contents of a model during serialization(saving) before distribution — a modern version of the Trojan Horse.
 
-The attack functions by exploiting the saving and loading process of models. When you load a model with `model = torch.load(PATH)`, PyTorch opens the contents of the file and begins to running the code within. The second you load the model the exploit has executed. 
+The attack functions by exploiting the saving and loading process of models. When you load a model with `model = torch.load(PATH)`, PyTorch opens the contents of the file and begins to running the code within. The second you load the model the exploit has executed.
 
 A **Model Serialization Attack** can be used to execute:
 
@@ -51,14 +51,27 @@ A **Model Serialization Attack** can be used to execute:
 
 These attacks are incredibly simple to execute and you can view working examples in our 📓[notebooks](https://github.com/protectai/modelscan/tree/main/notebooks) folder.
 
+## Enforcing And Automating Model Security
+
+ModelScan offers robust open-source scanning. If you need comprehensive AI security, consider [Guardian](https://protectai.com/guardian). It is our enterprise-grade model scanning product.
+
+![Guardian Overview](/imgs/guardian_overview.png)
+
+### Guardian's Features:
+
+1. **Cutting-Edge Scanning**: Access our latest scanners, broader model support, and automatic model format detection.
+2. **Proactive Security**: Define and enforce security requirements for Hugging Face models before they enter your environment—no code changes required.
+3. **Enterprise-Wide Coverage**: Implement a cohesive security posture across your organization, seamlessly integrating with your CI/CD pipelines.
+4. **Comprehensive Audit Trail**: Gain full visibility into all scans and results, empowering you to identify and mitigate threats effectively.
+
 ## Getting Started
 
 ### How ModelScan Works
 
-If loading a model with your machine learning framework automatically executes the attack, 
+If loading a model with your machine learning framework automatically executes the attack,
 how does ModelScan check the content without loading the malicious code?
 
-Simple, it reads the content of the file one byte at a time just like a string, looking for 
+Simple, it reads the content of the file one byte at a time just like a string, looking for
 code signatures that are unsafe. This makes it incredibly fast, scanning models in the time it
 takes for your computer to process the total filesize from disk(seconds in most cases). It also secure.
 
@@ -78,7 +91,7 @@ it opens you up for attack. Use your discretion to determine if that is appropri
 
 ### What Models and Frameworks Are Supported?
 
-This will be expanding continually, so look out for changes in our release notes. 
+This will be expanding continually, so look out for changes in our release notes.
 
 At present, ModelScan supports any Pickle derived format and many others:
 
@@ -90,7 +103,7 @@ At present, ModelScan supports any Pickle derived format and many others:
 |                                              | [keras.models.save(save_format= 'keras')](https://www.tensorflow.org/guide/keras/serialization_and_saving) | Keras V3 (Hierarchical Data Format) | Yes               |
 | Classic ML Libraries (Sklearn, XGBoost etc.) | pickle.dump(), dill.dump(), joblib.dump(), cloudpickle.dump()                                              | Pickle, Cloudpickle, Dill, Joblib   | Yes               |
 
-### Installation 
+### Installation
 ModelScan is installed on your systems as a Python package(Python 3.9 to 3.12 supported). As shown from above you can install
 it by running this in your terminal:
 
@@ -114,7 +127,7 @@ pip install 'modelscan[ tensorflow, h5py ]'
 
 ModelScan supports the following arguments via the CLI:
 
-| Usage                                                                            | Argument         | Explanation                                             | 
+| Usage                                                                            | Argument         | Explanation                                             |
 |----------------------------------------------------------------------------------|------------------|---------------------------------------------------------|
 | ```modelscan -h ```                                                              | -h or --help     | View usage help                                         |
 | ```modelscan -v ```                                                              | -v or --version  | View version information                                |
@@ -143,9 +156,9 @@ Once a scan has been completed you'll see output like this if an issue is found:
 ![ModelScan Scan Output](https://github.com/protectai/modelscan/raw/main/imgs/cli_output.png)
 
 Here we have a model that has an unsafe operator for both `ReadFile` and `WriteFile` in the model.
-Clearly we do not want our models reading and writing files arbitrarily. We would now reach out 
+Clearly we do not want our models reading and writing files arbitrarily. We would now reach out
 to the creator of this model to determine what they expected this to do. In this particular case
-it allows an attacker to read our AWS credentials and write them to another place. 
+it allows an attacker to read our AWS credentials and write them to another place.
 
 That is a firm NO for usage.
 
@@ -182,7 +195,7 @@ to learn more!
 
 ## Licensing
 
-Copyright 2023 Protect AI 
+Copyright 2024 Protect AI
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -201,9 +214,7 @@ limitations under the License.
 We were heavily inspired by [Matthieu Maitre](http://mmaitre314.github.io) who built [PickleScan](https://github.com/mmaitre314/picklescan).
 We appreciate the work and have extended it significantly with ModelScan. ModelScan is OSS’ed in the similar spirit as PickleScan.
 
-## Contributing 
+## Contributing
 
-We would love to have you contribute to our open source ModelScan project. 
-If you would like to contribute, please follow the details on [Contribution page](https://github.com/protectai/modelscan/blob/main/CONTRIBUTING.md). 
-
- 
+We would love to have you contribute to our open source ModelScan project.
+If you would like to contribute, please follow the details on [Contribution page](https://github.com/protectai/modelscan/blob/main/CONTRIBUTING.md).
