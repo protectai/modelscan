@@ -20,6 +20,7 @@ class IssueSeverity(Enum):
 
 class IssueCode:
     UNSAFE_OPERATOR = Property("UNSAFE_OPERATOR", 1)
+    INVALID_OPCODE = Property("INVALID_OPCODE", 2)
 
 
 class IssueDetails(metaclass=abc.ABCMeta):
