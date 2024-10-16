@@ -15,7 +15,7 @@ This needs to change, and proper tooling is the first step.
 
 ![ModelScan Preview](/imgs/modelscan-unsafe-model.gif)
 
-ModelScan is an open source project from [Protect AI](https://protectai.com/) that scans models to determine if they contain
+ModelScan is an open source project from [Protect AI](https://protectai.com/?utm_campaign=Homepage&utm_source=ModelScan%20GitHub%20Page&utm_medium=cta&utm_content=Open%20Source) that scans models to determine if they contain
 unsafe code. It is the first model scanning tool to support multiple model formats.
 ModelScan currently supports: H5, Pickle, and SavedModel formats. This protects you
 when using PyTorch, TensorFlow, Keras, Sklearn, XGBoost, with more on the way.
@@ -53,7 +53,7 @@ These attacks are incredibly simple to execute and you can view working examples
 
 ## Enforcing And Automating Model Security
 
-ModelScan offers robust open-source scanning. If you need comprehensive AI security, consider [Guardian](https://protectai.com/guardian). It is our enterprise-grade model scanning product.
+ModelScan offers robust open-source scanning. If you need comprehensive AI security, consider [Guardian](https://protectai.com/guardian?utm_campaign=Guardian&utm_source=ModelScan%20GitHub%20Page&utm_medium=cta&utm_content=Open%20Source). It is our enterprise-grade model scanning product.
 
 ![Guardian Overview](/imgs/guardian_overview.png)
 
