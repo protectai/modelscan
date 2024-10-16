@@ -128,6 +128,7 @@ DEFAULT_SETTINGS = {
             "bdb": "*",
             "pdb": "*",
             "shutil": "*",
+            "asyncio": "*",
         },
         "HIGH": {
             "webbrowser": "*",  # Includes webbrowser.open()
