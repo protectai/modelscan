@@ -10,6 +10,7 @@ import pickle
 import dill
 import pytest
 import requests
+import shutil
 import socket
 import subprocess
 import sys
@@ -330,6 +331,10 @@ def file_path(tmp_path_factory: Any) -> Any:
     initialize_data_file(f"{tmp}/data/malicious13.pkl", malicious13_gen())
 
     initialize_data_file(f"{tmp}/data/malicious14.pkl", malicious14_gen())
+
+    shutil.copy(
+        f"{os.path.dirname(__file__)}/data/password_protected.zip", f"{tmp}/data/"
+    )
 
     return tmp
 
@@ -1361,7 +1366,18 @@ def test_scan_directory_path(file_path: str) -> None:
         "benign0_v3.dill",
         "benign0_v4.dill",
     }
-    assert results["summary"]["skipped"]["skipped_files"] == []
+    assert results["summary"]["skipped"]["skipped_files"] == [
+        {
+            "category": "SCAN_NOT_SUPPORTED",
+            "description": "Model Scan did not scan file",
+            "source": "password_protected.zip",
+        },
+        {
+            "category": "BAD_ZIP",
+            "description": "Skipping zip file due to error: File 'test.txt' is encrypted, password required for extraction",
+            "source": "password_protected.zip",
+        },
+    ]
     assert results["errors"] == []
 
 
