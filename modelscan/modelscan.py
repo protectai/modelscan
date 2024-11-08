@@ -91,11 +91,7 @@ class ModelScan:
             with Model(file) as model:
                 yield model
 
-                if (
-                    not _is_zipfile(file, model.get_stream())
-                    and Path(file).suffix
-                    not in self._settings["supported_zip_extensions"]
-                ):
+                if not _is_zipfile(file, model.get_stream()):
                     continue
 
                 try:
@@ -114,7 +110,7 @@ class ModelScan:
                                     continue
 
                                 yield Model(file_name, file_io)
-                except zipfile.BadZipFile as e:
+                except (zipfile.BadZipFile, RuntimeError) as e:
                     logger.debug(
                         "Skipping zip file %s, due to error",
                         str(model.get_source()),
