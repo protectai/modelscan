@@ -132,6 +132,7 @@ class OperatorIssueDetails(IssueDetails):
         source: Union[Path, str],
         scanner: str = "",
     ) -> None:
+        super().__init__(scanner)
         self.module = module
         self.operator = operator
         self.source = source

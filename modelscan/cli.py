@@ -115,6 +115,7 @@ def scan(
         with open(settings_file_path, encoding="utf-8") as sf:
             settings = parse(sf.read()).unwrap()
             click.echo(f"Detected settings file. Using {settings_file_path}. \n")
+            sf.close()
     else:
         click.echo(
             f"No settings file detected at {settings_file_path}. Using defaults. \n"
@@ -178,17 +179,21 @@ def create_settings(force: bool, location: Optional[str]) -> None:
         if force:
             with open(settings_path, mode="w", encoding="utf-8") as settings_file:
                 settings_file.write(SettingsUtils.get_default_settings_as_toml())
+                settings_file.close()
         else:
             logger.warning(
                 "%s file already exists. Please use `--force` flag if you intend to overwrite it.",
                 settings_path,
             )
+
     except FileNotFoundError:
         with open(settings_path, mode="w", encoding="utf-8") as settings_file:
             settings_file.write(SettingsUtils.get_default_settings_as_toml())
+            settings_file.close()
 
 
 def main() -> None:
+    result = 0
     try:
         result = cli.main(standalone_mode=False)
 
