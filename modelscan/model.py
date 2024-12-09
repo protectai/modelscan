@@ -9,13 +9,13 @@ class ModelDataEmpty(ValueError):
 class Model:
     _source: Path
     _stream: Optional[IO[bytes]]
-    _should_close_stream: bool # Flag to control closing of file
+    _should_close_stream: bool  # Flag to control closing of file
     _context: Dict[str, Any]
 
     def __init__(self, source: Union[str, Path], stream: Optional[IO[bytes]] = None):
         self._source = Path(source)
         self._stream = stream
-        self._should_close_stream = stream is None # Only close if opened
+        self._should_close_stream = stream is None  # Only close if opened
         self._context = {"formats": []}
 
     def set_context(self, key: str, value: Any) -> None:
@@ -37,8 +37,8 @@ class Model:
         # Only close the stream if we opened a file (not for IO[bytes] objects passed in)
         if self._stream and self._should_close_stream:
             self._stream.close()
-            self._stream = None # Avoid double-closing
-            self._should_close_stream = False # Reset the flag
+            self._stream = None  # Avoid double-closing
+            self._should_close_stream = False  # Reset the flag
 
     def __enter__(self) -> "Model":
         return self.open()
