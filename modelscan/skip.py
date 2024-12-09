@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 
 from modelscan.settings import Property
 
