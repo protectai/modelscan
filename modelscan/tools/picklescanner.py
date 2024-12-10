@@ -5,7 +5,7 @@ from typing import IO, Any, Dict, List, Set, Tuple, Union, Optional
 
 import numpy as np
 
-from modelscan.error import ModelScanError, PickleGenopsError
+from modelscan.error import PickleGenopsError
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
 from modelscan.scanners.scan import ScanResults
