@@ -35,7 +35,7 @@ aiohttp = "^3.8.5"
 dill = "^0.3.7"
 types-requests = ">1.26"
 torch = "^2.2"
-tf-keras = "^2.16.0"
+tf-keras = "^2.18.0"
 
 
 [tool.poetry.group.dev.dependencies]
