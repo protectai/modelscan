@@ -7,7 +7,10 @@
 [![Supported Versions](https://img.shields.io/pypi/pyversions/modelscan.svg)](https://pypi.org/project/modelscan)
 [![pypi Version](https://img.shields.io/pypi/v/modelscan)](https://pypi.org/project/modelscan)
 [![License: Apache 2.0](https://img.shields.io/crates/l/apa)](https://opensource.org/license/apache-2-0/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
 # ModelScan: Protection Against Model Serialization Attacks
+
 Machine Learning (ML) models are shared publicly over the internet, within teams and across teams. The rise of Foundation Models have resulted in public ML models being increasingly consumed for further training/fine tuning. ML Models are increasingly used to make critical decisions and power mission-critical applications.
 Despite this, models are not yet scanned with the rigor of a PDF file in your inbox.
 
@@ -77,10 +80,10 @@ takes for your computer to process the total filesize from disk(seconds in most 
 
 ModelScan ranks the unsafe code as:
 
-* CRITICAL
-* HIGH
-* MEDIUM
-* LOW
+- CRITICAL
+- HIGH
+- MEDIUM
+- LOW
 
 ![ModelScan Flow Chart](/imgs/model_scan_flow_chart.png)
 
@@ -104,6 +107,7 @@ At present, ModelScan supports any Pickle derived format and many others:
 | Classic ML Libraries (Sklearn, XGBoost etc.) | pickle.dump(), dill.dump(), joblib.dump(), cloudpickle.dump()                                              | Pickle, Cloudpickle, Dill, Joblib   | Yes               |
 
 ### Installation
+
 ModelScan is installed on your systems as a Python package(Python 3.9 to 3.12 supported). As shown from above you can install
 it by running this in your terminal:
 
@@ -119,6 +123,7 @@ modelscan = ">=0.1.1"
 ```
 
 Scanners for Tensorflow or HD5 formatted models require installation with extras:
+
 ```bash
 pip install 'modelscan[ tensorflow, h5py ]'
 ```
@@ -129,8 +134,8 @@ ModelScan supports the following arguments via the CLI:
 
 | Usage                                                                            | Argument         | Explanation                                             |
 |----------------------------------------------------------------------------------|------------------|---------------------------------------------------------|
-| ```modelscan -h ```                                                              | -h or --help     | View usage help                                         |
-| ```modelscan -v ```                                                              | -v or --version  | View version information                                |
+| ```modelscan -h```                                                              | -h or --help     | View usage help                                         |
+| ```modelscan -v```                                                              | -v or --version  | View version information                                |
 | ```modelscan -p /path/to/model_file```                                           | -p or --path     | Scan a locally stored model                             |
 | ```modelscan -p /path/to/model_file --settings-file ./modelscan-settings.toml``` | --settings-file  | Scan a locally stored model using custom configurations |
 | ```modelscan create-settings-file```                                             | -l or --location | Create a configurable settings file                     |
@@ -138,11 +143,12 @@ ModelScan supports the following arguments via the CLI:
 | ```modelscan -r reporting-format -o file-name```                                             | -o or --output-file | Optional file name for output report                  |
 | ```modelscan --show-skipped```                          | --show-skipped | Print a list of files that were skipped      during the scan   |
 
-
 Remember models are just like any other form of digital media, you should scan content from any untrusted source before use.
 
-##### CLI Exit Codes
+#### CLI Exit Codes
+
 The CLI exit status codes are:
+
 - `0`: Scan completed successfully, no vulnerabilities found
 - `1`: Scan completed successfully, vulnerabilities found
 - `2`: Scan failed, modelscan threw an error while scanning
@@ -201,7 +207,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-   http://www.apache.org/licenses/LICENSE-2.0
+   <http://www.apache.org/licenses/LICENSE-2.0>
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
