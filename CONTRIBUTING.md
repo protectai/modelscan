@@ -6,7 +6,7 @@ Welcome! We're glad to have you. If you would like to report a bug, request a ne
 
 1. Python
 
-   `modelscan` requires python version `>=3.8` and `<3.11`
+   `modelscan` requires python version `>=3.9` and `<3.13`
 
 2. Poetry
 

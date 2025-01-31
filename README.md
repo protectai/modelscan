@@ -12,13 +12,13 @@
 # ModelScan: Protection Against Model Serialization Attacks
 
 Machine Learning (ML) models are shared publicly over the internet, within teams and across teams. The rise of Foundation Models have resulted in public ML models being increasingly consumed for further training/fine tuning. ML Models are increasingly used to make critical decisions and power mission-critical applications.
-Despite this, models are not scanned with the rigor of a PDF file in your inbox.
+Despite this, models are not yet scanned with the rigor of a PDF file in your inbox.
 
 This needs to change, and proper tooling is the first step.
 
 ![ModelScan Preview](/imgs/modelscan-unsafe-model.gif)
 
-ModelScan is an open source project that scans models to determine if they contain
+ModelScan is an open source project from [Protect AI](https://protectai.com/?utm_campaign=Homepage&utm_source=ModelScan%20GitHub%20Page&utm_medium=cta&utm_content=Open%20Source) that scans models to determine if they contain
 unsafe code. It is the first model scanning tool to support multiple model formats.
 ModelScan currently supports: H5, Pickle, and SavedModel formats. This protects you
 when using PyTorch, TensorFlow, Keras, Sklearn, XGBoost, with more on the way.
@@ -53,6 +53,19 @@ A **Model Serialization Attack** can be used to execute:
 - Model Poisoning(altering the results of the model itself)
 
 These attacks are incredibly simple to execute and you can view working examples in our 📓[notebooks](https://github.com/protectai/modelscan/tree/main/notebooks) folder.
+
+## Enforcing And Automating Model Security
+
+ModelScan offers robust open-source scanning. If you need comprehensive AI security, consider [Guardian](https://protectai.com/guardian?utm_campaign=Guardian&utm_source=ModelScan%20GitHub%20Page&utm_medium=cta&utm_content=Open%20Source). It is our enterprise-grade model scanning product.
+
+![Guardian Overview](/imgs/guardian_overview.png)
+
+### Guardian's Features:
+
+1. **Cutting-Edge Scanning**: Access our latest scanners, broader model support, and automatic model format detection.
+2. **Proactive Security**: Define and enforce security requirements for Hugging Face models before they enter your environment—no code changes required.
+3. **Enterprise-Wide Coverage**: Implement a cohesive security posture across your organization, seamlessly integrating with your CI/CD pipelines.
+4. **Comprehensive Audit Trail**: Gain full visibility into all scans and results, empowering you to identify and mitigate threats effectively.
 
 ## Getting Started
 
@@ -95,7 +108,7 @@ At present, ModelScan supports any Pickle derived format and many others:
 
 ### Installation
 
-ModelScan is installed on your systems as a Python package(Python 3.8 to 3.11 supported). As shown from above you can install
+ModelScan is installed on your systems as a Python package(Python 3.9 to 3.12 supported). As shown from above you can install
 it by running this in your terminal:
 
 ```bash
@@ -188,7 +201,7 @@ to learn more!
 
 ## Licensing
 
-Copyright 2023 Protect AI
+Copyright 2024 Protect AI
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

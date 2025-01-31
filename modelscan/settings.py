@@ -125,6 +125,10 @@ DEFAULT_SETTINGS = {
             ],
             "pty": "*",
             "pickle": "*",
+            "bdb": "*",
+            "pdb": "*",
+            "shutil": "*",
+            "asyncio": "*",
         },
         "HIGH": {
             "webbrowser": "*",  # Includes webbrowser.open()

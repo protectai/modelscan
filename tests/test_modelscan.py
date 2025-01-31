@@ -1,4 +1,5 @@
 import aiohttp
+import bdb
 import http.client
 import importlib
 import io
@@ -9,12 +10,13 @@ import pickle
 import dill
 import pytest
 import requests
+import shutil
 import socket
 import subprocess
 import sys
 import torch
 import tensorflow as tf
-from tensorflow import keras
+import tf_keras as keras
 from typing import Any, List, Set, Dict
 from test_utils import (
     generate_dill_unsafe_file,
@@ -86,6 +88,15 @@ class Malicious7:
 class Malicious8:
     def __reduce__(self) -> Any:
         return sys.exit, (0,)
+
+
+class Malicious15:
+    def __reduce__(self) -> Any:
+        bd = bdb.Bdb()
+        return bdb.Bdb.run, (
+            bd,
+            'import os\nos.system("whoami")',
+        )
 
 
 def malicious12_gen() -> bytes:
@@ -272,6 +283,7 @@ def file_path(tmp_path_factory: Any) -> Any:
     initialize_pickle_file(f"{tmp}/data/malicious7.pkl", Malicious6(), 4)
     initialize_pickle_file(f"{tmp}/data/malicious8.pkl", Malicious7(), 4)
     initialize_pickle_file(f"{tmp}/data/malicious9.pkl", Malicious8(), 4)
+    initialize_pickle_file(f"{tmp}/data/malicious15.pkl", Malicious15(), 4)
 
     # Malicious Pickle from Capture-the-Flag challenge 'Misc/Safe Pickle' at https://imaginaryctf.org/Challenges
     # GitHub Issue: https://github.com/mmaitre314/picklescan/issues/22
@@ -320,6 +332,10 @@ def file_path(tmp_path_factory: Any) -> Any:
 
     initialize_data_file(f"{tmp}/data/malicious14.pkl", malicious14_gen())
 
+    shutil.copy(
+        f"{os.path.dirname(__file__)}/data/password_protected.zip", f"{tmp}/data/"
+    )
+
     return tmp
 
 
@@ -362,6 +378,9 @@ def keras_file_extensions() -> List[str]:
 
 @pytest.fixture(scope="session")
 def keras_file_path(tmp_path_factory: Any, keras_file_extensions: List[str]) -> Any:
+    # Use Keras 2.0
+    os.environ["TF_USE_LEGACY_KERAS"] = "1"
+
     # Create a simple model.
 
     inputs = keras.Input(shape=(32,))
@@ -403,7 +422,7 @@ conn = http.client.HTTPSConnection("protectai.com")"""
     first_lambda_layer = keras.layers.Lambda(attack)(input_to_new_layer)
     second_lambda_layer = keras.layers.Lambda(attack)(first_lambda_layer)
 
-    malicious_model = tf.keras.Model(
+    malicious_model = keras.Model(
         inputs=keras_model.inputs, outputs=[second_lambda_layer]
     )
     malicious_model.compile(optimizer="adam", loss="mean_squared_error")
@@ -998,6 +1017,34 @@ def test_scan_pickle_operators(file_path: Any) -> None:
     malicious14.scan(Path(f"{file_path}/data/malicious14.pkl"))
     assert malicious14.issues.all_issues == expected_malicious14
 
+    expected_malicious15 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "bdb",
+                "Bdb.run",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious15.pkl",
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "bdb",
+                "Bdb",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious15.pkl",
+            ),
+        ),
+    ]
+    malicious15 = ModelScan()
+    malicious15.scan(Path(f"{file_path}/data/malicious15.pkl"))
+    assert sorted(malicious15.issues.all_issues, key=str) == sorted(
+        expected_malicious15, key=str
+    )
+
 
 def test_scan_directory_path(file_path: str) -> None:
     expected = {
@@ -1262,6 +1309,26 @@ def test_scan_directory_path(file_path: str) -> None:
                 f"{file_path}/data/malicious14.pkl",
             ),
         ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "bdb",
+                "Bdb",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious15.pkl",
+            ),
+        ),
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "bdb",
+                "Bdb.run",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious15.pkl",
+            ),
+        ),
     }
     ms = ModelScan()
     p = Path(f"{file_path}/data/")
@@ -1280,6 +1347,7 @@ def test_scan_directory_path(file_path: str) -> None:
         "malicious12.pkl",
         "malicious13.pkl",
         "malicious14.pkl",
+        "malicious15.pkl",
         "malicious1_v0.dill",
         "malicious1_v3.dill",
         "malicious1_v4.dill",
@@ -1298,7 +1366,18 @@ def test_scan_directory_path(file_path: str) -> None:
         "benign0_v3.dill",
         "benign0_v4.dill",
     }
-    assert results["summary"]["skipped"]["skipped_files"] == []
+    assert results["summary"]["skipped"]["skipped_files"] == [
+        {
+            "category": "SCAN_NOT_SUPPORTED",
+            "description": "Model Scan did not scan file",
+            "source": "password_protected.zip",
+        },
+        {
+            "category": "BAD_ZIP",
+            "description": "Skipping zip file due to error: File 'test.txt' is encrypted, password required for extraction",
+            "source": "password_protected.zip",
+        },
+    ]
     assert results["errors"] == []
 
 
