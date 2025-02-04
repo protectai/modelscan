@@ -1,9 +1,6 @@
 import tomlkit
-
 from typing import Any
-
 from modelscan._version import __version__
-
 
 class Property:
     def __init__(self, name: str, value: Any) -> None:
@@ -12,12 +9,14 @@ class Property:
 
 
 class SupportedModelFormats:
+    SAFETENSORS = Property("SAFETENSORS", "safetensors")
     TENSORFLOW = Property("TENSORFLOW", "tensorflow")
     KERAS_H5 = Property("KERAS_H5", "keras_h5")
     KERAS = Property("KERAS", "keras")
     NUMPY = Property("NUMPY", "numpy")
     PYTORCH = Property("PYTORCH", "pytorch")
     PICKLE = Property("PICKLE", "pickle")
+      # Added Safetensor format
 
 
 DEFAULT_REPORTING_MODULES = {
@@ -29,6 +28,10 @@ DEFAULT_SETTINGS = {
     "modelscan_version": __version__,
     "supported_zip_extensions": [".zip", ".npz"],
     "scanners": {
+        "modelscan.scanners.SafetensorUnsafeScan": {
+            "enabled": True,
+            "supported_extensions": [".safetensors"],
+        },
         "modelscan.scanners.H5LambdaDetectScan": {
             "enabled": True,
             "supported_extensions": [".h5"],
@@ -88,6 +91,7 @@ DEFAULT_SETTINGS = {
                     ".dat",
                     ".data",
                 ],
+                SupportedModelFormats.SAFETENSORS: [".safetensors"],  # Added SafeTensor extensions
             }
         }
     },
@@ -102,7 +106,7 @@ DEFAULT_SETTINGS = {
                 "open",
                 "breakpoint",
                 "__import__",
-            ],  # Pickle versions 0, 1, 2 have those function under '__builtin__'
+            ],
             "builtins": [
                 "eval",
                 "compile",
@@ -112,16 +116,16 @@ DEFAULT_SETTINGS = {
                 "open",
                 "breakpoint",
                 "__import__",
-            ],  # Pickle versions 3, 4 have those function under 'builtins'
+            ],
             "runpy": "*",
             "os": "*",
-            "nt": "*",  # Alias for 'os' on Windows. Includes os.system()
-            "posix": "*",  # Alias for 'os' on Linux. Includes os.system()
+            "nt": "*",
+            "posix": "*",
             "socket": "*",
             "subprocess": "*",
             "sys": "*",
             "operator": [
-                "attrgetter",  # Ex of code execution: operator.attrgetter("system")(__import__("os"))("echo pwned")
+                "attrgetter",
             ],
             "pty": "*",
             "pickle": "*",
@@ -131,8 +135,8 @@ DEFAULT_SETTINGS = {
             "asyncio": "*",
         },
         "HIGH": {
-            "webbrowser": "*",  # Includes webbrowser.open()
-            "httplib": "*",  # Includes http.client.HTTPSConnection()
+            "webbrowser": "*",
+            "httplib": "*",
             "requests.api": "*",
             "aiohttp.client": "*",
         },
@@ -142,7 +146,7 @@ DEFAULT_SETTINGS = {
     "reporting": {
         "module": "modelscan.reports.ConsoleReport",
         "settings": {},
-    },  # JSON reporting can be configured by changing "module" to "modelscan.reports.JSONReport" and adding an optional "output_file" field. For custom reporting modules, change "module" to the module name and add the applicable settings fields
+    },
 }
 
 
