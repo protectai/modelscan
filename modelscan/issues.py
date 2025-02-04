@@ -20,6 +20,8 @@ class IssueSeverity(Enum):
 
 class IssueCode:
     UNSAFE_OPERATOR = Property("UNSAFE_OPERATOR", 1)
+    FORMAT_MISMATCH = Property("FORMAT_MISMATCH", 2)
+    INVALID_HEADER = Property("INVALID_HEADER", 3)
 
 
 class IssueDetails(metaclass=abc.ABCMeta):
@@ -37,7 +39,7 @@ class IssueDetails(metaclass=abc.ABCMeta):
 
 class Issue:
     """
-    Defines properties of a issue
+    Defines properties of an issue
     """
 
     def __init__(
@@ -86,6 +88,10 @@ class Issue:
         issue_description = self.code.name
         if self.code.value == IssueCode.UNSAFE_OPERATOR.value:
             issue_description = "Unsafe operator"
+        elif self.code.value == IssueCode.FORMAT_MISMATCH.value:
+            issue_description = "Format mismatch"
+        elif self.code.value == IssueCode.INVALID_HEADER.value:
+            issue_description = "Invalid header"
         else:
             logger.error("No issue description for issue code %s", self.code)
 
@@ -157,3 +163,38 @@ class OperatorIssueDetails(IssueDetails):
 
     def __repr__(self) -> str:
         return f"<OperatorIssueDetails(module={self.module}, operator={self.operator}, severity={self.severity.name}, source={str(self.source)})>"
+
+class FormatIssueDetails(IssueDetails):
+    def __init__(
+        self,
+        module: str,
+        detected_format: str,
+        severity: IssueSeverity,
+        source: Union[Path, str],
+        scanner: str = "",
+    ) -> None:
+        super().__init__(scanner)
+        self.module = module
+        self.detected_format = detected_format
+        self.source = source
+        self.severity = severity
+        self.scanner = scanner
+
+    def output_lines(self) -> List[str]:
+        return [
+            f"Description: Format mismatch detected. Expected 'safetensor' but found '{self.detected_format}'.",
+            f"Source: {str(self.source)}",
+        ]
+
+    def output_json(self) -> Dict[str, str]:
+        return {
+            "description": f"Format mismatch detected. Expected 'safetensor' but found '{self.detected_format}'.",
+            "detected_format": self.detected_format,
+            "module": self.module,
+            "source": str(self.source),
+            "scanner": self.scanner,
+            "severity": self.severity.name,
+        }
+
+    def __repr__(self) -> str:
+        return f"<FormatMismatchIssueDetails(module={self.module}, detected_format={self.detected_format}, severity={self.severity.name}, source={str(self.source)})>"
