@@ -148,7 +148,7 @@ def scan_pickle_bytes(
             ],
             [],
         )
-    logger.debug("Global imports in %s: %s", model, raw_globals, settings)
+    logger.debug("Global imports in %s: %s,%s", model, raw_globals, settings)
     return _build_scan_result_from_raw_globals(raw_globals, model, settings)
 
 
