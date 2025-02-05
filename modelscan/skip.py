@@ -12,6 +12,7 @@ class SkipCategories:
     H5_DATA = Property("H5_DATA", 4)
     NOT_IMPLEMENTED = Property("NOT_IMPLEMENTED", 5)
     MAGIC_NUMBER = Property("MAGIC_NUMBER", 6)
+    HEADER_FORMAT = Property("HEADER_FORMAT",7)
 
 
 class Skip:
