@@ -1,6 +1,6 @@
 import logging
 import importlib
-
+import os
 from modelscan.settings import DEFAULT_SETTINGS
 
 from pathlib import Path
@@ -208,7 +208,8 @@ class ModelScan:
 
         if not scanned:
             all_skipped_files = [skipped.source for skipped in self._skipped]
-            if str(model.get_source()) not in all_skipped_files:
+            source = str(model.get_source())
+            if os.access(source, os.R_OK) and source not in all_skipped_files:
                 self._skipped.append(
                     ModelScanSkipped(
                         "ModelScan",
