@@ -2,7 +2,7 @@ import logging
 import json
 import re
 from typing import Optional
-
+import os
 from modelscan.settings import SupportedModelFormats
 from modelscan.scanners.scan import ScanBase, ScanResults
 from modelscan.model import Model
@@ -36,7 +36,7 @@ class GenericUnsafeScan(ScanBase):
 
         
         if SupportedModelFormats.GENERIC.value not in [fmt.value for fmt in model.get_context("formats")] \
-           and source.name not in [".gitattributes", "LICENSE"]:
+           and not os.access(source, os.R_OK):
             return None
 
         results = []
@@ -95,7 +95,6 @@ class GenericUnsafeScan(ScanBase):
                 break
 
         result = ScanResults(issues, [], [])
-        print(result)
         return self.label_results(result)
 
     @staticmethod
