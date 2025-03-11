@@ -16,6 +16,7 @@ class SupportedModelFormats:
     NUMPY = Property("NUMPY", "numpy")
     PYTORCH = Property("PYTORCH", "pytorch")
     PICKLE = Property("PICKLE", "pickle")
+    GENERIC = Property("GENERIC", "generic")
       # Added Safetensor format
 
 
@@ -74,6 +75,10 @@ DEFAULT_SETTINGS = {
             "enabled": True,
             "supported_extensions": [".bin", ".pt", ".pth", ".ckpt"],
         },
+        "modelscan.scanners.GenericUnsafeScan": {
+            "enabled": True,
+            "supported_extensions": [".json",".md",".txt",".msgpack",".onnx"],
+    },
     },
     "middlewares": {
         "modelscan.middlewares.FormatViaExtensionMiddleware": {
@@ -92,6 +97,7 @@ DEFAULT_SETTINGS = {
                     ".data",
                 ],
                 SupportedModelFormats.SAFETENSORS: [".safetensors"],  # Added SafeTensor extensions
+                SupportedModelFormats.GENERIC: [".json",".md",".txt",".msgpack",".onnx"], # Added Generic extensions
             }
         }
     },

@@ -11,3 +11,4 @@ from modelscan.scanners.saved_model.scan import (
 )
 from modelscan.scanners.keras.scan import KerasLambdaDetectScan
 from modelscan.scanners.safetensor.scan import SafetensorUnsafeScan
+from modelscan.scanners.generic.scan import GenericUnsafeScan
