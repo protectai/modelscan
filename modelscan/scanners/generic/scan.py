@@ -34,9 +34,16 @@ class GenericUnsafeScan(ScanBase):
         source = model.get_source() 
         stream = model.get_stream()  
 
+        exclude_ext = [".pb", ".h5", ".keras", ".npy", ".bin", ".pt", ".pth", ".ckpt",
+        ".pkl", ".pickle", ".joblib", ".dill", ".dat", ".data", ".safetensors"
+        ]
+
         
-        if SupportedModelFormats.GENERIC.value not in [fmt.value for fmt in model.get_context("formats")] \
-           and not os.access(source, os.R_OK):
+        if SupportedModelFormats.GENERIC.value not in [fmt.value for fmt in model.get_context("formats")] and not os.access(source, os.R_OK):
+            return None
+
+        
+        if source.suffix in exclude_ext:
             return None
 
         results = []
@@ -77,22 +84,22 @@ class GenericUnsafeScan(ScanBase):
                 )
                 issues.append(issue)
 
-        
-        for pattern in SUSPICIOUS_PATTERNS:
-            if re.search(pattern, content, re.IGNORECASE):
-                severity = IssueSeverity.LOW
-                issue = Issue(
-                    code=IssueCode.SUSPICIOUS_PATTERN,
-                    severity=severity,
-                    details=SuspiciousPatternIssueDetails(
-                        pattern=pattern,
-                        source=model.get_source(),
+        if source.suffix != ".py":
+            for pattern in SUSPICIOUS_PATTERNS:
+                if re.search(pattern, content, re.IGNORECASE):
+                    severity = IssueSeverity.LOW
+                    issue = Issue(
+                        code=IssueCode.SUSPICIOUS_PATTERN,
                         severity=severity,
-                        scanner="generic"
+                        details=SuspiciousPatternIssueDetails(
+                            pattern=pattern,
+                            source=model.get_source(),
+                            severity=severity,
+                            scanner="generic"
+                        )
                     )
-                )
-                issues.append(issue)
-                break
+                    issues.append(issue)
+                    break
 
         result = ScanResults(issues, [], [])
         return self.label_results(result)
