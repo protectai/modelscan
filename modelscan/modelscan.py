@@ -4,7 +4,7 @@ import os
 from modelscan.settings import DEFAULT_SETTINGS
 
 from pathlib import Path
-from typing import List, Union, Dict, Any, Optional, Generator
+from typing import List, Union, Dict, Any, Optional, Generator, Set
 from datetime import datetime
 import zipfile
 
@@ -37,6 +37,7 @@ class ModelScan:
         self._init_errors: List[ModelScanError] = []
         self._skipped: List[ModelScanSkipped] = []
         self._scanned: List[str] = []
+        self._all_scanned_files: List[str] = []  # Track all files for internal use
         self._input_path: str = ""
 
         # Scanners
@@ -134,6 +135,7 @@ class ModelScan:
         self._errors.extend(self._init_errors)
         self._skipped = []
         self._scanned = []
+        self._all_scanned_files = []
         self._input_path = str(path)
         pathlib_path = Path().cwd() if path == "." else Path(path).absolute()
         model_path = Path(pathlib_path)
@@ -167,6 +169,8 @@ class ModelScan:
         model: Model,
     ) -> bool:
         scanned = False
+        source_path = str(model.get_source())
+        is_container_internal = ":" in source_path
         for scan_class in self._scanners_to_run:
             scanner = scan_class(self._settings)  # type: ignore[operator]
 
@@ -195,16 +199,28 @@ class ModelScan:
                     model.get_source(),
                     scanner.full_name(),
                 )
+                
+                self._all_scanned_files.append(str(model.get_source()))
+                
                 if scan_results.errors:
                     self._errors.extend(scan_results.errors)
                 elif scan_results.issues:
-                    self._scanned.append(str(model.get_source()))
+                    if is_container_internal:
+                        root_path = source_path.split(":",1)[0]
+                        if root_path not in self._scanned:
+                            self._scanned.append(root_path)
+                    else:
+                        self._scanned.append(str(model.get_source()))
                     self._issues.add_issues(scan_results.issues)
-
                 elif scan_results.skipped:
                     self._skipped.extend(scan_results.skipped)
                 else:
-                    self._scanned.append(str(model.get_source()))
+                    if is_container_internal:
+                        root_path = source_path.split(":",1)[0]
+                        if root_path not in self._scanned:
+                            self._scanned.append(root_path)
+                    else:
+                        self._scanned.append(str(model.get_source()))
 
         if not scanned:
             all_skipped_files = [skipped.source for skipped in self._skipped]
@@ -348,6 +364,10 @@ class ModelScan:
     @property
     def scanned(self) -> List[str]:
         return self._scanned
+
+    @property
+    def all_scanned_files(self) -> List[str]:
+        return self._all_scanned_files
 
     @property
     def skipped(self) -> List[ModelScanSkipped]:
