@@ -37,6 +37,10 @@ DEFAULT_SETTINGS = {
             "enabled": True,
             "supported_extensions": [".keras"],
         },
+        "modelscan.scanners.KerasWeightsPickleScan": {
+            "enabled": True,
+            "supported_extensions": [".keras"],
+        },
         "modelscan.scanners.SavedModelLambdaDetectScan": {
             "enabled": True,
             "supported_extensions": [".pb"],
