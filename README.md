@@ -155,6 +155,47 @@ The CLI exit status codes are:
 - `3`: No supported files were passed to the tool
 - `4`: Usage error, CLI was passed invalid or incomplete options
 
+### Using ModelScan Programmatically in Python
+
+While ModelScan can be easily used via CLI, you can also integrate it directly into your Python applications or workflows.
+
+```python
+from modelscan.modelscan import ModelScan
+from modelscan.settings import DEFAULT_SETTINGS
+
+# Initialize ModelScan with default settings
+scanner = ModelScan(settings=DEFAULT_SETTINGS)
+
+# Scan a model file or directory 
+results = scanner.scan("/path/to/model_file.pkl")
+
+# Check if issues were found
+if scanner.issues.all_issues:
+    print(f"Found {len(scanner.issues.all_issues)} issues!")
+    
+    # Access issues by severity
+    issues_by_severity = scanner.issues.group_by_severity()
+    for severity, issues in issues_by_severity.items():
+        print(f"{severity}: {len(issues)} issues")
+        
+# Generate a report (default is console output)
+scanner.generate_report()
+```
+
+You can customize the scan behavior with your own settings:
+
+```python
+# Start with default settings and customize
+custom_settings = DEFAULT_SETTINGS.copy()
+
+# Update settings as needed
+custom_settings["reporting"]["module"] = "modelscan.reporting.json_report.JSONReport"
+custom_settings["reporting"]["settings"]["output_file"] = "scan_results.json"
+
+# Initialize with custom settings
+scanner = ModelScan(settings=custom_settings)
+```
+
 ### Understanding The Results
 
 Once a scan has been completed you'll see output like this if an issue is found:
