@@ -88,7 +88,6 @@ class SafetensorUnsafeScan(ScanBase):
                 logger.warning(f"Zero-sized tensor detected: {tensor_name}")
 
         results = ScanResults(issues, [], [])
-        print(results.issues)
         return self.label_results(results)
 
     def _detect_file_format(self, stream: Any) -> Optional[str]:
