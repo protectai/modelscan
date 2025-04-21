@@ -135,6 +135,7 @@ DEFAULT_SETTINGS = {
             ],
             "pty": "*",
             "pickle": "*",
+            "_pickle": "*",
             "bdb": "*",
             "pdb": "*",
             "shutil": "*",
