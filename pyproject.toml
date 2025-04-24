@@ -34,7 +34,7 @@ requests = "^2.31.0"
 aiohttp = "^3.8.5"
 dill = "^0.3.7"
 types-requests = ">1.26"
-torch = "^2.2"
+torch = "^2.5.1"
 tf-keras = "^2.18.0"
 
 
