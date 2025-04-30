@@ -230,10 +230,14 @@ def pytorch_file_path(tmp_path_factory: Any) -> Any:
     )
 
     # Unsafe PyTorch files in new (zip) format
-    pt.generate_unsafe_pytorch_file(
-        unsafe_file_path=f"{tmp}/unsafe_zip_pytorch.pt",
-        model_path=f"{tmp}/safe_zip_pytorch.pt",
-        zipfile=True,
+    # pt.generate_unsafe_pytorch_file(
+    #     unsafe_file_path=f"{tmp}/unsafe_zip_pytorch.pt",
+    #     model_path=f"{tmp}/safe_zip_pytorch.pt",
+    #     zipfile=True,
+    # )
+    shutil.copy(
+        f"{os.path.dirname(__file__)}/data/unsafe_zip_pytorch.pt",
+        tmp,
     )
 
     return tmp
@@ -534,6 +538,8 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
         "safe_zip_pytorch.pt:safe_zip_pytorch/byteorder",
         "safe_zip_pytorch.pt:safe_zip_pytorch/version",
         "safe_zip_pytorch.pt:safe_zip_pytorch/.data/serialization_id",
+        "safe_zip_pytorch.pt:safe_zip_pytorch/.format_version",
+        "safe_zip_pytorch.pt:safe_zip_pytorch/.storage_alignment",
     }
     assert ms.issues.all_issues == []
     assert results["errors"] == []
