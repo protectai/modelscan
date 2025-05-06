@@ -230,11 +230,6 @@ def pytorch_file_path(tmp_path_factory: Any) -> Any:
     )
 
     # Unsafe PyTorch files in new (zip) format
-    # pt.generate_unsafe_pytorch_file(
-    #     unsafe_file_path=f"{tmp}/unsafe_zip_pytorch.pt",
-    #     model_path=f"{tmp}/safe_zip_pytorch.pt",
-    #     zipfile=True,
-    # )
     shutil.copy(
         f"{os.path.dirname(__file__)}/data/unsafe_zip_pytorch.pt",
         tmp,
