@@ -9,4 +9,4 @@ from modelscan.scanners.saved_model.scan import (
     SavedModelLambdaDetectScan,
     SavedModelTensorflowOpScan,
 )
-from modelscan.scanners.keras.scan import KerasLambdaDetectScan
+from modelscan.scanners.keras.scan import KerasLambdaDetectScan, KerasWeightsPickleScan
