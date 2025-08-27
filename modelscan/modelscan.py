@@ -98,18 +98,35 @@ class ModelScan:
                     with zipfile.ZipFile(model.get_stream(), "r") as zip:
                         file_names = zip.namelist()
                         for file_name in file_names:
-                            with zip.open(file_name, "r") as file_io:
-                                file_name = f"{model.get_source()}:{file_name}"
-                                if _is_zipfile(file_name, data=file_io):
-                                    self._errors.append(
-                                        NestedZipError(
-                                            "ModelScan does not support nested zip files.",
-                                            Path(file_name),
+                            try:
+                                with zip.open(file_name, "r") as file_io:
+                                    file_name = f"{model.get_source()}:{file_name}"
+                                    if _is_zipfile(file_name, data=file_io):
+                                        self._errors.append(
+                                            NestedZipError(
+                                                "ModelScan does not support nested zip files.",
+                                                Path(file_name),
+                                            )
                                         )
-                                    )
-                                    continue
+                                        continue
 
-                                yield Model(file_name, file_io)
+                                    yield Model(file_name, file_io)
+                            except (KeyError, RuntimeError, zipfile.BadZipFile) as e:
+                                logger.debug(
+                                    "Skipping file %s in zip %s due to error",
+                                    file_name,
+                                    str(model.get_source()),
+                                    exc_info=True,
+                                )
+                                self._skipped.append(
+                                    ModelScanSkipped(
+                                        "ModelScan",
+                                        SkipCategories.BAD_ZIP,
+                                        f"Skipping file in zip due to error: {e}",
+                                        f"{model.get_source()}:{file_name}",
+                                    )
+                                )
+                                continue
                 except (zipfile.BadZipFile, RuntimeError) as e:
                     logger.debug(
                         "Skipping zip file %s, due to error",
