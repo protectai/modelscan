@@ -1,6 +1,6 @@
 {
   "description": "List of known safe TensorFlow raw operators from TensorFlow 2.x",
-  "version": "2.17",
+  "version": "2.20",
   "generated_note": "This list contains common TensorFlow operations that are considered safe for model execution",
   "operators": [
     "Abs", "Acos", "Acosh", "Add", "AddN", "AddV2", "All", "AllToAll",
@@ -26,7 +26,7 @@
     "DenseToSparseSetOperation", "DepthToSpace", "DepthwiseConv2dNative",
     "DepthwiseConv2dNativeBackpropFilter", "DepthwiseConv2dNativeBackpropInput",
     "DeserializeIterator", "DeserializeSparse", "Diag", "DiagPart",
-    "Digamma", "Dilation2D", "Dilation2DBackpropFilter",
+    "Digamma", "DisableCopyOnRead", "Dilation2D", "Dilation2DBackpropFilter",
     "Dilation2DBackpropInput", "Div", "DivNoNan", "DynamicPartition",
     "DynamicStitch", "Elu", "EluGrad", "Empty", "EmptyTensorList",
     "EnsureShape", "Equal", "Erf", "Erfc", "Erfinv", "EuclideanNorm",
@@ -161,8 +161,9 @@
     "Split", "SplitV", "Sqrt", "SqrtGrad", "Square", "SquaredDifference",
     "Squeeze", "Stack", "StackClose", "StackCloseV2", "StackPop",
     "StackPopV2", "StackPush", "StackPushV2", "StackV2", "Stage",
-    "StageClear", "StagePeek", "StageSize", "StatelessCase",
-    "StatelessIf", "StatelessMultinomial", "StatelessParameterizedTruncatedNormal",
+    "StageClear", "StagePeek", "StageSize", "StatefulPartitionedCall",
+    "StatelessCase", "StatelessIf", "StatelessMultinomial",
+    "StatelessParameterizedTruncatedNormal",
     "StatelessRandomBinomial", "StatelessRandomGetAlg",
     "StatelessRandomGetKeyCounter", "StatelessRandomGetKeyCounterAlg",
     "StatelessRandomNormal", "StatelessRandomNormalV2",

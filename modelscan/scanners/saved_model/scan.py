@@ -59,7 +59,9 @@ class SavedModelScan(ScanBase):
                 data = json.load(f)
                 return data.get("operators", [])
         except (FileNotFoundError, json.JSONDecodeError) as e:
-            logger.warning(f"Could not load safe operators list: {e}. Using empty list.")
+            logger.warning(
+                f"Could not load safe operators list: {e}. Using empty list."
+            )
             return []
 
     # This function checks for malicious operators in both Keras and Tensorflow
@@ -95,7 +97,6 @@ class SavedModelScan(ScanBase):
                 )
             )
         return ScanResults(issues, [], [])
-
 
     @staticmethod
     def name() -> str:
