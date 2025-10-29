@@ -22,20 +22,6 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
         ]:
             return None
 
-        dep_error = self.handle_binary_dependencies()
-        if dep_error:
-            return ScanResults(
-                [],
-                [
-                    DependencyError(
-                        self.name(),
-                        f"To use {self.full_name()}, please install modelscan with tensorflow extras. `pip install 'modelscan[ tensorflow ]'` if you are using pip.",
-                        model,
-                    )
-                ],
-                [],
-            )
-
         try:
             with zipfile.ZipFile(model.get_stream(), "r") as zip:
                 file_names = zip.namelist()

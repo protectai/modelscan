@@ -5,14 +5,14 @@ import logging
 
 from typing import List, Set, Optional, Dict, Any
 
+# Use vendored protobuf files, but prefer tensorflow imports if available
 try:
-    import tensorflow
     from tensorflow.core.protobuf.saved_model_pb2 import SavedModel
     from tensorflow.python.keras.protobuf.saved_metadata_pb2 import SavedMetadata
-
-    tensorflow_installed = True
 except ImportError:
-    tensorflow_installed = False
+    # Fallback to vendored protobuf files
+    from modelscan.vendored.saved_model_pb2 import SavedModel  # type: ignore[attr-defined]
+    from modelscan.vendored.saved_metadata_pb2 import SavedMetadata  # type: ignore[attr-defined]
 
 
 from modelscan.error import (
@@ -37,26 +37,37 @@ class SavedModelScan(ScanBase):
         ]:
             return None
 
-        dep_error = self.handle_binary_dependencies()
-        if dep_error:
-            return ScanResults(
-                [],
-                [
-                    DependencyError(
-                        self.name(),
-                        f"To use {self.full_name()}, please install modelscan with tensorflow extras. `pip install 'modelscan[ tensorflow ]'` if you are using pip.",
-                        model,
-                    )
-                ],
-                [],
-            )
-
         results = self._scan(model)
 
         return self.label_results(results) if results else None
 
     def _scan(self, model: Model) -> Optional[ScanResults]:
         raise NotImplementedError
+
+    @staticmethod
+    def _load_safe_operators() -> List[str]:
+        """Load the static list of safe TensorFlow operators from JSON file."""
+        import os
+        import json
+
+        # Get the path to the data directory
+        data_dir = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+        operators_file = os.path.join(data_dir, "tensorflow_operators.json")
+
+        try:
+            with open(operators_file, "r") as f:
+                data = json.load(f)
+                return [
+                    operator
+                    for operator in list(data.get("operators", []))
+                    if operator[0] != "_"
+                ]
+
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logger.warning(
+                f"Could not load safe operators list: {e}. Using empty list."
+            )
+            return []
 
     # This function checks for malicious operators in both Keras and Tensorflow
     @staticmethod
@@ -67,12 +78,8 @@ class SavedModelScan(ScanBase):
         unsafe_operators: Dict[str, Any],
     ) -> ScanResults:
         issues: List[Issue] = []
-        all_operators = (
-            tensorflow.raw_ops.__dict__.keys() if tensorflow_installed else []
-        )
-        all_safe_operators = [
-            operator for operator in list(all_operators) if operator[0] != "_"
-        ]
+        # Load static list of safe TensorFlow operators
+        all_safe_operators = SavedModelScan._load_safe_operators()
 
         for op in raw_operator:
             if op in unsafe_operators:
@@ -95,13 +102,6 @@ class SavedModelScan(ScanBase):
                 )
             )
         return ScanResults(issues, [], [])
-
-    def handle_binary_dependencies(
-        self, settings: Optional[Dict[str, Any]] = None
-    ) -> Optional[str]:
-        if not tensorflow_installed:
-            return DependencyError.name()
-        return None
 
     @staticmethod
     def name() -> str:
