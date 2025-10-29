@@ -57,8 +57,10 @@ class SavedModelScan(ScanBase):
         try:
             with open(operators_file, "r") as f:
                 data = json.load(f)
-                return  [
-                    operator for operator in list(data.get("operators", [])) if operator[0] != "_"
+                return [
+                    operator
+                    for operator in list(data.get("operators", []))
+                    if operator[0] != "_"
                 ]
 
         except (FileNotFoundError, json.JSONDecodeError) as e:

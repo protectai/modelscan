@@ -20,9 +20,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 
-def update_operators_json(
-    json_path: Path
-) -> None:
+def update_operators_json(json_path: Path) -> None:
     """
     Update the JSON file with new version and operators.
 
@@ -41,13 +39,16 @@ def update_operators_json(
     for op in tf.raw_ops.__dict__.keys():
         operators.append(op)
     data = {}
-    data['description'] = "List of known TensorFlow raw operators from tensorflow.raw_ops.__dict__.keys()"
-    data['version'] = version
-    data['operators'] = operators
+    data["description"] = (
+        "List of known TensorFlow raw operators from tensorflow.raw_ops.__dict__.keys()"
+    )
+    data["version"] = version
+    data["operators"] = operators
 
     # Write updated file with nice formatting
-    with open(json_path, 'w') as f:
+    with open(json_path, "w") as f:
         json.dump(data, f, indent=2)
+
 
 def main():
     """Main entry point."""
