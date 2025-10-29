@@ -7,7 +7,7 @@ env: ## Display information about the current environment.
 
 .PHONY: install-dev
 install-dev:  ## Install all dependencies including dev and test dependencies, as well as pre-commit.
-	poetry install --with dev --with test --extras "tensorflow h5py"
+	poetry install --with dev --with test --extras "h5py"
 	pre-commit install
 
 .PHONY: install
@@ -20,7 +20,7 @@ install-prod:  ## Install prod dependencies.
 
 .PHONY: install-test
 install-test: ## Install test dependencies.
-	poetry install --with test --extras "tensorflow h5py"
+	poetry install --with test --extras "h5py"
 
 .PHONY: clean
 clean:  ## Uninstall modelscan
