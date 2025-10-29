@@ -11,8 +11,8 @@ try:
     from tensorflow.python.keras.protobuf.saved_metadata_pb2 import SavedMetadata
 except ImportError:
     # Fallback to vendored protobuf files
-    from modelscan.vendored.saved_model_pb2 import SavedModel
-    from modelscan.vendored.saved_metadata_pb2 import SavedMetadata
+    from modelscan.vendored.saved_model_pb2 import SavedModel  # type: ignore[attr-defined]
+    from modelscan.vendored.saved_metadata_pb2 import SavedMetadata  # type: ignore[attr-defined]
 
 
 from modelscan.error import (

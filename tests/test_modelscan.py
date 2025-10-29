@@ -8,7 +8,7 @@ import numpy as np
 import os
 import pickle
 import pytest
-import requests
+import requests  # type: ignore[import-untyped]
 import shutil
 import socket
 import subprocess

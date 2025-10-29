@@ -34,11 +34,11 @@ def update_operators_json(json_path: Path) -> None:
         print("Please install TensorFlow: pip install tensorflow")
         sys.exit(1)
 
-    version = tf.__version__
-    operators = []
+    version: str = tf.__version__
+    operators: List[str] = []
     for op in tf.raw_ops.__dict__.keys():
         operators.append(op)
-    data = {}
+    data: Dict[str, Any] = {}
     data["description"] = (
         "List of known TensorFlow raw operators from tensorflow.raw_ops.__dict__.keys()"
     )
@@ -50,7 +50,7 @@ def update_operators_json(json_path: Path) -> None:
         json.dump(data, f, indent=2)
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     # Determine paths
     script_dir = Path(__file__).parent
