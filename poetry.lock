@@ -1993,7 +1993,6 @@ files = [
     {file = "protobuf-6.32.0-py3-none-any.whl", hash = "sha256:ba377e5b67b908c8f3072a57b63e2c6a4cbd18aea4ed98d2584350dbf46f2783"},
     {file = "protobuf-6.32.0.tar.gz", hash = "sha256:a81439049127067fc49ec1d36e25c6ee1d1a2b7be930675f919258d03c04e7d2"},
 ]
-markers = {main = "extra == \"tensorflow\""}
 
 [[package]]
 name = "pygments"
@@ -2294,22 +2293,6 @@ wrapt = ">=1.11.0"
 [package.extras]
 and-cuda = ["nvidia-cublas-cu12 (>=12.5.3.2,<13.0)", "nvidia-cuda-cupti-cu12 (>=12.5.82,<13.0)", "nvidia-cuda-nvcc-cu12 (>=12.5.82,<13.0)", "nvidia-cuda-nvrtc-cu12 (>=12.5.82,<13.0)", "nvidia-cuda-runtime-cu12 (>=12.5.82,<13.0)", "nvidia-cudnn-cu12 (>=9.3.0.75,<10.0)", "nvidia-cufft-cu12 (>=11.2.3.61,<12.0)", "nvidia-curand-cu12 (>=10.3.6.82,<11.0)", "nvidia-cusolver-cu12 (>=11.6.3.83,<12.0)", "nvidia-cusparse-cu12 (>=12.5.1.3,<13.0)", "nvidia-nccl-cu12 (>=2.25.1,<3.0)", "nvidia-nvjitlink-cu12 (>=12.5.82,<13.0)"]
 gcs-filesystem = ["tensorflow-io-gcs-filesystem (>=0.23.1) ; sys_platform != \"win32\" and python_version < \"3.13\"", "tensorflow-io-gcs-filesystem (>=0.23.1) ; sys_platform == \"win32\" and python_version < \"3.12\""]
-
-[[package]]
-name = "tensorflow-protobuf"
-version = "2.11.0"
-description = "Protobuf files from TensorFlow and TensorFlow-Serving"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"tensorflow\""
-files = [
-    {file = "tensorflow-protobuf-2.11.0.tar.gz", hash = "sha256:bb47200e2dff7ec15727524bcb224e409e48fe184ef93993dac00b0f60b99a77"},
-    {file = "tensorflow_protobuf-2.11.0-py3-none-any.whl", hash = "sha256:58bacf0bc336f0b048e64c0ae61482c33bd321d5fe264b6c75b2d54d4c9da093"},
-]
-
-[package.dependencies]
-protobuf = "*"
 
 [[package]]
 name = "termcolor"
@@ -2732,9 +2715,8 @@ propcache = ">=0.2.0"
 
 [extras]
 h5py = ["h5py"]
-tensorflow = ["tensorflow-protobuf"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "7d4ef8230156d84e23abaf2446ff5ae4c528bc69acf3037b30587407eed27fdc"
+content-hash = "c0020f4daeee449b7191a53e0ef7fb80fa1c477f2304073abe1c659068306382"
