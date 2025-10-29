@@ -39,9 +39,9 @@ def update_operators_json(json_path: Path) -> None:
     for op in tf.raw_ops.__dict__.keys():
         operators.append(op)
     data: Dict[str, Any] = {}
-    data["description"] = (
-        "List of known TensorFlow raw operators from tensorflow.raw_ops.__dict__.keys()"
-    )
+    data[
+        "description"
+    ] = "List of known TensorFlow raw operators from tensorflow.raw_ops.__dict__.keys()"
     data["version"] = version
     data["operators"] = operators
 

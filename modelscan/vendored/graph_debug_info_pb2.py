@@ -25,9 +25,9 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     DESCRIPTOR._options = None
     DESCRIPTOR._serialized_options = b"\n\030org.tensorflow.frameworkB\024GraphDebugInfoProtosP\001ZUgithub.com/tensorflow/tensorflow/tensorflow/go/core/protobuf/for_core_protos_go_proto\370\001\001"
     _GRAPHDEBUGINFO_STACKTRACE.fields_by_name["frame_id"]._options = None
-    _GRAPHDEBUGINFO_STACKTRACE.fields_by_name["frame_id"]._serialized_options = (
-        b"\020\001"
-    )
+    _GRAPHDEBUGINFO_STACKTRACE.fields_by_name[
+        "frame_id"
+    ]._serialized_options = b"\020\001"
     _GRAPHDEBUGINFO_FRAMESBYIDENTRY._options = None
     _GRAPHDEBUGINFO_FRAMESBYIDENTRY._serialized_options = b"8\001"
     _GRAPHDEBUGINFO_TRACESBYIDENTRY._options = None
