@@ -1,32 +1,24 @@
 import aiohttp
 import bdb
+import dill
 import http.client
 import importlib
 import io
 import numpy as np
 import os
-from pathlib import Path
 import pickle
-import dill
 import pytest
 import requests
 import shutil
 import socket
 import subprocess
 import sys
-import torch
-import tensorflow as tf
 import tf_keras as keras
-from typing import Any, List, Set, Dict
-from test_utils import (
-    generate_dill_unsafe_file,
-    generate_unsafe_pickle_file,
-    MaliciousModule,
-    PyTorchTestModel,
-)
+import torch
 import zipfile
+from pathlib import Path
+from typing import Any, List, Set, Dict
 
-from modelscan.modelscan import ModelScan
 from modelscan.cli import cli
 from modelscan.issues import (
     Issue,
@@ -34,13 +26,19 @@ from modelscan.issues import (
     IssueSeverity,
     OperatorIssueDetails,
 )
+from modelscan.model import Model
+from modelscan.modelscan import ModelScan
+from modelscan.settings import DEFAULT_SETTINGS
+from modelscan.skip import SkipCategories
 from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
 )
-
-from modelscan.skip import SkipCategories
-from modelscan.settings import DEFAULT_SETTINGS
-from modelscan.model import Model
+from test_utils import (
+    generate_dill_unsafe_file,
+    generate_unsafe_pickle_file,
+    MaliciousModule,
+    PyTorchTestModel,
+)
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS
 
