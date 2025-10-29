@@ -52,12 +52,15 @@ class SavedModelScan(ScanBase):
 
         # Get the path to the data directory
         data_dir = os.path.join(os.path.dirname(__file__), "..", "..", "data")
-        operators_file = os.path.join(data_dir, "tensorflow_safe_operators.json")
+        operators_file = os.path.join(data_dir, "tensorflow_operators.json")
 
         try:
             with open(operators_file, "r") as f:
                 data = json.load(f)
-                return data.get("operators", [])
+                return  [
+                    operator for operator in list(data.get("operators", [])) if operator[0] != "_"
+                ]
+
         except (FileNotFoundError, json.JSONDecodeError) as e:
             logger.warning(
                 f"Could not load safe operators list: {e}. Using empty list."

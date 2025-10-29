@@ -55,4 +55,8 @@ enable = true
 exclude_dirs = ["tests", "notebooks"]
 
 [tool.mypy]
-exclude = ["notebooks"]
+exclude = "vendored|notebooks"
+
+[[tool.mypy.overrides]]
+module = "modelscan.vendored.*"
+ignore_errors = true
