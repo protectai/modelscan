@@ -41,4 +41,7 @@ class ModelScanSkipped:
         self.source = str(source)
 
     def __str__(self) -> str:
-        return f"The following file {self.source} was skipped during a {self.scan_name} scan: \n{self.message}"
+        return (
+            f"The following file {self.source} was skipped with reason "
+            f"{self.category.name} during a {self.scan_name} scan: \n{self.message}"
+        )
