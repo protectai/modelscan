@@ -55,17 +55,15 @@ def _list_globals(
     memo: Dict[Union[int, str], str] = {}
     # Scan the data for pickle buffers, stopping when parsing fails or stops making progress
     last_byte = b"dummy"
+    parsing_pkl_error: Optional[str] = None
     while last_byte != b"":
         # List opcodes
+        ops: List[Tuple[Any, Any, Union[int, None]]] = []
         try:
-            ops: List[Tuple[Any, Any, Union[int, None]]] = list(
-                pickletools.genops(data)
-            )
+            for op in pickletools.genops(data):
+                ops.append(op)
         except Exception as e:
-            # Given we can have multiple pickles in a file, we may have already successfully extracted globals from a valid pickle.
-            # Thus return the already found globals in the error & let the caller decide what to do.
-            globals_opt = globals if len(globals) > 0 else None
-            raise GenOpsError(str(e), globals_opt)
+            parsing_pkl_error = str(e)
 
         last_byte = data.read(1)
         data.seek(-1, 1)
@@ -84,7 +82,7 @@ def _list_globals(
                 globals.add(tuple(op_value.split(" ", 1)))
             elif op_name == "STACK_GLOBAL":
                 values: List[str] = []
-                for offset in range(1, n):
+                for offset in range(1, n + 1):
                     if ops[n - offset][0].name in [
                         "MEMOIZE",
                         "PUT",
@@ -99,6 +97,9 @@ def _list_globals(
                         "UNICODE",
                         "BINUNICODE",
                         "BINUNICODE8",
+                        "STRING",
+                        "BINSTRING",
+                        "SHORT_BINSTRING",
                     ]:
                         logger.debug(
                             "Presence of non-string opcode, categorizing as an unknown dangerous import"
@@ -115,6 +116,11 @@ def _list_globals(
                 globals.add((values[1], values[0]))
         if not multiple_pickles:
             break
+
+        if parsing_pkl_error is not None:
+            # Return the already found globals in the error & let the caller decide what to do.
+            globals_opt = globals if len(globals) > 0 else None
+            raise GenOpsError(parsing_pkl_error, globals_opt)
 
     return globals
 
