@@ -6,10 +6,11 @@ from typing import List, Optional
 
 from modelscan.error import DependencyError, ModelScanScannerError, JsonDecodeError
 from modelscan.skip import ModelScanSkipped, SkipCategories
-from modelscan.scanners.scan import ScanResults
+from modelscan.scanners.scan import ScanResults, ScanBase
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
 from modelscan.model import Model
 from modelscan.settings import SupportedModelFormats
+from modelscan.tools.picklescanner import scan_numpy
 
 
 logger = logging.getLogger("modelscan")
@@ -136,3 +137,51 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
     @staticmethod
     def full_name() -> str:
         return "modelscan.scanners.KerasLambdaDetectScan"
+
+
+class KerasWeightsPickleScan(ScanBase):
+    def scan(self, model: Model) -> Optional[ScanResults]:
+        if SupportedModelFormats.KERAS.value not in [
+            format_property.value for format_property in model.get_context("formats")
+        ]:
+            return None
+
+        try:
+            with zipfile.ZipFile(model.get_stream(), "r") as zip:
+                file_names = zip.namelist()
+                for file_name in file_names:
+                    if file_name == "model.weights.npz":
+                        with zip.open(file_name, "r") as weights_file:
+                            # Create a new Model instance for the weights file
+                            weights_model = Model(
+                                f"{model.get_source()}:{file_name}", weights_file
+                            )
+                            # Use the existing numpy scanner to check for malicious pickle content
+                            results = scan_numpy(
+                                model=weights_model,
+                                settings=self._settings,
+                            )
+                            return self.label_results(results)
+        except zipfile.BadZipFile as e:
+            return ScanResults(
+                [],
+                [],
+                [
+                    ModelScanSkipped(
+                        self.name(),
+                        SkipCategories.BAD_ZIP,
+                        f"Skipping zip file due to error: {e}",
+                        f"{model.get_source()}",
+                    )
+                ],
+            )
+
+        return ScanResults([], [], [])
+
+    @staticmethod
+    def name() -> str:
+        return "keras_weights"
+
+    @staticmethod
+    def full_name() -> str:
+        return "modelscan.scanners.KerasWeightsPickleScan"
