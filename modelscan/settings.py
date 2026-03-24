@@ -42,6 +42,7 @@ DEFAULT_SETTINGS = {
             "supported_extensions": [".pb"],
             "unsafe_keras_operators": {
                 "Lambda": "MEDIUM",
+                "UnsafeModule": "CRITICAL",
             },
         },
         "modelscan.scanners.SavedModelTensorflowOpScan": {

@@ -1,7 +1,7 @@
 import json
 import zipfile
 import logging
-from typing import List, Optional
+from typing import List, Optional, Set
 
 
 from modelscan.error import DependencyError, ModelScanScannerError, JsonDecodeError
@@ -13,6 +13,13 @@ from modelscan.settings import SupportedModelFormats
 
 
 logger = logging.getLogger("modelscan")
+
+# Keras-internal module prefixes that are safe to import
+_SAFE_KERAS_MODULE_PREFIXES = (
+    "keras",
+    "tensorflow",
+    "tf_keras",
+)
 
 
 class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
@@ -78,8 +85,6 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
     def _scan_keras_config_file(self, model: Model) -> ScanResults:
         machine_learning_library_name = "Keras"
 
-        # if self._check_json_data(source, config_file):
-
         try:
             operators_in_model = self._get_keras_operator_names(model)
         except json.JSONDecodeError as e:
@@ -118,16 +123,64 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
 
     def _get_keras_operator_names(self, model: Model) -> List[str]:
         model_config_data = json.load(model.get_stream())
+        operators = []
 
+        # Check for Lambda layers (original check)
         lambda_layers = [
             layer.get("config", {}).get("function", {})
             for layer in model_config_data.get("config", {}).get("layers", {})
             if layer.get("class_name", {}) == "Lambda"
         ]
         if lambda_layers:
-            return ["Lambda"] * len(lambda_layers)
+            operators.extend(["Lambda"] * len(lambda_layers))
 
-        return []
+        # Check for unsafe module references in the entire config tree
+        unsafe_modules = self._extract_unsafe_modules(model_config_data)
+        for module_ref in unsafe_modules:
+            operators.append(f"UnsafeModule:{module_ref}")
+
+        return operators
+
+    @staticmethod
+    def _extract_unsafe_modules(config: dict, visited: Optional[Set[int]] = None) -> List[str]:
+        """Recursively extract non-Keras module references from config tree.
+
+        Keras config.json uses module/class_name pairs throughout the config
+        hierarchy (layers, initializers, regularizers, constraints, dtype
+        policies). Any module outside the Keras/TensorFlow namespace could
+        be used for arbitrary code execution via importlib on load.
+        """
+        if visited is None:
+            visited = set()
+
+        obj_id = id(config)
+        if obj_id in visited:
+            return []
+        visited.add(obj_id)
+
+        unsafe = []
+
+        if isinstance(config, dict):
+            module = config.get("module")
+            if isinstance(module, str) and module:
+                if not module.startswith(_SAFE_KERAS_MODULE_PREFIXES):
+                    class_name = config.get("class_name", "unknown")
+                    unsafe.append(f"{module}.{class_name}")
+
+            for value in config.values():
+                if isinstance(value, (dict, list)):
+                    unsafe.extend(
+                        KerasLambdaDetectScan._extract_unsafe_modules(value, visited)
+                    )
+
+        elif isinstance(config, list):
+            for item in config:
+                if isinstance(item, (dict, list)):
+                    unsafe.extend(
+                        KerasLambdaDetectScan._extract_unsafe_modules(item, visited)
+                    )
+
+        return unsafe
 
     @staticmethod
     def name() -> str:
