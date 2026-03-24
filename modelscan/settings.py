@@ -50,6 +50,16 @@ DEFAULT_SETTINGS = {
             "unsafe_tf_operators": {
                 "ReadFile": "HIGH",
                 "WriteFile": "HIGH",
+                "MatchingFiles": "HIGH",
+                "WholeFileReader": "HIGH",
+                "WholeFileReaderV2": "HIGH",
+                "InitializeTableFromTextFile": "MEDIUM",
+                "InitializeTableFromTextFileV2": "MEDIUM",
+                "LMDBReader": "MEDIUM",
+                "PyFunc": "CRITICAL",
+                "PyFuncStateless": "CRITICAL",
+                "EagerPyFunc": "CRITICAL",
+                "FileSystemSetConfiguration": "MEDIUM",
             },
         },
         "modelscan.scanners.NumpyUnsafeOpScan": {
