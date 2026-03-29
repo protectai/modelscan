@@ -128,6 +128,14 @@ DEFAULT_SETTINGS = {
             "_pickle": "*",
             "bdb": "*",
             "pdb": "*",
+            "ctypes": "*",  # ctypes.CDLL loads DLLs, executes DllMain, provides system()
+            "ctypes.util": "*",  # ctypes utility functions for finding libraries
+            "signal": "*",  # Can send signals to crash the process
+            "_signal": "*",  # C-level signal module (pickle serializes signal.raise_signal as _signal)
+            "http": "*",  # http.client.HTTPConnection enables network exfiltration
+            "http.client": "*",  # Direct network access to attacker servers
+            "urllib": "*",  # URL-based data exfiltration
+            "urllib.request": "*",
             "shutil": "*",
             "asyncio": "*",
         },
