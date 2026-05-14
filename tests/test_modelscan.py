@@ -1,5 +1,6 @@
 import aiohttp
 import bdb
+import gzip
 import http.client
 import importlib
 import io
@@ -283,6 +284,10 @@ def file_path(tmp_path_factory: Any) -> Any:
     initialize_pickle_file(f"{tmp}/data/malicious8.pkl", Malicious7(), 4)
     initialize_pickle_file(f"{tmp}/data/malicious9.pkl", Malicious8(), 4)
     initialize_pickle_file(f"{tmp}/data/malicious15.pkl", Malicious15(), 4)
+    initialize_data_file(
+        f"{tmp}/data/malicious16.joblib.gz",
+        gzip.compress(pickle.dumps(Malicious2(), protocol=4)),
+    )
 
     # Malicious Pickle from Capture-the-Flag challenge 'Misc/Safe Pickle' at https://imaginaryctf.org/Challenges
     # GitHub Issue: https://github.com/mmaitre314/picklescan/issues/22
@@ -667,6 +672,25 @@ def test_scan_file_path(file_path: Any) -> None:
     results = malicious0.scan(Path(f"{file_path}/data/malicious0.pkl"))
     compare_results(malicious0.issues.all_issues, expected_malicious0)
     assert results["summary"]["scanned"]["scanned_files"] == ["malicious0.pkl"]
+    assert results["summary"]["skipped"]["skipped_files"] == []
+    assert results["errors"] == []
+
+    compressed_joblib = ModelScan()
+    expected_compressed_joblib = {
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{file_path}/data/malicious16.joblib.gz",
+            ),
+        ),
+    }
+    results = compressed_joblib.scan(Path(f"{file_path}/data/malicious16.joblib.gz"))
+    compare_results(compressed_joblib.issues.all_issues, expected_compressed_joblib)
+    assert results["summary"]["scanned"]["scanned_files"] == ["malicious16.joblib.gz"]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
 

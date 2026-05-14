@@ -61,7 +61,7 @@ class ModelScan:
                 and self._settings["scanners"][scanner_path]["enabled"]
             ):
                 try:
-                    (modulename, classname) = scanner_path.rsplit(".", 1)
+                    modulename, classname = scanner_path.rsplit(".", 1)
                     imported_module = importlib.import_module(
                         name=modulename, package=classname
                     )
@@ -302,13 +302,17 @@ class ModelScan:
 
     def is_compatible(self, path: str) -> bool:
         # Determines whether a file path is compatible with any of the available scanners
-        if Path(path).suffix in self._settings["supported_zip_extensions"]:
+        if any(
+            path.endswith(extension)
+            for extension in self._settings["supported_zip_extensions"]
+        ):
             return True
         for scanner_path, scanner_settings in self._settings["scanners"].items():
-            if (
-                "supported_extensions" in scanner_settings.keys()
-                and Path(path).suffix
-                in self._settings["scanners"][scanner_path]["supported_extensions"]
+            if "supported_extensions" in scanner_settings.keys() and any(
+                path.endswith(extension)
+                for extension in self._settings["scanners"][scanner_path][
+                    "supported_extensions"
+                ]
             ):
                 return True
 
@@ -320,7 +324,7 @@ class ModelScan:
 
         scan_report = None
         try:
-            (modulename, classname) = reporting_module.rsplit(".", 1)
+            modulename, classname = reporting_module.rsplit(".", 1)
             imported_module = importlib.import_module(
                 name=modulename, package=classname
             )
