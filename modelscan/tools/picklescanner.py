@@ -1,4 +1,8 @@
 import logging
+import bz2
+import gzip
+import io
+import lzma
 import pickletools  # nosec
 from tarfile import TarError
 from typing import IO, Any, Dict, List, Set, Tuple, Union, Optional
@@ -14,6 +18,13 @@ from modelscan.model import Model
 logger = logging.getLogger("modelscan")
 
 from .utils import MAGIC_NUMBER, _should_read_directly, get_magic_number
+
+COMPRESSED_PICKLE_SUFFIXES = {
+    ".bz2": bz2.decompress,
+    ".gz": gzip.decompress,
+    ".lzma": lzma.decompress,
+    ".xz": lzma.decompress,
+}
 
 
 class GenOpsError(Exception):
@@ -128,8 +139,26 @@ def scan_pickle_bytes(
 ) -> ScanResults:
     """Disassemble a Pickle stream and report issues"""
     issues: List[Issue] = []
+    stream = model.get_stream(offset)
+    decompress = COMPRESSED_PICKLE_SUFFIXES.get(model.get_source().suffix)
+    if decompress is not None:
+        try:
+            stream = io.BytesIO(decompress(stream.read()))
+        except Exception as e:
+            return ScanResults(
+                issues,
+                [
+                    PickleGenopsError(
+                        scan_name,
+                        f"Decompression error: {e}",
+                        model,
+                    )
+                ],
+                [],
+            )
+
     try:
-        raw_globals = _list_globals(model.get_stream(offset), multiple_pickles)
+        raw_globals = _list_globals(stream, multiple_pickles)
     except GenOpsError as e:
         if e.globals is not None:
             return _build_scan_result_from_raw_globals(
@@ -228,8 +257,22 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
         version = np.lib.format.read_magic(stream)  # type: ignore[no-untyped-call]
-        np.lib.format._check_version(version)  # type: ignore[attr-defined]
-        _, _, dtype = np.lib.format._read_array_header(stream, version)  # type: ignore[attr-defined]
+        if version == (1, 0):
+            _, _, dtype = np.lib.format.read_array_header_1_0(stream)
+        elif version == (2, 0):
+            _, _, dtype = np.lib.format.read_array_header_2_0(stream)
+        else:
+            return ScanResults(
+                [],
+                [
+                    PickleGenopsError(
+                        scan_name,
+                        f"Unsupported numpy file format version: {version}",
+                        model,
+                    )
+                ],
+                [],
+            )
 
         if dtype.hasobject:
             return scan_pickle_bytes(model, settings, scan_name, True, stream.tell())
