@@ -130,6 +130,9 @@ DEFAULT_SETTINGS = {
             "pdb": "*",
             "shutil": "*",
             "asyncio": "*",
+            "mailcap": [
+                "findmatch",  # mailcap.findmatch executes matching entry test commands via os.system()
+            ],
         },
         "HIGH": {
             "webbrowser": "*",  # Includes webbrowser.open()
