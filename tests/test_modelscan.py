@@ -1644,3 +1644,56 @@ def test_main_defaultgroup(file_path: Any) -> None:
         pass
     finally:
         sys.argv = argv
+
+
+def edp_invalid_memo_binget_gen() -> bytes:
+    """Construct a pickle that exercises the EDP / invalid-memo-reference class.
+
+    The stream first invokes ``os.system`` via ``GLOBAL`` + ``REDUCE`` (the
+    unsafe payload), then follows it with a ``STACK_GLOBAL`` whose operands
+    resolve via ``BINGET`` into memo slots that were never PUT. A scanner
+    that aborts on the resulting ``KeyError`` during ``STACK_GLOBAL``
+    analysis would miss the ``os.system`` call entirely, even though that
+    call appears earlier in the byte stream.
+
+    The demo command is the benign string ``"echo pwned"`` to keep the
+    fixture self-contained and non-destructive.
+
+    Refs: Issue #338 (Invalid Memo Reference category); GHSA-9gvj-pp9x-gcfr.
+    """
+    p = pickle.PROTO + b"\x05"
+    p += pickle.GLOBAL + b"os\nsystem\n"
+    p += pickle.UNICODE + b"echo pwned\n"
+    p += pickle.TUPLE1
+    p += pickle.REDUCE
+    # Two BINGET opcodes referencing memo slots that were never PUT;
+    # the subsequent STACK_GLOBAL would try to resolve them.
+    p += pickle.BINGET + b"\x07"
+    p += pickle.BINGET + b"\x08"
+    p += pickle.STACK_GLOBAL
+    p += pickle.STOP
+    return p
+
+
+def test_scan_picklescanner_resilient_to_invalid_memo_binget(tmp_path: Any) -> None:
+    """The pickle scanner must report unsafe globals seen before a malformed
+    BINGET/GET memo reference, rather than aborting analysis on the
+    KeyError.
+
+    Regression for the EDP / Invalid Memo Reference class
+    (refs Issue #338; GHSA-9gvj-pp9x-gcfr). The fixture contains an
+    ``os.system`` call followed by a ``STACK_GLOBAL`` whose operands point
+    at memo slots that were never PUT; without the fix in
+    ``picklescanner._list_globals``, the scanner aborts before flagging
+    the ``os.system`` global.
+    """
+    test_file = tmp_path / "edp_invalid_memo_binget.pkl"
+    test_file.write_bytes(edp_invalid_memo_binget_gen())
+
+    ms = ModelScan()
+    ms.scan(str(test_file))
+
+    assert len(ms.issues.all_issues) > 0, (
+        "modelscan must flag the os.system unsafe global appearing before the "
+        "malformed BINGET, even when STACK_GLOBAL resolution fails."
+    )
