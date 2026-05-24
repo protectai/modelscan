@@ -93,7 +93,17 @@ def _list_globals(
                     ]:
                         continue
                     if ops[n - offset][0].name in ["GET", "BINGET", "LONG_BINGET"]:
-                        values.append(memo[int(ops[n - offset][1])])
+                        memo_key = int(ops[n - offset][1])
+                        if memo_key in memo:
+                            values.append(memo[memo_key])
+                        else:
+                            logger.debug(
+                                "GET/BINGET at position %s references missing memo "
+                                "index %s; categorizing as unknown.",
+                                n - offset,
+                                memo_key,
+                            )
+                            values.append("unknown")
                     elif ops[n - offset][0].name not in [
                         "SHORT_BINUNICODE",
                         "UNICODE",
