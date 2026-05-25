@@ -75,12 +75,12 @@ DEFAULT_SETTINGS = {
     "middlewares": {
         "modelscan.middlewares.FormatViaExtensionMiddleware": {
             "formats": {
-                SupportedModelFormats.TENSORFLOW: [".pb"],
-                SupportedModelFormats.KERAS_H5: [".h5"],
-                SupportedModelFormats.KERAS: [".keras"],
-                SupportedModelFormats.NUMPY: [".npy"],
-                SupportedModelFormats.PYTORCH: [".bin", ".pt", ".pth", ".ckpt"],
-                SupportedModelFormats.PICKLE: [
+                SupportedModelFormats.TENSORFLOW.value: [".pb"],
+                SupportedModelFormats.KERAS_H5.value: [".h5"],
+                SupportedModelFormats.KERAS.value: [".keras"],
+                SupportedModelFormats.NUMPY.value: [".npy"],
+                SupportedModelFormats.PYTORCH.value: [".bin", ".pt", ".pth", ".ckpt"],
+                SupportedModelFormats.PICKLE.value: [
                     ".pkl",
                     ".pickle",
                     ".joblib",
