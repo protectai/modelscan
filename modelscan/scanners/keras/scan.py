@@ -10,6 +10,7 @@ from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
 from modelscan.model import Model
 from modelscan.settings import SupportedModelFormats
+from modelscan.scanners.keras_utils import get_keras_layer_names
 
 
 logger = logging.getLogger("modelscan")
@@ -119,15 +120,11 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
     def _get_keras_operator_names(self, model: Model) -> List[str]:
         model_config_data = json.load(model.get_stream())
 
-        lambda_layers = [
-            layer.get("config", {}).get("function", {})
-            for layer in model_config_data.get("config", {}).get("layers", {})
-            if layer.get("class_name", {}) == "Lambda"
+        return [
+            layer_name
+            for layer_name in get_keras_layer_names(model_config_data)
+            if layer_name == "Lambda"
         ]
-        if lambda_layers:
-            return ["Lambda"] * len(lambda_layers)
-
-        return []
 
     @staticmethod
     def name() -> str:
