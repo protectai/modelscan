@@ -19,6 +19,7 @@ from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
 from modelscan.model import Model
 from modelscan.settings import SupportedModelFormats
+from modelscan.scanners.keras_utils import get_keras_layer_names
 
 logger = logging.getLogger("modelscan")
 
@@ -111,23 +112,18 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                     return None
 
                 model_config = json.loads(model_hdf5.attrs.get("model_config", {}))
-                layers = model_config.get("config", {}).get("layers", {})
-                lambda_layers = []
-                for layer in layers:
-                    if layer.get("class_name", {}) == "Lambda":
-                        lambda_layers.append(
-                            layer.get("config", {}).get("function", {})
-                        )
+                lambda_layers = [
+                    layer_name
+                    for layer_name in get_keras_layer_names(model_config)
+                    if layer_name == "Lambda"
+                ]
             except json.JSONDecodeError as e:
                 logger.error(
                     f"Not a valid JSON data from source: {model.get_source()}, error: {e}"
                 )
                 return ["JSONDecodeError"]
 
-        if lambda_layers:
-            return ["Lambda"] * len(lambda_layers)
-
-        return []
+        return lambda_layers
 
     def handle_binary_dependencies(
         self, settings: Optional[Dict[str, Any]] = None
