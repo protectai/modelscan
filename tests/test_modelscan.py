@@ -39,7 +39,7 @@ from modelscan.tools.picklescanner import (
 )
 
 from modelscan.skip import SkipCategories
-from modelscan.settings import DEFAULT_SETTINGS
+from modelscan.settings import DEFAULT_SETTINGS, SupportedModelFormats
 from modelscan.model import Model
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS
@@ -604,6 +604,24 @@ def test_scan_numpy(numpy_file_path: Any) -> None:
     assert results["summary"]["scanned"]["scanned_files"] == ["unsafe_numpy.npy"]
     assert results["summary"]["skipped"]["skipped_files"] == []
     assert results["errors"] == []
+
+
+def test_scan_numpy_reports_dependency_error_when_numpy_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from modelscan.scanners.pickle import scan as pickle_scan
+
+    monkeypatch.setattr(pickle_scan, "numpy_installed", False)
+
+    model = Model("missing_numpy.npy", io.BytesIO(b""))
+    model.set_context("formats", [SupportedModelFormats.NUMPY])
+    scanner = pickle_scan.NumpyUnsafeOpScan(settings)
+
+    results = scanner.scan(model)
+
+    assert results is not None
+    assert [error.to_dict()["category"] for error in results.errors] == ["DEPENDENCY"]
+    assert "modelscan[ numpy ]" in results.errors[0].message
 
 
 def test_scan_file_path(file_path: Any) -> None:
