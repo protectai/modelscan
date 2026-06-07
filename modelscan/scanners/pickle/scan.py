@@ -1,9 +1,11 @@
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
+from modelscan.error import DependencyError
 from modelscan.scanners.scan import ScanBase, ScanResults
 from modelscan.tools.utils import _is_zipfile
 from modelscan.tools.picklescanner import (
+    numpy_installed,
     scan_numpy,
     scan_pickle_bytes,
     scan_pytorch,
@@ -53,6 +55,20 @@ class NumpyUnsafeOpScan(ScanBase):
         ]:
             return None
 
+        dep_error = self.handle_binary_dependencies()
+        if dep_error:
+            return ScanResults(
+                [],
+                [
+                    DependencyError(
+                        self.name(),
+                        f"To use {self.full_name()}, please install modelscan with numpy extras. `pip install 'modelscan[ numpy ]'` if you are using pip.",
+                        model,
+                    )
+                ],
+                [],
+            )
+
         results = scan_numpy(
             model=model,
             settings=self._settings,
@@ -67,6 +83,13 @@ class NumpyUnsafeOpScan(ScanBase):
     @staticmethod
     def full_name() -> str:
         return "modelscan.scanners.NumpyUnsafeOpScan"
+
+    def handle_binary_dependencies(
+        self, settings: Optional[Dict[str, Any]] = None
+    ) -> Optional[str]:
+        if not numpy_installed:
+            return DependencyError.name()
+        return None
 
 
 class PickleUnsafeOpScan(ScanBase):
