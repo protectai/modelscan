@@ -197,7 +197,7 @@ class ModelScan:
                 )
                 if scan_results.errors:
                     self._errors.extend(scan_results.errors)
-                elif scan_results.issues:
+                if scan_results.issues:
                     self._scanned.append(str(model.get_source()))
                     self._issues.add_issues(scan_results.issues)
 

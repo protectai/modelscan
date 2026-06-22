@@ -606,6 +606,54 @@ def test_scan_numpy(numpy_file_path: Any) -> None:
     assert results["errors"] == []
 
 
+def test_pickle_parse_error_without_dangerous_globals_fails_closed() -> None:
+    """Verify hybrid joblib parse errors without pre-error dangerous globals fail closed."""
+    # Create a hybrid stream: valid pickle opcodes followed by binary junk
+    import pickle
+    import io
+    
+    safe_pickle = pickle.dumps(["a", "b", "c"], protocol=4)
+    hybrid_stream = safe_pickle + b"\xff\xff\xff\xfe\xfd\xfc"  # Invalid opcodes
+    
+    model = Model("test_hybrid.joblib", io.BytesIO(hybrid_stream))
+    results = scan_pickle_bytes(model, settings)
+    # Should report sentinel unknown.pickle_parsing_error since no real dangerous globals
+    assert len(results.issues) >= 1
+    assert any(
+        issue.details.operator == "pickle_parsing_error" 
+        for issue in results.issues
+    )
+
+
+def test_pickle_parse_error_with_dangerous_globals_no_sentinel() -> None:
+    """Verify parse errors with already-detected dangerous globals do NOT add duplicate sentinel."""
+    import pickle
+    import io
+    
+    class Evil:
+        def __reduce__(self):
+            return (eval, ("1+1",))
+    
+    # Dangerous pickle followed by junk that triggers parse error
+    dangerous_pickle = pickle.dumps(Evil(), protocol=4)
+    hybrid_stream = dangerous_pickle + b"\xff\xff\xff\xfe\xfd\xfc"
+    
+    model = Model("test_dangerous_hybrid.joblib", io.BytesIO(hybrid_stream))
+    results = scan_pickle_bytes(model, settings)
+    # Should report eval, not add duplicate sentinel
+    assert len(results.issues) >= 1
+    assert any(
+        issue.details.operator == "eval" and issue.details.module == "builtins"
+        for issue in results.issues
+    )
+    # Should NOT have pickle_parsing_error sentinel if real dangerous globals found
+    sentinel_count = sum(
+        1 for issue in results.issues 
+        if issue.details.operator == "pickle_parsing_error"
+    )
+    assert sentinel_count == 0
+
+
 def test_scan_file_path(file_path: Any) -> None:
     benign_pickle = ModelScan()
     results = benign_pickle.scan(Path(f"{file_path}/data/benign0_v3.pkl"))

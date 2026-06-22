@@ -16,6 +16,12 @@ logger = logging.getLogger("modelscan")
 from .utils import MAGIC_NUMBER, _should_read_directly, get_magic_number
 
 
+def _source_looks_like_pickle_stream(model: Model) -> bool:
+    source = str(model.get_source()).lower()
+    source_leaf = source.split(":")[-1]
+    return source_leaf.endswith((".pkl", ".pickle", ".joblib", ".dat", ".data", ".npy"))
+
+
 class GenOpsError(Exception):
     def __init__(self, msg: str, globals: Optional[Set[Tuple[str, str]]]):
         self.msg = msg
@@ -57,15 +63,13 @@ def _list_globals(
     last_byte = b"dummy"
     while last_byte != b"":
         # List opcodes
+        ops: List[Tuple[Any, Any, Union[int, None]]] = []
+        parsing_error: Optional[Exception] = None
         try:
-            ops: List[Tuple[Any, Any, Union[int, None]]] = list(
-                pickletools.genops(data)
-            )
+            for op in pickletools.genops(data):
+                ops.append(op)
         except Exception as e:
-            # Given we can have multiple pickles in a file, we may have already successfully extracted globals from a valid pickle.
-            # Thus return the already found globals in the error & let the caller decide what to do.
-            globals_opt = globals if len(globals) > 0 else None
-            raise GenOpsError(str(e), globals_opt)
+            parsing_error = e
 
         last_byte = data.read(1)
         data.seek(-1, 1)
@@ -113,6 +117,12 @@ def _list_globals(
                         f"Found {len(values)} values for STACK_GLOBAL at position {n} instead of 2."
                     )
                 globals.add((values[1], values[0]))
+
+        if parsing_error is not None:
+            # A partial parse means we reached executable pickle opcodes before hitting malformed bytes.
+            # Preserve those globals and let the caller mark the file unsafe.
+            globals_opt = globals if len(globals) > 0 else None
+            raise GenOpsError(str(parsing_error), globals_opt)
         if not multiple_pickles:
             break
 
@@ -132,10 +142,45 @@ def scan_pickle_bytes(
         raw_globals = _list_globals(model.get_stream(offset), multiple_pickles)
     except GenOpsError as e:
         if e.globals is not None:
-            return _build_scan_result_from_raw_globals(
+            results = _build_scan_result_from_raw_globals(
                 e.globals,
                 model,
                 settings,
+            )
+            if len(results.issues) == 0:
+                results = _build_scan_result_from_raw_globals(
+                    {("unknown", "pickle_parsing_error")},
+                    model,
+                    settings,
+                )
+            return ScanResults(
+                results.issues,
+                [
+                    PickleGenopsError(
+                        scan_name,
+                        f"Parsing error: {e}",
+                        model,
+                    )
+                ],
+                [],
+            )
+        if _source_looks_like_pickle_stream(model):
+            raw_globals_with_parse_error = {("unknown", "pickle_parsing_error")}
+            results = _build_scan_result_from_raw_globals(
+                raw_globals_with_parse_error,
+                model,
+                settings,
+            )
+            return ScanResults(
+                results.issues,
+                [
+                    PickleGenopsError(
+                        scan_name,
+                        f"Parsing error: {e}",
+                        model,
+                    )
+                ],
+                [],
             )
         return ScanResults(
             issues,
