@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Set
 
 
 try:
@@ -21,6 +21,13 @@ from modelscan.model import Model
 from modelscan.settings import SupportedModelFormats
 
 logger = logging.getLogger("modelscan")
+
+# Keras-internal module prefixes that are safe to import on model load.
+_SAFE_KERAS_MODULE_PREFIXES = (
+    "keras",
+    "tensorflow",
+    "tf_keras",
+)
 
 
 class H5LambdaDetectScan(SavedModelLambdaDetectScan):
@@ -124,10 +131,65 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
                 )
                 return ["JSONDecodeError"]
 
-        if lambda_layers:
-            return ["Lambda"] * len(lambda_layers)
+        operators: List[Any] = []
 
-        return []
+        if lambda_layers:
+            operators.extend(["Lambda"] * len(lambda_layers))
+
+        # Lambda layers are not the only code-execution path in an H5
+        # model_config. The config tree uses module/class_name pairs throughout
+        # (initializers, regularizers, constraints, dtype policies, custom
+        # layers) which Keras resolves via importlib on load. None of these were
+        # inspected, so a non-Keras module reference (e.g. builtins.exec hidden
+        # in a kernel_initializer) was reported as "0 issues" — a false
+        # negative. Recurse the whole config tree and flag any reference outside
+        # the Keras/TensorFlow namespace.
+        for module_ref in self._extract_unsafe_modules(model_config):
+            operators.append(f"UnsafeModule:{module_ref}")
+
+        return operators
+
+    @staticmethod
+    def _extract_unsafe_modules(
+        config: Any, visited: Optional[Set[int]] = None
+    ) -> List[str]:
+        """Recursively collect non-Keras module references from a config tree.
+
+        Returns a list of ``"<module>.<class_name>"`` strings for every dict in
+        the tree whose ``module`` field falls outside the safe Keras/TensorFlow
+        namespace. Cycles are guarded via an id() visited-set.
+        """
+        if visited is None:
+            visited = set()
+
+        obj_id = id(config)
+        if obj_id in visited:
+            return []
+        visited.add(obj_id)
+
+        unsafe: List[str] = []
+
+        if isinstance(config, dict):
+            module = config.get("module")
+            if isinstance(module, str) and module:
+                if not module.startswith(_SAFE_KERAS_MODULE_PREFIXES):
+                    class_name = config.get("class_name", "unknown")
+                    unsafe.append(f"{module}.{class_name}")
+
+            for value in config.values():
+                if isinstance(value, (dict, list)):
+                    unsafe.extend(
+                        H5LambdaDetectScan._extract_unsafe_modules(value, visited)
+                    )
+
+        elif isinstance(config, list):
+            for item in config:
+                if isinstance(item, (dict, list)):
+                    unsafe.extend(
+                        H5LambdaDetectScan._extract_unsafe_modules(item, visited)
+                    )
+
+        return unsafe
 
     def handle_binary_dependencies(
         self, settings: Optional[Dict[str, Any]] = None
