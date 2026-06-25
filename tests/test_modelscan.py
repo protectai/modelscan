@@ -145,6 +145,39 @@ def malicious13_gen() -> bytes:
     return p
 
 
+def malicious_transformers_gen_v2() -> bytes:
+    # Protocol 2, GLOBAL opcode path (pickle v0-v3 scanner branch).
+    # transformers.dynamic_module_utils was absent from unsafe_globals, so
+    # this gadget passed ModelScan with 0 issues before the fix.
+    return (
+        pickle.PROTO + b"\x02"
+        + pickle.GLOBAL
+        + b"transformers.dynamic_module_utils\nget_class_from_dynamic_module\n"
+        + pickle.MARK
+        + pickle.TUPLE
+        + pickle.REDUCE
+        + pickle.STOP
+    )
+
+
+def malicious_transformers_gen_v4() -> bytes:
+    # Protocol 4, STACK_GLOBAL opcode path (pickle v4 scanner branch).
+    mod = b"transformers.dynamic_module_utils"
+    name = b"get_class_from_dynamic_module"
+    # frame payload: SHORT_BINUNICODE(mod) + SHORT_BINUNICODE(name) + STACK_GLOBAL + MARK + TUPLE + REDUCE + STOP
+    frame_len = (1 + 1 + len(mod)) + (1 + 1 + len(name)) + 5
+    p = pickle.PROTO + b"\x04"
+    p += pickle.FRAME + frame_len.to_bytes(8, "little")
+    p += pickle.SHORT_BINUNICODE + bytes([len(mod)]) + mod
+    p += pickle.SHORT_BINUNICODE + bytes([len(name)]) + name
+    p += pickle.STACK_GLOBAL
+    p += pickle.MARK
+    p += pickle.TUPLE
+    p += pickle.REDUCE
+    p += pickle.STOP
+    return p
+
+
 def malicious14_gen() -> bytes:
     p = b"".join(
         [
@@ -331,6 +364,13 @@ def file_path(tmp_path_factory: Any) -> Any:
 
     initialize_data_file(f"{tmp}/data/malicious14.pkl", malicious14_gen())
 
+    initialize_data_file(
+        f"{tmp}/data/malicious_transformers_v2.pkl", malicious_transformers_gen_v2()
+    )
+    initialize_data_file(
+        f"{tmp}/data/malicious_transformers_v4.pkl", malicious_transformers_gen_v4()
+    )
+
     shutil.copy(
         f"{os.path.dirname(__file__)}/data/password_protected.zip", f"{tmp}/data/"
     )
@@ -483,6 +523,27 @@ def test_scan_pickle_bytes() -> None:
 
     model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious1())))
     assert scan_pickle_bytes(model, settings).issues == expected
+
+
+@pytest.mark.parametrize(
+    "pkl_bytes,filename",
+    [
+        (malicious_transformers_gen_v2(), "malicious_transformers_v2.pkl"),
+        (malicious_transformers_gen_v4(), "malicious_transformers_v4.pkl"),
+    ],
+)
+def test_scan_pickle_transformers_gadget(pkl_bytes: bytes, filename: str) -> None:
+    # transformers.dynamic_module_utils.get_class_from_dynamic_module downloads
+    # and executes arbitrary Python from HuggingFace Hub (or local path) at
+    # unpickle time without a trust_remote_code consent gate. Both the GLOBAL
+    # opcode (v2) and STACK_GLOBAL opcode (v4) paths must be flagged CRITICAL.
+    model = Model(filename, io.BytesIO(pkl_bytes))
+    issues = scan_pickle_bytes(model, settings).issues
+    assert len(issues) == 1, f"expected 1 CRITICAL issue, got {issues}"
+    assert issues[0].code == IssueCode.UNSAFE_OPERATOR
+    assert issues[0].severity == IssueSeverity.CRITICAL
+    assert issues[0].details.module == "transformers.dynamic_module_utils"
+    assert issues[0].details.operator == "get_class_from_dynamic_module"
 
 
 def test_scan_zip(zip_file_path: Any) -> None:

@@ -130,6 +130,7 @@ DEFAULT_SETTINGS = {
             "pdb": "*",
             "shutil": "*",
             "asyncio": "*",
+            "transformers.dynamic_module_utils": "*",  # Downloads and executes arbitrary Python from HuggingFace Hub or local path at unpickle time; callable directly from a pickle gadget without trust_remote_code consent gate
         },
         "HIGH": {
             "webbrowser": "*",  # Includes webbrowser.open()
