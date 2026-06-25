@@ -175,6 +175,25 @@ def malicious14_gen() -> bytes:
     return p
 
 
+
+
+def malicious_transformers_gen_v2() -> bytes:
+    """GLOBAL opcode (protocol 2) using transformers.dynamic_module_utils."""
+    p = pickle.PROTO + b"\x02"
+    p += pickle.GLOBAL + b"transformers.dynamic_module_utils\nget_class_from_dynamic_module\n"
+    p += pickle.STOP
+    return p
+
+
+def malicious_transformers_gen_v4() -> bytes:
+    """STACK_GLOBAL opcode (protocol 4) using transformers.dynamic_module_utils."""
+    p = pickle.PROTO + b"\x04"
+    p += pickle.UNICODE + b"transformers.dynamic_module_utils\n"
+    p += pickle.UNICODE + b"get_class_from_dynamic_module\n"
+    p += pickle.STACK_GLOBAL
+    p += pickle.STOP
+    return p
+
 def initialize_pickle_file(path: str, obj: Any, version: int) -> None:
     if not os.path.exists(path):
         with open(path, "wb") as file:
@@ -330,6 +349,9 @@ def file_path(tmp_path_factory: Any) -> Any:
     initialize_data_file(f"{tmp}/data/malicious13.pkl", malicious13_gen())
 
     initialize_data_file(f"{tmp}/data/malicious14.pkl", malicious14_gen())
+
+    initialize_data_file(f"{tmp}/data/malicious_transformers_v2.pkl", malicious_transformers_gen_v2())
+    initialize_data_file(f"{tmp}/data/malicious_transformers_v4.pkl", malicious_transformers_gen_v4())
 
     shutil.copy(
         f"{os.path.dirname(__file__)}/data/password_protected.zip", f"{tmp}/data/"
@@ -1046,6 +1068,40 @@ def test_scan_pickle_operators(file_path: Any) -> None:
         expected_malicious15, key=str
     )
 
+
+
+def test_scan_pickle_transformers_gadget(file_path: Any) -> None:
+    """Test that transformers.dynamic_module_utils gadgets are detected in both GLOBAL and STACK_GLOBAL pickle protocols."""
+    expected_v2 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                'transformers.dynamic_module_utils',
+                'get_class_from_dynamic_module',
+                IssueSeverity.CRITICAL,
+                f'{file_path}/data/malicious_transformers_v2.pkl',
+            ),
+        )
+    ]
+    expected_v4 = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                'transformers.dynamic_module_utils',
+                'get_class_from_dynamic_module',
+                IssueSeverity.CRITICAL,
+                f'{file_path}/data/malicious_transformers_v4.pkl',
+            ),
+        )
+    ]
+    ms_v2 = ModelScan()
+    ms_v4 = ModelScan()
+    ms_v2.scan(Path(f'{file_path}/data/malicious_transformers_v2.pkl'))
+    ms_v4.scan(Path(f'{file_path}/data/malicious_transformers_v4.pkl'))
+    assert ms_v2.issues.all_issues == expected_v2
+    assert ms_v4.issues.all_issues == expected_v4
 
 def test_scan_directory_path(file_path: str) -> None:
     expected = {
