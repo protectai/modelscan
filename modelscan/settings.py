@@ -130,6 +130,7 @@ DEFAULT_SETTINGS = {
             "pdb": "*",
             "shutil": "*",
             "asyncio": "*",
+            "transformers.dynamic_module_utils": "*",
         },
         "HIGH": {
             "webbrowser": "*",  # Includes webbrowser.open()
