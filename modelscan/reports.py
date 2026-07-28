@@ -60,6 +60,12 @@ class ConsoleReport(Report):
                 print(f"\n[blue]--- {issue_keys} ---")
                 for issue in issues_by_severity[issue_keys]:
                     issue.print()
+        elif scan.skipped:
+            # Nothing was scanned successfully, so "no issues" would be misleading.
+            print(
+                "\n[yellow] No issues found in the scanned files, but "
+                f"{len(scan.skipped)} file(s) were skipped and not scanned."
+            )
         else:
             print("\n[green] No issues found! 🎉")
 
