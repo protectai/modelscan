@@ -173,22 +173,15 @@ def create_settings(force: bool, location: Optional[str]) -> None:
     if location:
         settings_path = location
 
-    try:
-        open(settings_path, encoding="utf-8")
-        if force:
-            with open(settings_path, mode="w", encoding="utf-8") as settings_file:
-                settings_file.write(SettingsUtils.get_default_settings_as_toml())
-                settings_file.close()
-        else:
-            logger.warning(
-                "%s file already exists. Please use `--force` flag if you intend to overwrite it.",
-                settings_path,
-            )
+    if os.path.exists(settings_path) and not force:
+        logger.warning(
+            "%s file already exists. Please use `--force` flag if you intend to overwrite it.",
+            settings_path,
+        )
+        return
 
-    except FileNotFoundError:
-        with open(settings_path, mode="w", encoding="utf-8") as settings_file:
-            settings_file.write(SettingsUtils.get_default_settings_as_toml())
-            settings_file.close()
+    with open(settings_path, mode="w", encoding="utf-8") as settings_file:
+        settings_file.write(SettingsUtils.get_default_settings_as_toml())
 
 
 def main() -> None:
