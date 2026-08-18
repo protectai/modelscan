@@ -41,6 +41,8 @@ from modelscan.tools.picklescanner import (
 from modelscan.skip import SkipCategories
 from modelscan.settings import DEFAULT_SETTINGS
 from modelscan.model import Model
+from modelscan.reports import Report, JSONReport
+from modelscan._version import __version__
 
 settings: Dict[str, Any] = DEFAULT_SETTINGS
 
@@ -1644,3 +1646,54 @@ def test_main_defaultgroup(file_path: Any) -> None:
         pass
     finally:
         sys.argv = argv
+
+
+def test_report_metadata(file_path: Any, tmp_path: Any) -> None:
+    ms = ModelScan()
+    ms.scan(Path(f"{file_path}/data/benign0_v3.pkl"))
+
+    metadata = Report.build_metadata(ms, settings={})
+    assert set(metadata.keys()) >= {
+        "modelscan_version",
+        "timestamp",
+        "input_path",
+        "total_scanned",
+    }
+    assert metadata["modelscan_version"] == __version__
+    assert metadata["input_path"] == str(Path(f"{file_path}/data/benign0_v3.pkl"))
+    assert metadata["total_scanned"] == len(ms.scanned)
+
+    # Caller-supplied metadata is merged in and wins on conflict.
+    merged = Report.build_metadata(
+        ms,
+        settings={"metadata": {"data_scanned": "hf://acme/model", "total_scanned": 99}},
+    )
+    assert merged["data_scanned"] == "hf://acme/model"
+    assert merged["total_scanned"] == 99
+
+
+def test_json_report_includes_metadata(file_path: Any, tmp_path: Any) -> None:
+    ms = ModelScan()
+    ms.scan(Path(f"{file_path}/data/benign0_v3.pkl"))
+
+    output_file = f"{tmp_path}/report.json"
+    JSONReport.generate(
+        ms,
+        settings={
+            "output_file": output_file,
+            "metadata": {"data_scanned": "local pickle"},
+        },
+    )
+
+    with open(output_file) as f:
+        report = json.load(f)
+
+    assert "metadata" in report
+    assert report["metadata"]["modelscan_version"] == __version__
+    assert report["metadata"]["input_path"] == str(
+        Path(f"{file_path}/data/benign0_v3.pkl")
+    )
+    assert report["metadata"]["data_scanned"] == "local pickle"
+    # Existing top-level structure stays intact.
+    assert "summary" in report
+    assert "issues" in report
