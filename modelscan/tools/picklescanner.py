@@ -3,8 +3,6 @@ import pickletools  # nosec
 from tarfile import TarError
 from typing import IO, Any, Dict, List, Set, Tuple, Union, Optional
 
-import numpy as np
-
 from modelscan.error import PickleGenopsError
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
@@ -201,6 +199,16 @@ def _build_scan_result_from_raw_globals(
 
 def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
     scan_name = "numpy"
+    # NumPy is an optional dependency (only needed for .npy scanning);
+    # import lazily so the package works without it installed.
+    try:
+        import numpy as np  # noqa: F401 - used below for extension checks
+    except ImportError as exc:
+        raise ModelScanSkipped(
+            model,
+            SkipCategories.UNSUPPORTED,
+            "numpy is not installed; skipping NumPy file scanning",
+        ) from exc
     # Code to distinguish from NumPy binary files and pickles.
     _ZIP_PREFIX = b"PK\x03\x04"
     _ZIP_SUFFIX = b"PK\x05\x06"  # empty zip files start with this
