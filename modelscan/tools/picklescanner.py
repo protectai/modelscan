@@ -5,6 +5,12 @@ from typing import IO, Any, Dict, List, Set, Tuple, Union, Optional
 
 import numpy as np
 
+try:
+    # numpy >= 2.0 moved the private helpers here; numpy 2.5 dropped them from np.lib.format
+    from numpy.lib._format_impl import _check_version, _read_array_header  # type: ignore[attr-defined]
+except ImportError:
+    from numpy.lib.format import _check_version, _read_array_header  # type: ignore[attr-defined]
+
 from modelscan.error import PickleGenopsError
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.issues import Issue, IssueCode, IssueSeverity, OperatorIssueDetails
@@ -228,8 +234,8 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
         version = np.lib.format.read_magic(stream)  # type: ignore[no-untyped-call]
-        np.lib.format._check_version(version)  # type: ignore[attr-defined]
-        _, _, dtype = np.lib.format._read_array_header(stream, version)  # type: ignore[attr-defined]
+        _check_version(version)
+        _, _, dtype = _read_array_header(stream, version)
 
         if dtype.hasobject:
             return scan_pickle_bytes(model, settings, scan_name, True, stream.tell())
