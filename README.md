@@ -108,7 +108,7 @@ At present, ModelScan supports any Pickle derived format and many others:
 
 ### Installation
 
-ModelScan is installed on your systems as a Python package(Python 3.9 to 3.12 supported). As shown from above you can install
+ModelScan is installed on your systems as a Python package(Python 3.10 to 3.14 supported; the `tensorflow` extra is not yet available on 3.14). As shown from above you can install
 it by running this in your terminal:
 
 ```bash
