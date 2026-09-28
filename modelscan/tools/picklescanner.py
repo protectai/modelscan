@@ -7,9 +7,9 @@ import numpy as np
 
 try:
     # numpy >= 2.0 moved the private helpers here; numpy 2.5 dropped them from np.lib.format
-    from numpy.lib._format_impl import _check_version, _read_array_header  # type: ignore[attr-defined]
+    from numpy.lib._format_impl import _check_version, _read_array_header  # type: ignore[attr-defined,unused-ignore]
 except ImportError:
-    from numpy.lib.format import _check_version, _read_array_header  # type: ignore[attr-defined]
+    from numpy.lib.format import _check_version, _read_array_header  # type: ignore[attr-defined,unused-ignore]
 
 from modelscan.error import PickleGenopsError
 from modelscan.skip import ModelScanSkipped, SkipCategories
@@ -233,7 +233,7 @@ def scan_numpy(model: Model, settings: Dict[str, Any]) -> ScanResults:
 
     elif magic == np.lib.format.MAGIC_PREFIX:
         # .npy file
-        version = np.lib.format.read_magic(stream)  # type: ignore[no-untyped-call]
+        version = np.lib.format.read_magic(stream)  # type: ignore[no-untyped-call,unused-ignore]
         _check_version(version)
         _, _, dtype = _read_array_header(stream, version)
 
