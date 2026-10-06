@@ -1,7 +1,11 @@
+import bz2
+import io
 import logging
+import lzma
 import pickletools  # nosec
 from tarfile import TarError
-from typing import IO, Any, Dict, List, Set, Tuple, Union, Optional
+from typing import IO, Any, Callable, Dict, List, Set, Tuple, Union, Optional
+import zlib
 
 import numpy as np
 
@@ -24,6 +28,97 @@ class GenOpsError(Exception):
 
     def __str__(self) -> str:
         return self.msg
+
+
+# Maximum number of bytes produced while transparently decompressing a
+# compressed pickle stream. Guards against decompression bombs: if the cap is
+# exceeded the original stream is scanned as before, which surfaces a visible
+# parse error instead of silently exhausting memory.
+_MAX_DECOMPRESSED_BYTES = 2**31
+
+# Maximum compression layers to peel. joblib writes a single layer, but
+# peeling a bounded few keeps doubly-wrapped streams visible to the scanner
+# without risking unbounded work.
+_MAX_DECOMPRESSION_LAYERS = 3
+
+
+def _decompressor_for_magic(magic: bytes) -> Optional[Callable[[], Any]]:
+    """Return a factory for an incremental decompressor matching the given
+    stream magic bytes, or None if the stream is not compressed.
+
+    Covers every compression format joblib.dump(..., compress=...) can wrap a
+    pickle stream in. joblib.load() transparently decompresses these, so the
+    scanner must look through the compression layer too — otherwise a payload
+    hides behind the compressor and the scan silently misses it.
+    See https://github.com/protectai/modelscan/issues/363
+    """
+    if magic[:2] == b"\x1f\x8b":  # gzip
+        return lambda: zlib.decompressobj(wbits=31)
+    if magic[:3] == b"BZh":  # bzip2
+        return lambda: bz2.BZ2Decompressor()
+    if magic[:6] == b"\xfd7zXZ\x00":  # xz
+        return lambda: lzma.LZMADecompressor(format=lzma.FORMAT_XZ)
+    if magic[:2] == b"\x5d\x00":  # lzma (alone format, as written by joblib)
+        return lambda: lzma.LZMADecompressor(format=lzma.FORMAT_ALONE)
+    if magic[:1] == b"\x78":  # zlib (deflate with a 32K window)
+        return zlib.decompressobj
+    return None
+
+
+def _bounded_decompress(decompressor: Any, data: bytes) -> bytes:
+    """Decompress data incrementally, refusing to produce more than
+    _MAX_DECOMPRESSED_BYTES or to leave input unconsumed.
+
+    Trailing bytes after the compressed member could hide a second payload, so
+    anything but a clean single-member stream is rejected: the caller then
+    falls back to scanning the original stream, which surfaces a visible
+    parse error instead of silently ignoring bytes.
+    """
+    chunks: List[bytes] = []
+    total = 0
+    step = 1 << 16
+    for offset in range(0, len(data), step):
+        if getattr(decompressor, "eof", False):
+            # The member ended but input remains: those trailing bytes could
+            # hide a second payload, so refuse instead of ignoring them.
+            raise ValueError("trailing data after compressed stream")
+        chunk = decompressor.decompress(data[offset : offset + step])
+        total += len(chunk)
+        if total > _MAX_DECOMPRESSED_BYTES:
+            raise ValueError("decompressed stream exceeds size limit")
+        chunks.append(chunk)
+    if not getattr(decompressor, "eof", False):
+        raise ValueError("compressed stream was not fully consumed")
+    if getattr(decompressor, "unused_data", b""):
+        raise ValueError("trailing data after compressed stream")
+    return b"".join(chunks)
+
+
+def _transparently_decompressed_stream(data: IO[bytes]) -> IO[bytes]:
+    """Peek at the stream's magic bytes and, when they indicate a compression
+    format joblib wraps pickles in, return a fresh seekable stream over the
+    decompressed bytes. Otherwise return the original stream untouched.
+
+    Any decompression failure falls back to the original stream (position
+    restored): the scan then behaves exactly as before, reporting a visible
+    parse error rather than masking bytes.
+    """
+    entry_position = data.tell()
+    stream: IO[bytes] = data
+    try:
+        for _ in range(_MAX_DECOMPRESSION_LAYERS):
+            position = stream.tell()
+            magic = stream.read(8)
+            stream.seek(position)
+            factory = _decompressor_for_magic(magic)
+            if factory is None:
+                return stream
+            stream = io.BytesIO(_bounded_decompress(factory(), stream.read()))
+        return stream
+    except Exception as e:
+        logger.debug("Transparent decompression skipped: %s", e)
+        data.seek(entry_position)
+        return data
 
 
 # TODO: handle methods loading other Pickle files (either mark as suspicious, or follow calls to scan other files [preventing infinite loops])
@@ -129,7 +224,10 @@ def scan_pickle_bytes(
     """Disassemble a Pickle stream and report issues"""
     issues: List[Issue] = []
     try:
-        raw_globals = _list_globals(model.get_stream(offset), multiple_pickles)
+        raw_globals = _list_globals(
+            _transparently_decompressed_stream(model.get_stream(offset)),
+            multiple_pickles,
+        )
     except GenOpsError as e:
         if e.globals is not None:
             return _build_scan_result_from_raw_globals(

@@ -1,8 +1,10 @@
 import aiohttp
 import bdb
+import gzip
 import http.client
 import importlib
 import io
+import joblib
 import numpy as np
 import os
 from pathlib import Path
@@ -35,6 +37,7 @@ from modelscan.issues import (
     OperatorIssueDetails,
 )
 from modelscan.tools.picklescanner import (
+    _decompressor_for_magic,
     scan_pickle_bytes,
 )
 
@@ -483,6 +486,85 @@ def test_scan_pickle_bytes() -> None:
 
     model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious1())))
     assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def _assert_unsafe_eval_detected(ms: ModelScan) -> None:
+    eval_issues = [
+        issue
+        for issue in ms.issues.all_issues
+        if isinstance(issue.details, OperatorIssueDetails)
+        and issue.details.module == "builtins"
+        and issue.details.operator == "eval"
+        and issue.severity == IssueSeverity.CRITICAL
+    ]
+    assert len(eval_issues) == 1
+
+
+@pytest.mark.parametrize("compress_method", ["zlib", "gzip", "bz2", "lzma", "xz"])
+def test_scan_compressed_joblib(tmp_path: Any, compress_method: str) -> None:
+    # Regression test for https://github.com/protectai/modelscan/issues/363:
+    # joblib.dump(..., compress=...) writes compressor magic bytes instead of
+    # pickle magic. The scanner must look through the compression layer —
+    # joblib.load() does — instead of failing to parse the raw stream.
+    file_path = tmp_path / f"malicious_{compress_method}.joblib"
+    joblib.dump(Malicious1(), file_path, compress=(compress_method, 3))
+
+    ms = ModelScan()
+    ms.scan(str(file_path))
+
+    assert ms.errors == []
+    _assert_unsafe_eval_detected(ms)
+
+
+def test_scan_compressed_joblib_safe(tmp_path: Any) -> None:
+    # A benign compressed payload must stay clean: no issues, no errors.
+    file_path = tmp_path / "safe.joblib"
+    joblib.dump({"key": [1, 2, 3]}, file_path, compress=("zlib", 3))
+
+    ms = ModelScan()
+    ms.scan(str(file_path))
+
+    assert ms.issues.all_issues == []
+    assert ms.errors == []
+
+
+def test_scan_corrupt_compressed_joblib(tmp_path: Any) -> None:
+    # Bytes that look compressed but do not decompress must not crash the
+    # scan nor silently pass: the failure stays visible as a parse error.
+    file_path = tmp_path / "corrupt.joblib"
+    file_path.write_bytes(b"\x78\xda" + b"this is not zlib-compressed data")
+
+    ms = ModelScan()
+    ms.scan(str(file_path))
+
+    assert ms.issues.all_issues == []
+    assert len(ms.errors) == 1
+
+
+def test_scan_doubly_compressed_pickle(tmp_path: Any) -> None:
+    # A bounded number of compression layers is peeled, so wrapping the
+    # payload twice does not hide it either.
+    file_path = tmp_path / "malicious_double.joblib"
+    payload = pickle.dumps(Malicious1(), protocol=4)
+    file_path.write_bytes(gzip.compress(gzip.compress(payload)))
+
+    ms = ModelScan()
+    ms.scan(str(file_path))
+
+    assert ms.errors == []
+    _assert_unsafe_eval_detected(ms)
+
+
+def test_decompressor_for_magic() -> None:
+    # zlib, gzip, bzip2, xz, lzma (alone format, as written by joblib)
+    assert _decompressor_for_magic(b"\x78\xda\x6b\x60\x99\x9e\xc9\x00") is not None
+    assert _decompressor_for_magic(b"\x1f\x8b\x08\x00\x00\x00\x00\x00") is not None
+    assert _decompressor_for_magic(b"BZh31AY&SY") is not None
+    assert _decompressor_for_magic(b"\xfd7zXZ\x00\x00\x04") is not None
+    assert _decompressor_for_magic(b"\x5d\x00\x00\x40\x00\xff\xff\xff") is not None
+    # plain pickle streams and empty input are left untouched
+    assert _decompressor_for_magic(b"\x80\x04\x95\x25\x00\x00\x00\x00") is None
+    assert _decompressor_for_magic(b"") is None
 
 
 def test_scan_zip(zip_file_path: Any) -> None:
