@@ -61,7 +61,7 @@ class ConsoleReport(Report):
                 for issue in issues_by_severity[issue_keys]:
                     issue.print()
         else:
-            print("\n[green] No issues found! 🎉")
+            print("\n[green] No issues found!")
 
         if len(scan.errors) > 0:
             print("\n[red]--- Errors --- ")
