@@ -14,6 +14,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import timeit
 import torch
 import tensorflow as tf
 import tf_keras as keras
@@ -97,6 +98,11 @@ class Malicious15:
             bd,
             'import os\nos.system("whoami")',
         )
+
+
+class Malicious16:
+    def __reduce__(self) -> Any:
+        return timeit.timeit, ("", 'import os; os.system("whoami")')
 
 
 def malicious12_gen() -> bytes:
@@ -482,6 +488,21 @@ def test_scan_pickle_bytes() -> None:
     ]
 
     model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious1())))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_timeit() -> None:
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "timeit", "timeit", IssueSeverity.CRITICAL, "file.pkl"
+            ),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious16())))
     assert scan_pickle_bytes(model, settings).issues == expected
 
 
