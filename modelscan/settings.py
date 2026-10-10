@@ -126,6 +126,8 @@ DEFAULT_SETTINGS = {
             "pty": "*",
             "pickle": "*",
             "_pickle": "*",
+            "pandas": ["read_pickle"],
+            "pandas.io.pickle": ["read_pickle"],
             "bdb": "*",
             "pdb": "*",
             "shutil": "*",

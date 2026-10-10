@@ -485,6 +485,41 @@ def test_scan_pickle_bytes() -> None:
     assert scan_pickle_bytes(model, settings).issues == expected
 
 
+@pytest.mark.parametrize("module", [b"pandas", b"pandas.io.pickle"])
+def test_scan_pandas_read_pickle(module: bytes) -> None:
+    operator = b"read_pickle"
+    url = b"https://example.com/unsafe.pkl"
+    payload = (
+        pickle.PROTO
+        + b"\x04"
+        + pickle.SHORT_BINUNICODE
+        + bytes([len(module)])
+        + module
+        + pickle.SHORT_BINUNICODE
+        + bytes([len(operator)])
+        + operator
+        + pickle.STACK_GLOBAL
+        + pickle.SHORT_BINUNICODE
+        + bytes([len(url)])
+        + url
+        + pickle.TUPLE1
+        + pickle.REDUCE
+        + pickle.STOP
+    )
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                module.decode(), "read_pickle", IssueSeverity.CRITICAL, "file.pkl"
+            ),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(payload))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
 def test_scan_zip(zip_file_path: Any) -> None:
     expected = [
         Issue(
