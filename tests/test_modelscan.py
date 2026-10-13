@@ -1,19 +1,26 @@
 import aiohttp
+import asyncio.subprocess
 import bdb
+import cProfile
 import http.client
 import importlib
 import io
+import json
 import numpy as np
+import operator
 import os
 from pathlib import Path
 import pickle
 import dill
+import profile
+import pydoc
 import pytest
 import requests
 import shutil
 import socket
 import subprocess
 import sys
+import timeit
 import torch
 import tensorflow as tf
 import tf_keras as keras
@@ -97,6 +104,50 @@ class Malicious15:
             bd,
             'import os\nos.system("whoami")',
         )
+
+
+class Malicious17:
+    # asyncio.subprocess.create_subprocess_shell must be caught via the
+    # "asyncio" wildcard entry through submodule prefix matching.
+    def __reduce__(self) -> Any:
+        return asyncio.subprocess.create_subprocess_shell, ("true",)
+
+
+class Malicious18:
+    # cProfile.run executes its statement argument as code.
+    def __reduce__(self) -> Any:
+        return cProfile.run, ("pass",)
+
+
+class Malicious19:
+    # profile.run executes its statement argument as code.
+    def __reduce__(self) -> Any:
+        return profile.run, ("pass",)
+
+
+class Malicious20:
+    # timeit.timeit executes its stmt argument as code.
+    def __reduce__(self) -> Any:
+        return timeit.timeit, ("pass",)
+
+
+class Malicious21:
+    # pydoc.pipepager pipes text through cmd via the shell.
+    def __reduce__(self) -> Any:
+        return pydoc.pipepager, ("text", "less")
+
+
+class Malicious22:
+    # operator.methodcaller invokes arbitrary methods, e.g.
+    # operator.methodcaller("system")(__import__("os"))("echo pwned").
+    def __reduce__(self) -> Any:
+        return operator.methodcaller, ("strip",)
+
+
+class Benign1:
+    # json.dumps is not a code-execution primitive and must stay unflagged.
+    def __reduce__(self) -> Any:
+        return json.dumps, ("{}",)
 
 
 def malicious12_gen() -> bytes:
@@ -483,6 +534,103 @@ def test_scan_pickle_bytes() -> None:
 
     model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious1())))
     assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_submodule_prefix() -> None:
+    # asyncio.subprocess is not listed itself; it must resolve through the
+    # "asyncio" wildcard entry via longest-prefix module matching.
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "asyncio.subprocess",
+                "create_subprocess_shell",
+                IssueSeverity.CRITICAL,
+                "file.pkl",
+            ),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious17())))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_cprofile() -> None:
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails("cProfile", "run", IssueSeverity.CRITICAL, "file.pkl"),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious18())))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_profile() -> None:
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails("profile", "run", IssueSeverity.CRITICAL, "file.pkl"),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious19())))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_timeit() -> None:
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "timeit", "timeit", IssueSeverity.CRITICAL, "file.pkl"
+            ),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious20())))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_pydoc() -> None:
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "pydoc", "pipepager", IssueSeverity.CRITICAL, "file.pkl"
+            ),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious21())))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_operator_methodcaller() -> None:
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "operator", "methodcaller", IssueSeverity.CRITICAL, "file.pkl"
+            ),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious22())))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_benign_global() -> None:
+    # A non-dangerous global must not be flagged.
+    model = Model("file.pkl", io.BytesIO(pickle.dumps(Benign1())))
+    assert scan_pickle_bytes(model, settings).issues == []
 
 
 def test_scan_zip(zip_file_path: Any) -> None:

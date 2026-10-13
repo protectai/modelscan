@@ -168,9 +168,18 @@ def _build_scan_result_from_raw_globals(
     for rg in raw_globals:
         global_module, global_name, severity = rg[0], rg[1], None
         for severity_name in severities:
-            if global_module not in settings["unsafe_globals"][severity_name]:
+            # Match the module by longest prefix: a submodule global such as
+            # asyncio.subprocess/create_subprocess_shell must match the
+            # "asyncio" entry. Walk up the dotted path so the boundary is
+            # always a dot, i.e. "asyncioX" never matches "asyncio".
+            module_prefix = global_module
+            while module_prefix:
+                if module_prefix in settings["unsafe_globals"][severity_name]:
+                    break
+                module_prefix = module_prefix.rpartition(".")[0]
+            if not module_prefix:
                 continue
-            filter = settings["unsafe_globals"][severity_name][global_module]
+            filter = settings["unsafe_globals"][severity_name][module_prefix]
             if filter == "*":
                 severity = severities[severity_name]
                 break

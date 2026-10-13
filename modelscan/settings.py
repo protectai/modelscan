@@ -122,6 +122,7 @@ DEFAULT_SETTINGS = {
             "sys": "*",
             "operator": [
                 "attrgetter",  # Ex of code execution: operator.attrgetter("system")(__import__("os"))("echo pwned")
+                "methodcaller",  # Ex of code execution: operator.methodcaller("system")(__import__("os"))("echo pwned")
             ],
             "pty": "*",
             "pickle": "*",
@@ -130,6 +131,10 @@ DEFAULT_SETTINGS = {
             "pdb": "*",
             "shutil": "*",
             "asyncio": "*",
+            "timeit": "*",
+            "cProfile": "*",
+            "profile": "*",
+            "pydoc": "*",
         },
         "HIGH": {
             "webbrowser": "*",  # Includes webbrowser.open()
