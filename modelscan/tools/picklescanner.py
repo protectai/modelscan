@@ -84,7 +84,11 @@ def _list_globals(
                 globals.add(tuple(op_value.split(" ", 1)))
             elif op_name == "STACK_GLOBAL":
                 values: List[str] = []
-                for offset in range(1, n):
+                # The range must reach ops[0]: when the module operand is the
+                # first opcode, stopping at ops[1] finds only one operand and
+                # raises ValueError, letting a valid malicious pickle scan
+                # with zero findings.
+                for offset in range(1, n + 1):
                     if ops[n - offset][0].name in [
                         "MEMOIZE",
                         "PUT",

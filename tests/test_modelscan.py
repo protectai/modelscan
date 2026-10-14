@@ -485,6 +485,69 @@ def test_scan_pickle_bytes() -> None:
     assert scan_pickle_bytes(model, settings).issues == expected
 
 
+def test_scan_pickle_bytes_stack_global_operand_at_index_zero() -> None:
+    # Regression test for #382: a valid STACK_GLOBAL pickle whose module
+    # operand is the first opcode used to raise
+    # "ValueError: Found 1 values for STACK_GLOBAL at position 2 instead of 2",
+    # which propagated out of scan_pickle_bytes and left the file with zero
+    # findings. It must flag os.system as CRITICAL instead.
+    payload = b"".join(
+        [
+            pickle.UNICODE + b"os\n",
+            pickle.UNICODE + b"system\n",
+            pickle.STACK_GLOBAL,
+            pickle.MARK,
+            pickle.UNICODE + b"echo hello\n",
+            pickle.TUPLE,
+            pickle.REDUCE,
+            pickle.STOP,
+        ]
+    )
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "os", "system", IssueSeverity.CRITICAL, "file.pkl"
+            ),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(payload))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def test_scan_pickle_bytes_stack_global_with_memoize_padding() -> None:
+    # The standard protocol-4 shape (MEMOIZE between the operands and
+    # STACK_GLOBAL) must keep resolving to the same global after the fix.
+    payload = b"".join(
+        [
+            pickle.UNICODE + b"os\n",
+            pickle.MEMOIZE,
+            pickle.UNICODE + b"system\n",
+            pickle.MEMOIZE,
+            pickle.STACK_GLOBAL,
+            pickle.MARK,
+            pickle.UNICODE + b"echo hello\n",
+            pickle.TUPLE,
+            pickle.REDUCE,
+            pickle.STOP,
+        ]
+    )
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "os", "system", IssueSeverity.CRITICAL, "file.pkl"
+            ),
+        )
+    ]
+
+    model = Model("file.pkl", io.BytesIO(payload))
+    assert scan_pickle_bytes(model, settings).issues == expected
+
+
 def test_scan_zip(zip_file_path: Any) -> None:
     expected = [
         Issue(
