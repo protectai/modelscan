@@ -506,6 +506,123 @@ def test_scan_zip(zip_file_path: Any) -> None:
     assert ms.issues.all_issues == expected
 
 
+def test_scan_pickle_extensionless_zip_entry(tmp_path: Any) -> None:
+    # An extensionless zip entry holding pickle content must be scanned, not
+    # silently skipped (issue #384).
+    payload = pickle.dumps(Malicious2(), protocol=4)
+    zip_path = f"{tmp_path}/test.zip"
+    with zipfile.ZipFile(zip_path, "w") as zip:
+        zip.writestr("payload", payload)
+        zip.writestr("readme", "just a readme, nothing to see here")
+
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails(
+                "posix",
+                "system",
+                IssueSeverity.CRITICAL,
+                f"{tmp_path}/test.zip:payload",
+            ),
+        )
+    ]
+
+    ms = ModelScan()
+    results = ms.scan(zip_path)
+    assert ms.issues.all_issues == expected
+    assert results["summary"]["skipped"]["skipped_files"] == [
+        {
+            "category": "SCAN_NOT_SUPPORTED",
+            "description": "Model Scan did not scan file",
+            "source": "test.zip:readme",
+        }
+    ]
+
+
+def test_scan_pickle_extensionless_file(tmp_path: Any) -> None:
+    # A bare extensionless pickle file must be scanned (issue #384).
+    payload = pickle.dumps(Malicious2(), protocol=4)
+    file_path = f"{tmp_path}/payload"
+    with open(file_path, "wb") as file:
+        file.write(payload)
+
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails("posix", "system", IssueSeverity.CRITICAL, file_path),
+        )
+    ]
+
+    ms = ModelScan()
+    results = ms.scan(file_path)
+    assert ms.issues.all_issues == expected
+    assert results["summary"]["skipped"]["skipped_files"] == []
+
+
+def test_scan_pickle_protocol0_extensionless_file(tmp_path: Any) -> None:
+    # Protocol-0 pickles have no PROTO magic byte; they must be sniffed via
+    # their starting opcode (issue #384).
+    payload = pickle.dumps(Malicious2(), protocol=0)
+    file_path = f"{tmp_path}/payload"
+    with open(file_path, "wb") as file:
+        file.write(payload)
+
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails("posix", "system", IssueSeverity.CRITICAL, file_path),
+        )
+    ]
+
+    ms = ModelScan()
+    results = ms.scan(file_path)
+    assert ms.issues.all_issues == expected
+    assert results["summary"]["skipped"]["skipped_files"] == []
+
+
+def test_scan_non_pickle_extensionless_still_skipped(tmp_path: Any) -> None:
+    # Extensionless content that is not a pickle must keep the previous
+    # behavior: skipped as SCAN_NOT_SUPPORTED (issue #384).
+    file_path = f"{tmp_path}/readme"
+    with open(file_path, "w") as file:
+        file.write("just a readme, nothing to see here")
+
+    ms = ModelScan()
+    results = ms.scan(file_path)
+    assert results["summary"]["total_issues"] == 0
+    assert results["summary"]["skipped"]["skipped_files"] == [
+        {
+            "category": "SCAN_NOT_SUPPORTED",
+            "description": "Model Scan did not scan file",
+            "source": "readme",
+        }
+    ]
+
+
+def test_scan_pickle_normal_extension_still_works(tmp_path: Any) -> None:
+    # Regression control: a regular .pkl file must still be scanned (issue #384).
+    payload = pickle.dumps(Malicious2(), protocol=4)
+    file_path = f"{tmp_path}/payload.pkl"
+    with open(file_path, "wb") as file:
+        file.write(payload)
+
+    expected = [
+        Issue(
+            IssueCode.UNSAFE_OPERATOR,
+            IssueSeverity.CRITICAL,
+            OperatorIssueDetails("posix", "system", IssueSeverity.CRITICAL, file_path),
+        )
+    ]
+
+    ms = ModelScan()
+    results = ms.scan(file_path)
+    assert ms.issues.all_issues == expected
+    assert results["summary"]["skipped"]["skipped_files"] == []
+
+
 def test_scan_pytorch(pytorch_file_path: Any) -> None:
     ms = ModelScan()
     results = ms.scan(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
