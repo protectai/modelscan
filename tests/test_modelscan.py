@@ -578,6 +578,32 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     assert results["errors"] == []
 
 
+def test_scan_keras_h5_wrong_extension_pickle(tmp_path: Any) -> None:
+    # Issue #388: a raw pickle renamed to .keras or .h5 must be flagged by the
+    # pickle scanner, not silently skipped when the format-specific parse fails.
+    payload = pickle.dumps(Malicious2(), protocol=4)
+    for filename in ("malicious.keras", "malicious.h5"):
+        path = tmp_path / filename
+        path.write_bytes(payload)
+        ms = ModelScan()
+        results = ms.scan(path)
+        expected = [
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.CRITICAL,
+                OperatorIssueDetails(
+                    "posix",
+                    "system",
+                    IssueSeverity.CRITICAL,
+                    f"{path}",
+                ),
+            )
+        ]
+        assert ms.issues.all_issues == expected
+        assert results["summary"]["skipped"]["skipped_files"] == []
+        assert results["errors"] == []
+
+
 def test_scan_numpy(numpy_file_path: Any) -> None:
     ms = ModelScan()
     results = ms.scan(f"{numpy_file_path}/safe_numpy.npy")

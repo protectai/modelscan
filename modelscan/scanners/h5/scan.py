@@ -17,6 +17,7 @@ from modelscan.error import (
 from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
+from modelscan.tools.picklescanner import scan_pickle_bytes
 from modelscan.model import Model
 from modelscan.settings import SupportedModelFormats
 
@@ -55,7 +56,14 @@ class H5LambdaDetectScan(SavedModelLambdaDetectScan):
 
     def _scan_keras_h5_file(self, model: Model) -> Optional[ScanResults]:
         machine_learning_library_name = "Keras"
-        if self._check_model_config(model):
+        try:
+            has_model_config = self._check_model_config(model)
+        except OSError:
+            # Not an HDF5 file at all: fall back to the plain pickle scanner so
+            # a raw pickle with an H5-associated extension cannot silently evade
+            # scanning. Mirrors scan_numpy's fallback.
+            return scan_pickle_bytes(model, self._settings, self.name())
+        if has_model_config:
             operators_in_model = self._get_keras_h5_operator_names(model)
             if operators_in_model is None:
                 return None

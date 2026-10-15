@@ -5,9 +5,9 @@ from typing import List, Optional
 
 
 from modelscan.error import DependencyError, ModelScanScannerError, JsonDecodeError
-from modelscan.skip import ModelScanSkipped, SkipCategories
 from modelscan.scanners.scan import ScanResults
 from modelscan.scanners.saved_model.scan import SavedModelLambdaDetectScan
+from modelscan.tools.picklescanner import scan_pickle_bytes
 from modelscan.model import Model
 from modelscan.settings import SupportedModelFormats
 
@@ -48,19 +48,11 @@ class KerasLambdaDetectScan(SavedModelLambdaDetectScan):
                             return self.label_results(
                                 self._scan_keras_config_file(model)
                             )
-        except zipfile.BadZipFile as e:
-            return ScanResults(
-                [],
-                [],
-                [
-                    ModelScanSkipped(
-                        self.name(),
-                        SkipCategories.BAD_ZIP,
-                        f"Skipping zip file due to error: {e}",
-                        f"{model.get_source()}:{file_name}",
-                    )
-                ],
-            )
+        except zipfile.BadZipFile:
+            # Not a zip archive at all: fall back to the plain pickle scanner so
+            # a raw pickle with a Keras-associated extension cannot silently
+            # evade scanning. Mirrors scan_numpy's fallback.
+            return scan_pickle_bytes(model, self._settings, self.name())
 
         # Added return to pass the failing mypy test: Missing return statement
         return ScanResults(
