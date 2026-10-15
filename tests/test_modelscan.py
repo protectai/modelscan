@@ -12,6 +12,7 @@ import pytest
 import requests
 import shutil
 import socket
+import struct
 import subprocess
 import sys
 import torch
@@ -483,6 +484,91 @@ def test_scan_pickle_bytes() -> None:
 
     model = Model("file.pkl", io.BytesIO(pickle.dumps(Malicious1())))
     assert scan_pickle_bytes(model, settings).issues == expected
+
+
+def _os_system_critical_issue(source: str) -> Issue:
+    return Issue(
+        IssueCode.UNSAFE_OPERATOR,
+        IssueSeverity.CRITICAL,
+        OperatorIssueDetails("os", "system", IssueSeverity.CRITICAL, source),
+    )
+
+
+# Regression fixtures for https://github.com/protectai/modelscan/issues/338
+# sections 4 and 5. Each byte string is an inert protocol-0 payload
+# (GLOBAL os system + REDUCE, never unpickled) followed by a malformed tail.
+# Before the fix, the tail made the scanner discard the payload's globals:
+# zero findings instead of the CRITICAL os.system issue.
+_MALFORMED_TAIL_PAYLOAD = b"cos\nsystem\n(S'touch /tmp/scanner_regression_probe'\ntR."
+
+
+def test_scan_pickle_bytes_truncated_stream_reports_partial_globals() -> None:
+    # Issue #338 section 4: the opcode stream ends right after REDUCE, so
+    # pickletools.genops raises mid-stream. Opcodes parsed before the
+    # truncation must still be reported.
+    data = _MALFORMED_TAIL_PAYLOAD[:-1]  # no STOP: truncated stream
+    model = Model("truncated.pkl", io.BytesIO(data))
+    assert scan_pickle_bytes(model, settings).issues == [
+        _os_system_critical_issue("truncated.pkl")
+    ]
+
+
+def test_scan_pickle_bytes_invalid_memo_reference_reports_prior_globals() -> None:
+    # Issue #338 section 5a: the tail's BINGET references a memo key that was
+    # never stored. The resulting KeyError must not discard the payload's
+    # globals recovered from the preceding pickle buffer.
+    tail = b"\x8c\x02os\x94\x68\x03\x93."  # 'os'; MEMOIZE; BINGET 3; STACK_GLOBAL; STOP
+    model = Model("invalid_memo_ref.pkl", io.BytesIO(_MALFORMED_TAIL_PAYLOAD + tail))
+    assert scan_pickle_bytes(model, settings).issues == [
+        _os_system_critical_issue("invalid_memo_ref.pkl")
+    ]
+
+
+def test_scan_pickle_bytes_bytes_operand_via_memo_reports_prior_globals() -> None:
+    # Issue #338 section 5b: STACK_GLOBAL operands routed through the memo as
+    # bytes (SHORT_BINBYTES + MEMOIZE + BINGET) bypassed the "unknown" guard
+    # for direct operands and crashed the scan. They are now categorized as an
+    # unknown dangerous import (assumed RCE, like direct non-string operands),
+    # and the payload's globals are still reported.
+    tail = b"C\x02os\x94h\x00\x8c\x06system\x93."  # b'os'; MEMOIZE; BINGET 0; 'system'; STACK_GLOBAL; STOP
+    model = Model("bytes_operand.pkl", io.BytesIO(_MALFORMED_TAIL_PAYLOAD + tail))
+    compare_results(
+        scan_pickle_bytes(model, settings).issues,
+        {
+            _os_system_critical_issue("bytes_operand.pkl"),
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.CRITICAL,
+                OperatorIssueDetails(
+                    "unknown", "system", IssueSeverity.CRITICAL, "bytes_operand.pkl"
+                ),
+            ),
+        },
+    )
+
+
+def test_scan_pickle_bytes_bytearray_operand_via_memo_reports_prior_globals() -> None:
+    # Issue #338 section 5c: a BYTEARRAY8 value routed through the memo is
+    # unhashable, raising TypeError at globals.add(). It is now categorized
+    # as an unknown dangerous import instead, and the payload's globals are
+    # still reported.
+    tail = (
+        b"\x96" + struct.pack("<Q", 6) + b"system" + b"\x94h\x00\x8c\x02os\x93."
+    )  # bytearray(b'system'); MEMOIZE; BINGET 0; 'os'; STACK_GLOBAL; STOP
+    model = Model("bytearray_operand.pkl", io.BytesIO(_MALFORMED_TAIL_PAYLOAD + tail))
+    compare_results(
+        scan_pickle_bytes(model, settings).issues,
+        {
+            _os_system_critical_issue("bytearray_operand.pkl"),
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.CRITICAL,
+                OperatorIssueDetails(
+                    "unknown", "os", IssueSeverity.CRITICAL, "bytearray_operand.pkl"
+                ),
+            ),
+        },
+    )
 
 
 def test_scan_zip(zip_file_path: Any) -> None:

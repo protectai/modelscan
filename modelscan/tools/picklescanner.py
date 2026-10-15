@@ -56,63 +56,83 @@ def _list_globals(
     # Scan the data for pickle buffers, stopping when parsing fails or stops making progress
     last_byte = b"dummy"
     while last_byte != b"":
-        # List opcodes
+        # Consume the opcode stream incrementally: if the stream is truncated
+        # or malformed, opcodes parsed before the failure are still examined
+        # instead of being discarded along with the exception.
+        ops: List[Tuple[Any, Any, Union[int, None]]] = []
+        parse_error: Optional[Exception] = None
         try:
-            ops: List[Tuple[Any, Any, Union[int, None]]] = list(
-                pickletools.genops(data)
-            )
+            for op in pickletools.genops(data):
+                ops.append(op)
         except Exception as e:
-            # Given we can have multiple pickles in a file, we may have already successfully extracted globals from a valid pickle.
-            # Thus return the already found globals in the error & let the caller decide what to do.
-            globals_opt = globals if len(globals) > 0 else None
-            raise GenOpsError(str(e), globals_opt)
+            parse_error = e
 
         last_byte = data.read(1)
         data.seek(-1, 1)
 
-        # Extract global imports
-        for n in range(len(ops)):
-            op = ops[n]
-            op_name = op[0].name
-            op_value: str = op[1]
+        # Extract global imports. A malformed tail (dangling memo reference,
+        # non-string STACK_GLOBAL operand, ...) must not silently discard the
+        # globals recovered so far: surface them through GenOpsError so the
+        # caller reports them instead of failing open.
+        try:
+            for n in range(len(ops)):
+                op = ops[n]
+                op_name = op[0].name
+                op_value: str = op[1]
 
-            if op_name == "MEMOIZE" and n > 0:
-                memo[len(memo)] = ops[n - 1][1]
-            elif op_name in ["PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
-                memo[op_value] = ops[n - 1][1]
-            elif op_name in ("GLOBAL", "INST"):
-                globals.add(tuple(op_value.split(" ", 1)))
-            elif op_name == "STACK_GLOBAL":
-                values: List[str] = []
-                for offset in range(1, n):
-                    if ops[n - offset][0].name in [
-                        "MEMOIZE",
-                        "PUT",
-                        "BINPUT",
-                        "LONG_BINPUT",
-                    ]:
-                        continue
-                    if ops[n - offset][0].name in ["GET", "BINGET", "LONG_BINGET"]:
-                        values.append(memo[int(ops[n - offset][1])])
-                    elif ops[n - offset][0].name not in [
-                        "SHORT_BINUNICODE",
-                        "UNICODE",
-                        "BINUNICODE",
-                        "BINUNICODE8",
-                    ]:
-                        logger.debug(
-                            "Presence of non-string opcode, categorizing as an unknown dangerous import"
+                if op_name == "MEMOIZE" and n > 0:
+                    memo[len(memo)] = ops[n - 1][1]
+                elif op_name in ["PUT", "BINPUT", "LONG_BINPUT"] and n > 0:
+                    memo[op_value] = ops[n - 1][1]
+                elif op_name in ("GLOBAL", "INST"):
+                    globals.add(tuple(op_value.split(" ", 1)))
+                elif op_name == "STACK_GLOBAL":
+                    values: List[str] = []
+                    for offset in range(1, n):
+                        if ops[n - offset][0].name in [
+                            "MEMOIZE",
+                            "PUT",
+                            "BINPUT",
+                            "LONG_BINPUT",
+                        ]:
+                            continue
+                        if ops[n - offset][0].name in ["GET", "BINGET", "LONG_BINGET"]:
+                            memo_value = memo[int(ops[n - offset][1])]
+                            # A memo reference can resolve to a non-string
+                            # (bytes, bytearray, ...): categorize it as an
+                            # unknown dangerous import, like a non-string
+                            # opcode operand, instead of crashing downstream.
+                            values.append(
+                                memo_value if isinstance(memo_value, str) else "unknown"
+                            )
+                        elif ops[n - offset][0].name not in [
+                            "SHORT_BINUNICODE",
+                            "UNICODE",
+                            "BINUNICODE",
+                            "BINUNICODE8",
+                        ]:
+                            logger.debug(
+                                "Presence of non-string opcode, categorizing as an unknown dangerous import"
+                            )
+                            values.append("unknown")
+                        else:
+                            values.append(ops[n - offset][1])
+                        if len(values) == 2:
+                            break
+                    if len(values) != 2:
+                        raise ValueError(
+                            f"Found {len(values)} values for STACK_GLOBAL at position {n} instead of 2."
                         )
-                        values.append("unknown")
-                    else:
-                        values.append(ops[n - offset][1])
-                    if len(values) == 2:
-                        break
-                if len(values) != 2:
-                    raise ValueError(
-                        f"Found {len(values)} values for STACK_GLOBAL at position {n} instead of 2."
-                    )
-                globals.add((values[1], values[0]))
+                    globals.add((values[1], values[0]))
+        except Exception as e:
+            parse_error = e
+
+        if parse_error is not None:
+            # Given we can have multiple pickles in a file, we may have already successfully extracted globals from a valid pickle.
+            # Thus return the already found globals in the error & let the caller decide what to do.
+            globals_opt = globals if len(globals) > 0 else None
+            raise GenOpsError(str(parse_error), globals_opt)
+
         if not multiple_pickles:
             break
 
