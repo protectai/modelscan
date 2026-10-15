@@ -253,17 +253,9 @@ def scan_pytorch(model: Model, settings: Dict[str, Any]) -> ScanResults:
 
     magic = get_magic_number(model.get_stream())
     if magic != MAGIC_NUMBER:
-        return ScanResults(
-            [],
-            [],
-            [
-                ModelScanSkipped(
-                    scan_name,
-                    SkipCategories.MAGIC_NUMBER,
-                    "Invalid magic number",
-                    str(model.get_source()),
-                )
-            ],
-        )
+        # Not a PyTorch ZIP archive: fall back to the plain pickle scanner so a
+        # raw pickle with a PyTorch-associated extension (.bin/.pt/.pth/.ckpt)
+        # cannot silently evade scanning. Mirrors scan_numpy's fallback.
+        return scan_pickle_bytes(model, settings, scan_name, multiple_pickles=False)
 
     return scan_pickle_bytes(model, settings, scan_name, multiple_pickles=False)

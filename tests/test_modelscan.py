@@ -216,6 +216,15 @@ def pytorch_file_path(tmp_path_factory: Any) -> Any:
     # Fake PyTorch file (PNG file format) simulating https://huggingface.co/RectalWorm/loras_new/blob/main/Owl_Mage_no_background.pt
     initialize_data_file(f"{tmp}/bad_pytorch.pt", b"\211PNG\r\n\032\n")
 
+    # Raw pickle with a PyTorch-associated extension (issue #338 item 12): must be
+    # scanned by the pickle scanner, not silently skipped on magic mismatch
+    initialize_data_file(
+        f"{tmp}/malicious_raw_pickle.bin", pickle.dumps(Malicious2(), protocol=4)
+    )
+    initialize_data_file(
+        f"{tmp}/malicious_raw_pickle.pt", pickle.dumps(Malicious2(), protocol=4)
+    )
+
     # Safe PyTorch files in old and new (zip) formats
     pt = PyTorchTestModel()
     torch.save(
@@ -510,14 +519,13 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
     ms = ModelScan()
     results = ms.scan(Path(f"{pytorch_file_path}/bad_pytorch.pt"))
 
-    assert results["summary"]["skipped"]["skipped_files"] == [
-        {
-            "category": SkipCategories.MAGIC_NUMBER.name,
-            "description": "Invalid magic number",
-            "source": "bad_pytorch.pt",
-        }
-    ]
+    # Garbage content behind a PyTorch extension is a loud parse error (same as
+    # scan_numpy's fallback), never a silent MAGIC_NUMBER skip
+    assert results["summary"]["skipped"]["skipped_files"] == []
     assert ms.issues.all_issues == []
+    assert len(results["errors"]) == 1
+    assert results["errors"][0]["category"] == "PICKLE_GENOPS"
+    assert results["errors"][0]["source"] == "bad_pytorch.pt"
 
     results = ms.scan(Path(f"{pytorch_file_path}/safe_zip_pytorch.pt"))
     assert results["summary"]["scanned"]["scanned_files"] == [
@@ -575,6 +583,30 @@ def test_scan_pytorch(pytorch_file_path: Any) -> None:
         "unsafe_zip_pytorch.pt:unsafe_zip_pytorch/.data/serialization_id",
     }
     assert ms.issues.all_issues == expected
+
+
+def test_scan_pytorch_extension_mismatch(pytorch_file_path: Any) -> None:
+    # Issue #338 item 12: a raw pickle behind a PyTorch-associated extension must
+    # be flagged by the pickle scanner, not silently skipped on magic mismatch.
+    ms = ModelScan()
+    for filename in ("malicious_raw_pickle.bin", "malicious_raw_pickle.pt"):
+        path = f"{pytorch_file_path}/{filename}"
+        expected = [
+            Issue(
+                IssueCode.UNSAFE_OPERATOR,
+                IssueSeverity.CRITICAL,
+                OperatorIssueDetails(
+                    "posix",
+                    "system",
+                    IssueSeverity.CRITICAL,
+                    path,
+                ),
+            ),
+        ]
+        results = ms.scan(Path(path))
+        compare_results(ms.issues.all_issues, expected)
+        assert results["summary"]["skipped"]["skipped_files"] == []
+        assert results["errors"] == []
     assert results["errors"] == []
 
 
