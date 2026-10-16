@@ -156,3 +156,17 @@ class SettingsUtils:
         toml_settings = f"# ModelScan settings file\n\n{toml_settings}"
 
         return toml_settings
+
+    @staticmethod
+    def settings_version_is_current(settings: Any) -> bool:
+        """Check the modelscan version recorded in a settings file.
+
+        Returns True only when the settings carry a "modelscan_version" key
+        that matches the currently running modelscan version. Returns False
+        when the key is missing (files generated before versioning existed)
+        or when the versions differ, meaning the user's settings may be
+        out of date and should be regenerated.
+        """
+        file_version = settings.get("modelscan_version")
+
+        return file_version is not None and str(file_version) == __version__

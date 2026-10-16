@@ -115,6 +115,15 @@ def scan(
         with open(settings_file_path, encoding="utf-8") as sf:
             settings = parse(sf.read()).unwrap()
             click.echo(f"Detected settings file. Using {settings_file_path}. \n")
+        if not SettingsUtils.settings_version_is_current(settings):
+            logger.warning(
+                "The settings file at %s was generated with modelscan version %s, "
+                "but the current modelscan version is %s. Your settings may be out of date. "
+                "Consider regenerating the file with `modelscan create-settings-file --force`.",
+                settings_file_path,
+                settings.get("modelscan_version", "unknown"),
+                __version__,
+            )
     else:
         click.echo(
             f"No settings file detected at {settings_file_path}. Using defaults. \n"
