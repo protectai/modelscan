@@ -75,9 +75,9 @@ def cli() -> None:
 @click.option(
     "-r",
     "--reporting-format",
-    type=click.Choice(["console", "json", "custom"]),
+    type=click.Choice(["console", "json", "sarif", "custom"]),
     default="console",
-    help="Format of the output. Options are console, json, or custom (to be defined in settings-file). Default is console.",
+    help="Format of the output. Options are console, json, sarif, or custom (to be defined in settings-file). Default is console.",
 )
 @click.option(
     "-o",

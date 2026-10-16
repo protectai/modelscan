@@ -139,7 +139,7 @@ ModelScan supports the following arguments via the CLI:
 | ```modelscan -p /path/to/model_file```                                           | -p or --path     | Scan a locally stored model                             |
 | ```modelscan -p /path/to/model_file --settings-file ./modelscan-settings.toml``` | --settings-file  | Scan a locally stored model using custom configurations |
 | ```modelscan create-settings-file```                                             | -l or --location | Create a configurable settings file                     |
-| ```modelscan -r```                                             | -r or --reporting-format | Format of the output. Options are console,       json, or custom (to be defined in settings-file). Default is console                    |
+| ```modelscan -r```                                             | -r or --reporting-format | Format of the output. Options are console,       json, sarif, or custom (to be defined in settings-file). Default is console                    |
 | ```modelscan -r reporting-format -o file-name```                                             | -o or --output-file | Optional file name for output report                  |
 | ```modelscan --show-skipped```                          | --show-skipped | Print a list of files that were skipped      during the scan   |
 
@@ -154,6 +154,21 @@ The CLI exit status codes are:
 - `2`: Scan failed, modelscan threw an error while scanning
 - `3`: No supported files were passed to the tool
 - `4`: Usage error, CLI was passed invalid or incomplete options
+
+#### SARIF Output
+
+ModelScan can emit scan results in [SARIF v2.1.0](https://sarifweb.azurewebsites.net/) format so they can be consumed by GitHub code scanning and other SARIF-compatible tools:
+
+```
+modelscan -p /path/to/model_file.pkl -r sarif -o results.sarif
+```
+
+The mapping used is:
+
+- `ruleId`: the scanner's full name plus the issue code, e.g. `modelscan.scanners.PickleUnsafeOpScan/UNSAFE_OPERATOR`
+- `level`: `CRITICAL`/`HIGH` -> `error`, `MEDIUM` -> `warning`, `LOW` -> `note`
+- `locations`: the scanned file path in `artifactLocation.uri` (model files have no line numbers, so no `region` is emitted)
+- `tool.driver`: the `modelscan` tool name, its version, and the rules list
 
 ### Using ModelScan Programmatically in Python
 

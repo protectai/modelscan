@@ -23,6 +23,7 @@ class SupportedModelFormats:
 DEFAULT_REPORTING_MODULES = {
     "console": "modelscan.reports.ConsoleReport",
     "json": "modelscan.reports.JSONReport",
+    "sarif": "modelscan.reports.SARIFReport",
 }
 
 DEFAULT_SETTINGS = {
