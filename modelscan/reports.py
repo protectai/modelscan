@@ -63,6 +63,11 @@ class ConsoleReport(Report):
         else:
             print("\n[green] No issues found! 🎉")
 
+        if settings.get("show_scanned") and scan.scanner_runs:
+            print("\n[blue]--- Scanner Results ---")
+            for run in scan.scanner_runs:
+                print(f"{run['source']}: {run['scanner']} ({run['status']})")
+
         if len(scan.errors) > 0:
             print("\n[red]--- Errors --- ")
             for index, error in enumerate(scan.errors):

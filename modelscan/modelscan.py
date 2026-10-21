@@ -37,6 +37,7 @@ class ModelScan:
         self._init_errors: List[ModelScanError] = []
         self._skipped: List[ModelScanSkipped] = []
         self._scanned: List[str] = []
+        self._scanner_runs: List[Dict[str, str]] = []
         self._input_path: str = ""
 
         # Scanners
@@ -134,6 +135,7 @@ class ModelScan:
         self._errors.extend(self._init_errors)
         self._skipped = []
         self._scanned = []
+        self._scanner_runs = []
         self._input_path = str(path)
         pathlib_path = Path().cwd() if path == "." else Path(path).absolute()
         model_path = Path(pathlib_path)
@@ -173,6 +175,13 @@ class ModelScan:
             try:
                 scan_results = scanner.scan(model)
             except Exception as e:
+                self._scanner_runs.append(
+                    {
+                        "source": str(model.get_source()),
+                        "scanner": scanner.full_name(),
+                        "status": "error",
+                    }
+                )
                 logger.error(
                     "Error encountered from scanner %s with path %s: %s",
                     scanner.full_name(),
@@ -189,6 +198,22 @@ class ModelScan:
                 continue
 
             if scan_results is not None:
+                status = (
+                    "error"
+                    if scan_results.errors
+                    else (
+                        "skipped"
+                        if scan_results.skipped and not scan_results.issues
+                        else "completed"
+                    )
+                )
+                self._scanner_runs.append(
+                    {
+                        "source": str(model.get_source()),
+                        "scanner": scanner.full_name(),
+                        "status": status,
+                    }
+                )
                 scanned = True
                 logger.info(
                     "Scanning %s using %s model scan",
@@ -246,6 +271,13 @@ class ModelScan:
         report["summary"]["timestamp"] = datetime.now().isoformat()
 
         report["summary"]["scanned"] = {"total_scanned": len(self._scanned)}
+        report["summary"]["scanner_runs"] = [
+            {
+                **run,
+                "source": str(Path(run["source"]).relative_to(absolute_path)),
+            }
+            for run in self._scanner_runs
+        ]
 
         if self._scanned:
             scanned_files = []
@@ -347,6 +379,10 @@ class ModelScan:
     @property
     def scanned(self) -> List[str]:
         return self._scanned
+
+    @property
+    def scanner_runs(self) -> List[Dict[str, str]]:
+        return self._scanner_runs
 
     @property
     def skipped(self) -> List[ModelScanSkipped]:

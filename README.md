@@ -142,6 +142,9 @@ ModelScan supports the following arguments via the CLI:
 | ```modelscan -r```                                             | -r or --reporting-format | Format of the output. Options are console,       json, or custom (to be defined in settings-file). Default is console                    |
 | ```modelscan -r reporting-format -o file-name```                                             | -o or --output-file | Optional file name for output report                  |
 | ```modelscan --show-skipped```                          | --show-skipped | Print a list of files that were skipped      during the scan   |
+| `modelscan --show-scanned` | --show-scanned | Print each scanner run and its outcome |
+
+The JSON report includes `summary.scanner_runs` for every scanner that handled a file. Each entry contains a file path, scanner name, and outcome: `completed`, `skipped`, or `error`. This also records completed checks when no issue was found. Use `--show-scanned` to see the same information in the console report.
 
 Remember models are just like any other form of digital media, you should scan content from any untrusted source before use.
 

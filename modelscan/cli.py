@@ -68,6 +68,12 @@ def cli() -> None:
     help="Print a list of files that were skipped during the scan",
 )
 @click.option(
+    "--show-scanned",
+    is_flag=True,
+    default=False,
+    help="Print the scanner and outcome for each file checked",
+)
+@click.option(
     "--settings-file",
     type=click.Path(exists=True, dir_okay=False),
     help="Specify a settings file to use for the scan. Defaults to ./modelscan-settings.toml.",
@@ -95,6 +101,7 @@ def scan(
     log: str,
     path: Optional[str],
     show_skipped: bool,
+    show_scanned: bool,
     settings_file: Optional[str],
     reporting_format: str,
     output_file: Path,
@@ -138,6 +145,7 @@ def scan(
         ]
 
     modelscan._settings["reporting"]["settings"]["show_skipped"] = show_skipped
+    modelscan._settings["reporting"]["settings"]["show_scanned"] = show_scanned
     modelscan._settings["reporting"]["settings"]["output_file"] = output_file
 
     modelscan.generate_report()
