@@ -1,6 +1,7 @@
 import abc
 import logging
 import json
+import sys
 from typing import Optional, Dict, Any
 
 from rich import print
@@ -90,7 +91,7 @@ class JSONReport(Report):
         if not settings.get("show_skipped"):
             del report["summary"]["skipped"]
 
-        print(json.dumps(report))
+        sys.stdout.write(json.dumps(report) + "\n")
 
         output = settings.get("output_file")
         if output:
