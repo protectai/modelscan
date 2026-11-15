@@ -3,6 +3,7 @@ import bdb
 import http.client
 import importlib
 import io
+import json
 import numpy as np
 import os
 from pathlib import Path
@@ -34,6 +35,7 @@ from modelscan.issues import (
     IssueSeverity,
     OperatorIssueDetails,
 )
+from modelscan.reports import JSONReport
 from modelscan.tools.picklescanner import (
     scan_pickle_bytes,
 )
@@ -1644,3 +1646,18 @@ def test_main_defaultgroup(file_path: Any) -> None:
         pass
     finally:
         sys.argv = argv
+
+
+def test_json_report_stdout(tmp_path: Any, capsys: Any) -> None:
+    model_path = tmp_path / "unsafe.pkl"
+    model_path.write_bytes(pickle.dumps(Malicious1()))
+
+    ms = ModelScan()
+    ms.scan(model_path)
+    JSONReport.generate(ms, {})
+
+    report = json.loads(capsys.readouterr().out)
+    assert report["summary"]["scanned"]["scanned_files"] == ["unsafe.pkl"]
+    assert [issue["description"] for issue in report["issues"]] == [
+        "Use of unsafe operator 'eval' from module 'builtins'"
+    ]
